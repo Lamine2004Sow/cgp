@@ -1,0 +1,6 @@
+import { RolesService } from './roles.service';
+export declare class RolesController {
+    private readonly rolesService;
+    constructor(rolesService: RolesService);
+    list(): Promise<import("./dto/role-response.dto").RoleResponseDto[]>;
+}

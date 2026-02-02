@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model affectation {
+  id_affectation      BigInt              @id @default(autoincrement())
+  id_user             BigInt
+  id_role             String
+  id_entite           BigInt
+  id_annee            BigInt
+  date_debut          DateTime            @db.Date
+  date_fin            DateTime?           @db.Date
+  annee_universitaire annee_universitaire @relation(fields: [id_annee], references: [id_annee], onDelete: NoAction, onUpdate: NoAction)
+  entite_structure    entite_structure    @relation(fields: [id_entite], references: [id_entite], onDelete: NoAction, onUpdate: NoAction)
+  role                role                @relation(fields: [id_role], references: [id_role], onDelete: NoAction, onUpdate: NoAction)
+  utilisateur         utilisateur         @relation(fields: [id_user], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  contact_role        contact_role[]
+
+  @@unique([id_user, id_role, id_entite, id_annee], map: "affectation_unique")
+  @@index([id_annee], map: "idx_affectation_annee")
+  @@index([id_entite], map: "idx_affectation_entite")
+  @@index([id_role], map: "idx_affectation_role")
+  @@index([id_user], map: "idx_affectation_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model annee_universitaire {
+  id_annee                  BigInt                @id @default(autoincrement())
+  libelle                   String
+  date_debut                DateTime              @db.Date
+  date_fin                  DateTime              @db.Date
+  statut                    annee_statut
+  id_annee_source           BigInt?
+  affectation               affectation[]
+  annee_universitaire       annee_universitaire?  @relation("annee_universitaireToannee_universitaire", fields: [id_annee_source], references: [id_annee], onDelete: NoAction, onUpdate: NoAction)
+  other_annee_universitaire annee_universitaire[] @relation("annee_universitaireToannee_universitaire")
+  entite_structure          entite_structure[]
+  organigramme              organigramme[]
+}
+
+model composante {
+  id_entite        BigInt           @id
+  site_web         String?
+  entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model contact_role {
+  id_contact_role     BigInt      @id @default(autoincrement())
+  id_affectation      BigInt
+  email_fonctionnelle String?
+  type_email          String?
+  affectation         affectation @relation(fields: [id_affectation], references: [id_affectation], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id_affectation], map: "idx_contact_role_affectation")
+}
+
+model delegation {
+  id_delegation                                      BigInt            @id @default(autoincrement())
+  delegant_id                                        BigInt
+  delegataire_id                                     BigInt
+  id_entite                                          BigInt
+  id_role                                            String?
+  type_droit                                         String?
+  date_debut                                         DateTime          @db.Date
+  date_fin                                           DateTime?         @db.Date
+  statut                                             delegation_statut @default(ACTIVE)
+  utilisateur_delegation_delegant_idToutilisateur    utilisateur       @relation("delegation_delegant_idToutilisateur", fields: [delegant_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  utilisateur_delegation_delegataire_idToutilisateur utilisateur       @relation("delegation_delegataire_idToutilisateur", fields: [delegataire_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  entite_structure                                   entite_structure  @relation(fields: [id_entite], references: [id_entite], onDelete: NoAction, onUpdate: NoAction)
+  role                                               role?             @relation(fields: [id_role], references: [id_role], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([delegant_id], map: "idx_delegation_delegant")
+  @@index([delegataire_id], map: "idx_delegation_delegataire")
+  @@index([id_entite], map: "idx_delegation_entite")
+}
+
+model demande_modification {
+  id_demande                                                  BigInt         @id @default(autoincrement())
+  auteur_id                                                   BigInt
+  validateur_id                                               BigInt?
+  cible_type                                                  String
+  cible_id                                                    String
+  champ                                                       String
+  valeur_proposee                                             String?
+  statut                                                      demande_statut @default(EN_ATTENTE)
+  date_creation                                               DateTime       @default(now()) @db.Timestamptz(6)
+  date_decision                                               DateTime?      @db.Timestamptz(6)
+  utilisateur_demande_modification_auteur_idToutilisateur     utilisateur    @relation("demande_modification_auteur_idToutilisateur", fields: [auteur_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  utilisateur_demande_modification_validateur_idToutilisateur utilisateur?   @relation("demande_modification_validateur_idToutilisateur", fields: [validateur_id], references: [id_user], onUpdate: NoAction)
+  notification                                                notification[]
+
+  @@index([auteur_id], map: "idx_demande_modif_auteur")
+  @@index([validateur_id], map: "idx_demande_modif_validateur")
+}
+
+model demande_role {
+  id_demande_role                                          BigInt         @id @default(autoincrement())
+  id_user_createur                                         BigInt
+  id_user_validateur                                       BigInt?
+  role_propose                                             String
+  description                                              String?
+  justificatif                                             String?
+  statut                                                   demande_statut @default(EN_ATTENTE)
+  date_creation                                            DateTime       @default(now()) @db.Timestamptz(6)
+  date_decision                                            DateTime?      @db.Timestamptz(6)
+  utilisateur_demande_role_id_user_createurToutilisateur   utilisateur    @relation("demande_role_id_user_createurToutilisateur", fields: [id_user_createur], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  utilisateur_demande_role_id_user_validateurToutilisateur utilisateur?   @relation("demande_role_id_user_validateurToutilisateur", fields: [id_user_validateur], references: [id_user], onUpdate: NoAction)
+  notification                                             notification[]
+
+  @@index([id_user_createur], map: "idx_demande_role_createur")
+  @@index([id_user_validateur], map: "idx_demande_role_validateur")
+}
+
+model departement {
+  id_entite        BigInt           @id
+  code_interne     String?
+  entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model entite_structure {
+  id_entite              BigInt              @id @default(autoincrement())
+  id_annee               BigInt
+  id_entite_parent       BigInt?
+  type_entite            entite_type
+  nom                    String
+  tel_service            String?
+  bureau_service         String?
+  affectation            affectation[]
+  composante             composante?
+  delegation             delegation[]
+  departement            departement?
+  annee_universitaire    annee_universitaire @relation(fields: [id_annee], references: [id_annee], onDelete: NoAction, onUpdate: NoAction)
+  entite_structure       entite_structure?   @relation("entite_structureToentite_structure", fields: [id_entite_parent], references: [id_entite], onDelete: NoAction, onUpdate: NoAction)
+  other_entite_structure entite_structure[]  @relation("entite_structureToentite_structure")
+  mention                mention?
+  niveau                 niveau?
+  organigramme           organigramme[]
+  parcours               parcours?
+  role                   role[]
+  signalement            signalement[]
+
+  @@index([id_annee], map: "idx_entite_annee")
+  @@index([id_entite_parent], map: "idx_entite_parent")
+}
+
+model journal_audit {
+  id_log          BigInt      @id @default(autoincrement())
+  id_user_auteur  BigInt
+  horodatage      DateTime    @default(now()) @db.Timestamptz(6)
+  type_action     String
+  cible_type      String
+  cible_id        String?
+  ancienne_valeur String?
+  nouvelle_valeur String?
+  utilisateur     utilisateur @relation(fields: [id_user_auteur], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id_user_auteur], map: "idx_audit_auteur")
+}
+
+model mention {
+  id_entite        BigInt           @id
+  type_diplome     String?
+  entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model niveau {
+  id_entite        BigInt           @id
+  libelle_court    String?
+  entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model notification {
+  id_notif             BigInt                @id @default(autoincrement())
+  destinataire_id      BigInt
+  message              String
+  date_envoi           DateTime              @default(now()) @db.Timestamptz(6)
+  lu                   Boolean               @default(false)
+  id_demande           BigInt?
+  id_signalement       BigInt?
+  id_demande_role      BigInt?
+  utilisateur          utilisateur           @relation(fields: [destinataire_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  demande_modification demande_modification? @relation(fields: [id_demande], references: [id_demande], onUpdate: NoAction)
+  demande_role         demande_role?         @relation(fields: [id_demande_role], references: [id_demande_role], onUpdate: NoAction)
+  signalement          signalement?          @relation(fields: [id_signalement], references: [id_signalement], onUpdate: NoAction)
+
+  @@index([id_demande], map: "idx_notification_demande")
+  @@index([id_demande_role], map: "idx_notification_demande_role")
+  @@index([destinataire_id], map: "idx_notification_destinataire")
+  @@index([id_signalement], map: "idx_notification_signalement")
+}
+
+model organigramme {
+  id_organigramme     BigInt              @id @default(autoincrement())
+  id_annee            BigInt
+  id_entite_racine    BigInt
+  generated_by        BigInt
+  generated_at        DateTime            @default(now()) @db.Timestamptz(6)
+  est_fige            Boolean             @default(false)
+  export_path         String?
+  export_format       String              @default("PDF")
+  visibility_scope    String?
+  utilisateur         utilisateur         @relation(fields: [generated_by], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  annee_universitaire annee_universitaire @relation(fields: [id_annee], references: [id_annee], onDelete: NoAction, onUpdate: NoAction)
+  entite_structure    entite_structure    @relation(fields: [id_entite_racine], references: [id_entite], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id_annee], map: "idx_organigramme_annee")
+  @@index([id_entite_racine], map: "idx_organigramme_entite")
+  @@index([generated_by], map: "idx_organigramme_generated_by")
+}
+
+model parcours {
+  id_entite        BigInt           @id
+  code_parcours    String?
+  entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model role {
+  id_role             String            @id
+  libelle             String
+  description         String?
+  niveau_hierarchique Int               @default(0)
+  is_global           Boolean           @default(true)
+  id_composante       BigInt?
+  affectation         affectation[]
+  delegation          delegation[]
+  entite_structure    entite_structure? @relation(fields: [id_composante], references: [id_entite], onUpdate: NoAction)
+
+  @@index([id_composante], map: "idx_role_composante")
+}
+
+model signalement {
+  id_signalement                                      BigInt             @id @default(autoincrement())
+  auteur_id                                           BigInt
+  traitant_id                                         BigInt?
+  cloture_par_id                                      BigInt?
+  id_entite_cible                                     BigInt?
+  description                                         String
+  statut                                              signalement_statut @default(OUVERT)
+  date_creation                                       DateTime           @default(now()) @db.Timestamptz(6)
+  date_prise_en_charge                                DateTime?          @db.Timestamptz(6)
+  date_traitement                                     DateTime?          @db.Timestamptz(6)
+  commentaire_prise_en_charge                         String?
+  commentaire_cloture                                 String?
+  notification                                        notification[]
+  utilisateur_signalement_auteur_idToutilisateur      utilisateur        @relation("signalement_auteur_idToutilisateur", fields: [auteur_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  utilisateur_signalement_cloture_par_idToutilisateur utilisateur?       @relation("signalement_cloture_par_idToutilisateur", fields: [cloture_par_id], references: [id_user], onUpdate: NoAction)
+  entite_structure                                    entite_structure?  @relation(fields: [id_entite_cible], references: [id_entite], onUpdate: NoAction)
+  utilisateur_signalement_traitant_idToutilisateur    utilisateur?       @relation("signalement_traitant_idToutilisateur", fields: [traitant_id], references: [id_user], onUpdate: NoAction)
+
+  @@index([auteur_id], map: "idx_signalement_auteur")
+  @@index([id_entite_cible], map: "idx_signalement_entite")
+  @@index([traitant_id], map: "idx_signalement_traitant")
+}
+
+model utilisateur {
+  id_user                                                              BigInt                 @id @default(autoincrement())
+  login                                                                String                 @unique
+  uid_cas                                                              String?
+  nom                                                                  String
+  prenom                                                               String
+  email_institutionnel                                                 String?
+  telephone                                                            String?
+  bureau                                                               String?
+  statut                                                               utilisateur_statut     @default(ACTIF)
+  affectation                                                          affectation[]
+  delegation_delegation_delegant_idToutilisateur                       delegation[]           @relation("delegation_delegant_idToutilisateur")
+  delegation_delegation_delegataire_idToutilisateur                    delegation[]           @relation("delegation_delegataire_idToutilisateur")
+  demande_modification_demande_modification_auteur_idToutilisateur     demande_modification[] @relation("demande_modification_auteur_idToutilisateur")
+  demande_modification_demande_modification_validateur_idToutilisateur demande_modification[] @relation("demande_modification_validateur_idToutilisateur")
+  demande_role_demande_role_id_user_createurToutilisateur              demande_role[]         @relation("demande_role_id_user_createurToutilisateur")
+  demande_role_demande_role_id_user_validateurToutilisateur            demande_role[]         @relation("demande_role_id_user_validateurToutilisateur")
+  journal_audit                                                        journal_audit[]
+  notification                                                         notification[]
+  organigramme                                                         organigramme[]
+  signalement_signalement_auteur_idToutilisateur                       signalement[]          @relation("signalement_auteur_idToutilisateur")
+  signalement_signalement_cloture_par_idToutilisateur                  signalement[]          @relation("signalement_cloture_par_idToutilisateur")
+  signalement_signalement_traitant_idToutilisateur                     signalement[]          @relation("signalement_traitant_idToutilisateur")
+}
+
+enum annee_statut {
+  EN_COURS
+  PREPARATION
+  ARCHIVEE
+}
+
+enum delegation_statut {
+  ACTIVE
+  EXPIREE
+  ANNULEE
+}
+
+enum demande_statut {
+  EN_ATTENTE
+  VALIDEE
+  REFUSEE
+}
+
+enum entite_type {
+  COMPOSANTE
+  DEPARTEMENT
+  MENTION
+  PARCOURS
+  NIVEAU
+}
+
+enum signalement_statut {
+  OUVERT
+  EN_COURS
+  CLOTURE
+}
+
+enum utilisateur_statut {
+  ACTIF
+  INACTIF
+}

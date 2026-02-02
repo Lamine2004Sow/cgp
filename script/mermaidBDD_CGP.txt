@@ -1,0 +1,233 @@
+erDiagram
+    %% =========================================================
+    %% SCHÉMA BDD - ANNUAIRE USPN - VERSION SPRINT 2 (COHÉRENT TEXTE)
+    %% Notation : Crow's Foot (Pattes de corbeau)
+    %% =========================================================
+
+    %% ---------------------------------------------------------
+    %% BLOC 1 : GESTION TEMPORELLE (ANNÉES UNIVERSITAIRES)
+    %% ---------------------------------------------------------
+    ANNEE_UNIVERSITAIRE {
+        int    id_annee PK
+        string libelle          "2025-2026"
+        date   date_debut
+        date   date_fin
+        string statut           "EN_COURS/PREPARATION/ARCHIVEE"
+        int    id_annee_source FK "nullable (recopie depuis)"
+    }
+
+    %% Recopie : une année peut être la source de plusieurs années
+    ANNEE_UNIVERSITAIRE ||--o{ ANNEE_UNIVERSITAIRE : "Source de (recopie)"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 2 : STRUCTURE INSTITUTIONNELLE (HIÉRARCHIE PAR ANNÉE)
+    %% ---------------------------------------------------------
+    ENTITE_STRUCTURE {
+        int    id_entite PK
+        int    id_annee FK
+        int    id_entite_parent FK "nullable"
+        string type_entite       "COMPOSANTE/DEPARTEMENT/MENTION/PARCOURS/NIVEAU"
+        string nom
+        string tel_service
+        string bureau_service
+    }
+
+    %% Une année contient des entités de structure
+    ANNEE_UNIVERSITAIRE ||--o{ ENTITE_STRUCTURE : "Contient"
+
+    %% Hiérarchie interne (parent -> enfants)
+    ENTITE_STRUCTURE ||--o{ ENTITE_STRUCTURE : "Contient (parent/enfant)"
+
+    %% Sous-types (optionnels, si tu veux garder l'héritage comme dans ton V4)
+    COMPOSANTE { int id_entite PK,FK string site_web }
+    DEPARTEMENT { int id_entite PK,FK string code_interne }
+    MENTION { int id_entite PK,FK string type_diplome }
+    PARCOURS { int id_entite PK,FK string code_parcours }
+    NIVEAU { int id_entite PK,FK string libelle_court }
+
+    ENTITE_STRUCTURE ||--o| COMPOSANTE : "Est"
+    ENTITE_STRUCTURE ||--o| DEPARTEMENT : "Est"
+    ENTITE_STRUCTURE ||--o| MENTION : "Est"
+    ENTITE_STRUCTURE ||--o| PARCOURS : "Est"
+    ENTITE_STRUCTURE ||--o| NIVEAU : "Est"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 3 : UTILISATEURS + RÔLES + AFFECTATIONS + EMAILS FONCTIONNELS
+    %% ---------------------------------------------------------
+    UTILISATEUR {
+        int    id_user PK
+        string login              "CAS login"
+        string uid_cas
+        string nom
+        string prenom
+        string email_institutionnel
+        string telephone
+        string bureau
+        string statut             "ACTIF/INACTIF"
+    }
+
+    ROLE {
+        string id_role PK
+        string libelle
+        string description
+        int    niveau_hierarchique
+        boolean is_global
+        int    id_composante FK   "nullable (si rôle spécifique)"
+    }
+
+    AFFECTATION {
+        int    id_affectation PK
+        int    id_user FK
+        string id_role FK
+        int    id_entite FK
+        int    id_annee FK
+        date   date_debut
+        date   date_fin           "nullable"
+    }
+
+    %% Adresse fonctionnelle par rôle (optionnelle)
+    CONTACT_ROLE {
+        int    id_contact_role PK
+        int    id_affectation FK
+        string email_fonctionnelle "nullable"
+        string type_email
+    }
+
+    UTILISATEUR ||--o{ AFFECTATION : "Occupe"
+    ROLE ||--o{ AFFECTATION : "Attribué via"
+    ENTITE_STRUCTURE ||--o{ AFFECTATION : "Dans le périmètre"
+    ANNEE_UNIVERSITAIRE ||--o{ AFFECTATION : "Pour l'année"
+
+    AFFECTATION ||--o| CONTACT_ROLE : "Peut avoir"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 4 : DEMANDES DE RÔLES SPÉCIFIQUES (VALIDATION SC)
+    %% ---------------------------------------------------------
+    DEMANDE_ROLE {
+        int    id_demande_role PK
+        int    id_user_createur FK
+        int    id_user_validateur FK "nullable"
+        string role_propose
+        string description
+        string justificatif
+        string statut             "EN_ATTENTE/VALIDEE/REFUSEE"
+        datetime date_creation
+        datetime date_decision    "nullable"
+    }
+
+    UTILISATEUR ||--o{ DEMANDE_ROLE : "Soumet"
+    UTILISATEUR ||--o{ DEMANDE_ROLE : "Valide (SC)"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 5 : DÉLÉGATIONS (TRACÉES ET EXPLOITABLES)
+    %% ---------------------------------------------------------
+    DELEGATION {
+        int    id_delegation PK
+        int    delegant_id FK
+        int    delegataire_id FK
+        int    id_entite FK
+        string id_role FK         "nullable (si délégation liée à un rôle)"
+        string type_droit         "nullable (si délégation type)"
+        date   date_debut
+        date   date_fin           "nullable"
+        string statut             "ACTIVE/EXPIREE/ANNULEE"
+    }
+
+    UTILISATEUR ||--o{ DELEGATION : "Délègue"
+    UTILISATEUR ||--o{ DELEGATION : "Reçoit"
+    ENTITE_STRUCTURE ||--o{ DELEGATION : "Sur périmètre"
+    ROLE ||--o{ DELEGATION : "Peut concerner"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 6 : TRAÇABILITÉ / AUDIT
+    %% ---------------------------------------------------------
+    JOURNAL_AUDIT {
+        int      id_log PK
+        int      id_user_auteur FK
+        datetime horodatage
+        string   type_action
+        string   cible_type
+        string   cible_id
+        string   ancienne_valeur  "nullable"
+        string   nouvelle_valeur  "nullable"
+    }
+
+    UTILISATEUR ||--o{ JOURNAL_AUDIT : "Génère"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 7 : WORKFLOWS (DEMANDES DE MODIFICATION + SIGNALEMENTS) + NOTIFS
+    %% ---------------------------------------------------------
+    DEMANDE_MODIFICATION {
+        int      id_demande PK
+        int      auteur_id FK
+        int      validateur_id FK "nullable"
+        string   cible_type
+        string   cible_id
+        string   champ
+        string   valeur_proposee
+        string   statut          "EN_ATTENTE/VALIDEE/REFUSEE"
+        datetime date_creation
+        datetime date_decision   "nullable"
+    }
+
+    SIGNALEMENT {
+        int      id_signalement PK
+        int      auteur_id FK
+        int      traitant_id FK  "nullable"
+        int      id_entite_cible FK "nullable"
+        string   description
+        string   statut          "OUVERT/CLOTURE"
+        datetime date_creation
+        datetime date_traitement "nullable"
+    }
+
+    NOTIFICATION {
+        int      id_notif PK
+        int      destinataire_id FK
+        string   message
+        datetime date_envoi
+        boolean  lu
+        int      id_demande FK     "nullable"
+        int      id_signalement FK "nullable"
+        int      id_demande_role FK "nullable"
+    }
+
+    UTILISATEUR ||--o{ DEMANDE_MODIFICATION : "Émet"
+    UTILISATEUR ||--o{ DEMANDE_MODIFICATION : "Valide"
+
+    UTILISATEUR ||--o{ SIGNALEMENT : "Signale"
+    UTILISATEUR ||--o{ SIGNALEMENT : "Traite"
+
+    ENTITE_STRUCTURE ||--o{ SIGNALEMENT : "Est ciblée par"
+
+    UTILISATEUR ||--o{ NOTIFICATION : "Reçoit"
+    DEMANDE_MODIFICATION ||--o{ NOTIFICATION : "Génère"
+    SIGNALEMENT ||--o{ NOTIFICATION : "Génère"
+    DEMANDE_ROLE ||--o{ NOTIFICATION : "Génère"
+
+
+    %% ---------------------------------------------------------
+    %% BLOC 8 : ORGANIGRAMMES (GÉNÉRATION + FIGEMENT + EXPORT PDF)
+    %% ---------------------------------------------------------
+    ORGANIGRAMME {
+        int      id_organigramme PK
+        int      id_annee FK
+        int      id_entite_racine FK
+        int      generated_by FK
+        datetime generated_at
+        boolean  est_fige
+        string   export_path
+        string   export_format     "PDF"
+        string   visibility_scope  "nullable"
+    }
+
+    ANNEE_UNIVERSITAIRE ||--o{ ORGANIGRAMME : "Possède"
+    ENTITE_STRUCTURE ||--o{ ORGANIGRAMME : "Racine"
+    UTILISATEUR ||--o{ ORGANIGRAMME : "Génère"
+

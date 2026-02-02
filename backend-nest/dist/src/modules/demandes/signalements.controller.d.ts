@@ -1,0 +1,63 @@
+import type { Request } from 'express';
+import { SignalementsService } from './signalements.service';
+import { SignalementsListQueryDto } from './dto/signalements-list-query.dto';
+import { CreateSignalementDto } from './dto/create-signalement.dto';
+import { UpdateSignalementDto } from './dto/update-signalement.dto';
+export declare class SignalementsController {
+    private readonly signalementsService;
+    constructor(signalementsService: SignalementsService);
+    list(query: SignalementsListQueryDto): Promise<{
+        items: {
+            id_signalement: number;
+            auteur_id: number;
+            traitant_id: number | null;
+            cloture_par_id: number | null;
+            id_entite_cible: number | null;
+            description: string;
+            statut: import("@prisma/client").$Enums.signalement_statut;
+            date_creation: string;
+            date_prise_en_charge: string | null;
+            date_traitement: string | null;
+            commentaire_prise_en_charge: string | null;
+            commentaire_cloture: string | null;
+            auteur_nom: string;
+            auteur_prenom: string;
+            traitant_nom: string | null;
+            traitant_prenom: string | null;
+            cloture_nom: string | null;
+            cloture_prenom: string | null;
+        }[];
+    }>;
+    create(request: Request, payload: CreateSignalementDto): Promise<{
+        signalement: {
+            id_signalement: number;
+            auteur_id: number;
+            traitant_id: number | null;
+            cloture_par_id: number | null;
+            id_entite_cible: number | null;
+            description: string;
+            statut: string;
+            date_creation: string;
+            date_prise_en_charge: string | null;
+            date_traitement: string | null;
+            commentaire_prise_en_charge: string | null;
+            commentaire_cloture: string | null;
+        };
+    }>;
+    update(request: Request, id: string, payload: UpdateSignalementDto): Promise<{
+        signalement: {
+            id_signalement: number;
+            auteur_id: number;
+            traitant_id: number | null;
+            cloture_par_id: number | null;
+            id_entite_cible: number | null;
+            description: string;
+            statut: string;
+            date_creation: string;
+            date_prise_en_charge: string | null;
+            date_traitement: string | null;
+            commentaire_prise_en_charge: string | null;
+            commentaire_cloture: string | null;
+        };
+    }>;
+}

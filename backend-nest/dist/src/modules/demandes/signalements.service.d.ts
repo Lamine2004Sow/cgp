@@ -1,0 +1,56 @@
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { CreateSignalementDto } from './dto/create-signalement.dto';
+import { UpdateSignalementDto } from './dto/update-signalement.dto';
+export declare class SignalementsService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    list(statut?: string): Promise<{
+        id_signalement: number;
+        auteur_id: number;
+        traitant_id: number | null;
+        cloture_par_id: number | null;
+        id_entite_cible: number | null;
+        description: string;
+        statut: import("@prisma/client").$Enums.signalement_statut;
+        date_creation: string;
+        date_prise_en_charge: string | null;
+        date_traitement: string | null;
+        commentaire_prise_en_charge: string | null;
+        commentaire_cloture: string | null;
+        auteur_nom: string;
+        auteur_prenom: string;
+        traitant_nom: string | null;
+        traitant_prenom: string | null;
+        cloture_nom: string | null;
+        cloture_prenom: string | null;
+    }[]>;
+    create(userId: string, payload: CreateSignalementDto): Promise<{
+        id_signalement: number;
+        auteur_id: number;
+        traitant_id: number | null;
+        cloture_par_id: number | null;
+        id_entite_cible: number | null;
+        description: string;
+        statut: string;
+        date_creation: string;
+        date_prise_en_charge: string | null;
+        date_traitement: string | null;
+        commentaire_prise_en_charge: string | null;
+        commentaire_cloture: string | null;
+    }>;
+    update(id: string, userId: string, payload: UpdateSignalementDto): Promise<{
+        id_signalement: number;
+        auteur_id: number;
+        traitant_id: number | null;
+        cloture_par_id: number | null;
+        id_entite_cible: number | null;
+        description: string;
+        statut: string;
+        date_creation: string;
+        date_prise_en_charge: string | null;
+        date_traitement: string | null;
+        commentaire_prise_en_charge: string | null;
+        commentaire_cloture: string | null;
+    }>;
+    private mapSignalement;
+}
