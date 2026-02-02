@@ -19,8 +19,8 @@ Note : le service `backend` (Express) est en profil `legacy`. Le service `backen
 ### Démarrage
 
 ```bash
-cp .env.example .env
-docker compose up --build
+docker compose up -d --build
+docker compose logs -f backend-nest
 ```
 
 ### Lancer un service (optionnel)
