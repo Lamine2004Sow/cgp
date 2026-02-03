@@ -43,6 +43,14 @@ docker compose --profile legacy up --build backend
 docker compose down -v
 docker compose up --build
 ```
+#### Fix immédiat : recréer les conteneurs + réseau proprement
+Fais un reset “safe” (ne touche pas aux volumes) :
+```bash
+docker compose down
+docker network prune -f
+docker compose up -d --build --force-recreate
+
+```
 
 ## Sans Docker (local)
 
