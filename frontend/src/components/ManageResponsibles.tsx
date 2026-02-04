@@ -132,7 +132,9 @@ export function ManageResponsibles({
     setError(null);
     try {
       const [usersData, rolesData] = await Promise.all([
-        apiFetch<{ items: ApiUserRow[] }>(`/users?yearId=${currentYear.id}`, { login: authLogin }),
+        apiFetch<{ items: ApiUserRow[] }>(`/users?yearId=${currentYear.id}&pageSize=500`, {
+          login: authLogin,
+        }),
         apiFetch<ApiRole[] | { items: ApiRole[] }>("/roles", { login: authLogin }),
       ]);
 

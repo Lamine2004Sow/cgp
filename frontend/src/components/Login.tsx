@@ -8,17 +8,15 @@ interface LoginProps {
 }
 
 const demoLogins = [
-  { label: "Directeur de composante", login: "marie.dubois" },
-  { label: "Directeur administratif", login: "pierre.martin" },
-  { label: "DA adjointe", login: "nathalie.bernard" },
-  { label: "Chef de departement", login: "sophie.bernard" },
-  { label: "Directeur mention", login: "marc.rousseau" },
-  { label: "Directeur specialite", login: "claire.chaussard" },
-  { label: "Responsable formation", login: "laurent.petit" },
-  { label: "Responsable annee", login: "julie.moreau" },
-  { label: "Enseignant", login: "olivier.lefebvre" },
-  { label: "Administrateur", login: "thomas.durand" },
-  { label: "Services centraux", login: "carine.leroy" },
+  { label: "Administrateur", login: "test.administrateur" },
+  { label: "Directeur de composante", login: "test.directeur-composante" },
+  { label: "Chef de departement", login: "test.directeur-departement" },
+  { label: "Directeur de mention", login: "test.directeur-mention" },
+  { label: "Directeur de specialite", login: "test.directeur-specialite" },
+  { label: "Responsable formation", login: "test.responsable-formation" },
+  { label: "Responsable annee", login: "test.responsable-annee" },
+  { label: "Enseignant", login: "test.utilisateur-simple" },
+  { label: "Services centraux", login: "test.services-centraux" },
 ];
 
 export function Login({ onLogin, error, loading }: LoginProps) {
@@ -51,7 +49,7 @@ export function Login({ onLogin, error, loading }: LoginProps) {
               type="text"
               value={login}
               onChange={(event) => setLogin(event.target.value)}
-              placeholder="ex: marie.dubois"
+              placeholder="ex: test.administrateur"
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900"
             />
           </div>

@@ -3,12 +3,16 @@
 insert into annee_universitaire (id_annee, libelle, date_debut, date_fin, statut)
 values
   (1, '2023-2024', '2023-09-01', '2024-08-31', 'ARCHIVEE'),
-  (2, '2024-2025', '2024-09-01', '2025-08-31', 'EN_COURS'),
-  (3, '2025-2026', '2025-09-01', '2026-08-31', 'PREPARATION');
+  (2, '2024-2025', '2024-09-01', '2025-08-31', 'ARCHIVEE'),
+  (3, '2025-2026', '2025-09-01', '2026-08-31', 'EN_COURS');
 
 update annee_universitaire
 set id_annee_source = 1
 where id_annee = 2;
+
+update annee_universitaire
+set id_annee_source = 2
+where id_annee = 3;
 
 insert into entite_structure (
   id_entite,
