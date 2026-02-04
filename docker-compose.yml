@@ -19,29 +19,6 @@ services:
       timeout: 5s
       retries: 10
 
-  backend:
-    profiles:
-      - legacy
-    build:
-      context: ./backend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: development
-      PORT: "3001"
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-1234}
-      DB_NAME: ${POSTGRES_DB:-CGP}
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "${BACKEND_PORT:-3001}:3001"
-    volumes:
-      - ./backend:/app
-      - backend-node-modules:/app/node_modules
-
   backend-nest:
     build:
       context: ./backend-nest
@@ -77,6 +54,5 @@ services:
 
 volumes:
   db-data:
-  backend-node-modules:
   backend-nest-node-modules:
   frontend-node-modules:

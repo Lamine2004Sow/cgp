@@ -132,40 +132,6 @@ export function Dashboard({ user, currentYear, onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 className="text-slate-900 mb-4">Cas d'utilisation (UC)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UCItem number="UC1" title="S'authentifier via CAS" status="completed" />
-          <UCItem number="UC2" title="Consulter / rechercher dans l'annuaire" status="available" />
-          <UCItem number="UC3" title="Gérer fiches responsables" status={user.role !== 'utilisateur-simple' ? 'available' : 'restricted'} />
-          <UCItem number="UC4" title="Gérer droits et rôles" status={user.role === 'administrateur' ? 'available' : 'restricted'} />
-          <UCItem number="UC5" title="Générer un organigramme" status={user.role !== 'utilisateur-simple' ? 'available' : 'restricted'} />
-          <UCItem number="UC6" title="Importer données initiales" status={user.role === 'administrateur' ? 'available' : 'restricted'} />
-          <UCItem number="UC7" title="Exporter données / organigrammes" status="available" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function UCItem({ number, title, status }: { number: string; title: string; status: 'completed' | 'available' | 'restricted' }) {
-  const statusConfig = {
-    completed: { color: 'bg-green-100 text-green-700', label: 'Complété' },
-    available: { color: 'bg-blue-100 text-blue-700', label: 'Disponible' },
-    restricted: { color: 'bg-slate-100 text-slate-500', label: 'Restreint' }
-  };
-
-  const config = statusConfig[status];
-
-  return (
-    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-      <div>
-        <span className="text-indigo-600 mr-2">{number}</span>
-        <span className="text-slate-900">{title}</span>
-      </div>
-      <span className={`px-2 py-1 rounded text-xs ${config.color}`}>
-        {config.label}
-      </span>
     </div>
   );
 }
