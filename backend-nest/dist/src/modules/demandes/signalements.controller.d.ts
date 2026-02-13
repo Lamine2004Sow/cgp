@@ -1,12 +1,12 @@
-import type { Request } from 'express';
 import { SignalementsService } from './signalements.service';
 import { SignalementsListQueryDto } from './dto/signalements-list-query.dto';
 import { CreateSignalementDto } from './dto/create-signalement.dto';
 import { UpdateSignalementDto } from './dto/update-signalement.dto';
+import type { CurrentUser as CurrentUserType } from '../../common/types/current-user';
 export declare class SignalementsController {
     private readonly signalementsService;
     constructor(signalementsService: SignalementsService);
-    list(query: SignalementsListQueryDto): Promise<{
+    list(user: CurrentUserType, query: SignalementsListQueryDto): Promise<{
         items: {
             id_signalement: number;
             auteur_id: number;
@@ -28,7 +28,7 @@ export declare class SignalementsController {
             cloture_prenom: string | null;
         }[];
     }>;
-    create(request: Request, payload: CreateSignalementDto): Promise<{
+    create(user: CurrentUserType, payload: CreateSignalementDto): Promise<{
         signalement: {
             id_signalement: number;
             auteur_id: number;
@@ -44,7 +44,7 @@ export declare class SignalementsController {
             commentaire_cloture: string | null;
         };
     }>;
-    update(request: Request, id: string, payload: UpdateSignalementDto): Promise<{
+    update(user: CurrentUserType, id: string, payload: UpdateSignalementDto): Promise<{
         signalement: {
             id_signalement: number;
             auteur_id: number;

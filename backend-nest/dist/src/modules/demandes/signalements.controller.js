@@ -18,43 +18,41 @@ const signalements_service_1 = require("./signalements.service");
 const signalements_list_query_dto_1 = require("./dto/signalements-list-query.dto");
 const create_signalement_dto_1 = require("./dto/create-signalement.dto");
 const update_signalement_dto_1 = require("./dto/update-signalement.dto");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const roles_constants_1 = require("../../auth/roles.constants");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let SignalementsController = class SignalementsController {
     signalementsService;
     constructor(signalementsService) {
         this.signalementsService = signalementsService;
     }
-    async list(query) {
-        const items = await this.signalementsService.list(query.statut);
+    async list(user, query) {
+        const items = await this.signalementsService.list(user, query.statut);
         return { items };
     }
-    async create(request, payload) {
-        const userId = request.user?.userId;
-        if (!userId) {
-            throw new common_1.UnauthorizedException();
-        }
-        const signalement = await this.signalementsService.create(userId, payload);
+    async create(user, payload) {
+        const signalement = await this.signalementsService.create(user.userId, payload);
         return { signalement };
     }
-    async update(request, id, payload) {
-        const userId = request.user?.userId;
-        if (!userId) {
-            throw new common_1.UnauthorizedException();
-        }
-        const signalement = await this.signalementsService.update(id, userId, payload);
+    async update(user, id, payload) {
+        const signalement = await this.signalementsService.update(id, user, payload);
         return { signalement };
     }
 };
 exports.SignalementsController = SignalementsController;
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)()),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [signalements_list_query_dto_1.SignalementsListQueryDto]),
+    __metadata("design:paramtypes", [Object, signalements_list_query_dto_1.SignalementsListQueryDto]),
     __metadata("design:returntype", Promise)
 ], SignalementsController.prototype, "list", null);
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Req)()),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, create_signalement_dto_1.CreateSignalementDto]),
@@ -62,7 +60,8 @@ __decorate([
 ], SignalementsController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Req)()),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),

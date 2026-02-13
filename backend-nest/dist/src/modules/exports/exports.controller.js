@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExportsController = void 0;
 const common_1 = require("@nestjs/common");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const exports_service_1 = require("./exports.service");
 const exports_query_dto_1 = require("./dto/exports-query.dto");
 let ExportsController = class ExportsController {
@@ -22,13 +24,18 @@ let ExportsController = class ExportsController {
         this.exportsService = exportsService;
     }
     async exportResponsables(query) {
-        const items = await this.exportsService.exportResponsables(query.yearId);
+        const items = await this.exportsService.exportResponsables({
+            yearId: query.yearId,
+            entiteId: query.entiteId,
+            roleId: query.roleId,
+        });
         return { items };
     }
 };
 exports.ExportsController = ExportsController;
 __decorate([
     (0, common_1.Get)('responsables'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [exports_query_dto_1.ExportsQueryDto]),

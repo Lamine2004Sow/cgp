@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EntitesController = void 0;
 const common_1 = require("@nestjs/common");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const entites_service_1 = require("./entites.service");
 const entites_list_query_dto_1 = require("./dto/entites-list-query.dto");
 let EntitesController = class EntitesController {
@@ -29,6 +31,7 @@ let EntitesController = class EntitesController {
 exports.EntitesController = EntitesController;
 __decorate([
     (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [entites_list_query_dto_1.EntitesListQueryDto]),

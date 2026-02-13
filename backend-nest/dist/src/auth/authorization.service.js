@@ -21,23 +21,24 @@ let AuthorizationService = class AuthorizationService {
         return this.hasAnyRole(user, this.allWriteRoles()).some((role) => !restricted.has(role));
     }
     canExport(user) {
-        return this.hasAnyRole(user, [roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.ADMINISTRATEUR]).length > 0;
+        return this.hasAnyRole(user, [roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX]).length > 0;
     }
     canImport(user) {
-        return this.canExport(user);
+        return (this.hasAnyRole(user, [
+            roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE,
+            roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
+            roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
+        ]).length > 0);
     }
     canDelegate(user) {
-        return this.hasAnyRole(user, [
+        return (this.hasAnyRole(user, [
             roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE,
-            roles_constants_1.ROLE_IDS.DIRECTEUR_DEPARTEMENT,
-            roles_constants_1.ROLE_IDS.DIRECTEUR_MENTION,
-            roles_constants_1.ROLE_IDS.DIRECTEUR_SPECIALITE,
-            roles_constants_1.ROLE_IDS.RESPONSABLE_FORMATION,
-            roles_constants_1.ROLE_IDS.ADMINISTRATEUR,
-        ]).length > 0;
+            roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
+            roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
+        ]).length > 0);
     }
     canFreezeYear(user) {
-        return this.hasAnyRole(user, [roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.ADMINISTRATEUR]).length > 0;
+        return this.hasAnyRole(user, [roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX]).length > 0;
     }
     hasAnyRole(user, roleIds) {
         const userRoles = new Set(user.affectations.map((affectation) => affectation.roleId));
@@ -53,8 +54,6 @@ let AuthorizationService = class AuthorizationService {
             roles_constants_1.ROLE_IDS.DIRECTEUR_SPECIALITE,
             roles_constants_1.ROLE_IDS.RESPONSABLE_FORMATION,
             roles_constants_1.ROLE_IDS.RESPONSABLE_ANNEE,
-            roles_constants_1.ROLE_IDS.ADMINISTRATEUR,
-            roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX,
             roles_constants_1.ROLE_IDS.UTILISATEUR_SIMPLE,
             roles_constants_1.ROLE_IDS.LECTURE_SEULE,
         ];

@@ -1,0 +1,59 @@
+import { SearchQueryDto } from './dto/search-query.dto';
+import { SearchService } from './search.service';
+export declare class SearchController {
+    private readonly searchService;
+    constructor(searchService: SearchService);
+    responsables(query: SearchQueryDto): Promise<{
+        items: {
+            id_affectation: number;
+            id_user: number;
+            nom: string;
+            prenom: string;
+            email_institutionnel: string | null;
+            role_id: string;
+            role_label: string;
+            id_entite: number;
+            entite_nom: string;
+            type_entite: import("@prisma/client").$Enums.entite_type;
+            id_annee: number;
+        }[];
+    }>;
+    formations(query: SearchQueryDto): Promise<{
+        items: {
+            id_entite: number;
+            id_annee: number;
+            type_entite: import("@prisma/client").$Enums.entite_type;
+            nom: string;
+            tel_service: string | null;
+            bureau_service: string | null;
+            responsables: {
+                id_user: number;
+                nom: string;
+                prenom: string;
+                role_id: string;
+                role_label: string;
+            }[];
+        }[];
+    }>;
+    structures(query: SearchQueryDto): Promise<{
+        items: {
+            id_entite: number;
+            id_annee: number;
+            id_entite_parent: number | null;
+            type_entite: import("@prisma/client").$Enums.entite_type;
+            nom: string;
+            tel_service: string | null;
+            bureau_service: string | null;
+        }[];
+    }>;
+    secretariats(query: SearchQueryDto): Promise<{
+        items: {
+            id_entite: number;
+            id_annee: number;
+            type_entite: import("@prisma/client").$Enums.entite_type;
+            nom: string;
+            tel_service: string | null;
+            bureau_service: string | null;
+        }[];
+    }>;
+}

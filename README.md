@@ -60,7 +60,7 @@ Seed des comptes mock (optionnel) :
 npm run seed
 ```
 
-Auth mock (dev uniquement) : ajoute le header `x-user-login` (ex: `dc.infocom`).
+Auth mock (dev uniquement) : ajoute le header `x-user-login` (ex: `dc.infocom`, `da.infocom`, `sc.admin`).
 
 ### Frontend
 

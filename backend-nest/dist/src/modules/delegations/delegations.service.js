@@ -12,13 +12,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DelegationsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
+const roles_constants_1 = require("../../auth/roles.constants");
 let DelegationsService = class DelegationsService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async list() {
+    async list(user, query) {
+        const isCentral = this.isServicesCentraux(user);
+        const where = {
+            ...(isCentral
+                ? {}
+                : {
+                    OR: [
+                        { delegant_id: BigInt(user.userId) },
+                        { delegataire_id: BigInt(user.userId) },
+                    ],
+                }),
+            ...(query?.statut ? { statut: query.statut } : {}),
+            ...(query?.entiteId ? { id_entite: BigInt(query.entiteId) } : {}),
+        };
         const items = await this.prisma.delegation.findMany({
+            where,
             orderBy: { date_debut: 'desc' },
             include: {
                 utilisateur_delegation_delegant_idToutilisateur: true,
@@ -29,6 +44,9 @@ let DelegationsService = class DelegationsService {
         return items.map((item) => this.mapDelegation(item));
     }
     async create(delegantId, payload) {
+        if (String(payload.delegataire_id) === delegantId) {
+            throw new common_1.BadRequestException('delegataire_id must differ from delegant');
+        }
         const created = await this.prisma.delegation.create({
             data: {
                 delegant_id: BigInt(delegantId),
@@ -49,13 +67,23 @@ let DelegationsService = class DelegationsService {
             },
         }) ?? created);
     }
-    async revoke(id) {
+    async revoke(user, id) {
         let parsedId;
         try {
             parsedId = BigInt(id);
         }
         catch {
             throw new common_1.NotFoundException('Delegation not found');
+        }
+        const delegation = await this.prisma.delegation.findUnique({
+            where: { id_delegation: parsedId },
+        });
+        if (!delegation) {
+            throw new common_1.NotFoundException('Delegation not found');
+        }
+        if (!this.isServicesCentraux(user) &&
+            String(delegation.delegant_id) !== user.userId) {
+            throw new common_1.ForbiddenException('Only delegant can revoke this delegation');
         }
         const updated = await this.prisma.delegation.update({
             where: { id_delegation: parsedId },
@@ -73,6 +101,34 @@ let DelegationsService = class DelegationsService {
             },
         }) ?? updated);
     }
+    async exportCsv(user, query) {
+        const items = await this.list(user, query);
+        const header = [
+            'id_delegation',
+            'delegant_nom',
+            'delegataire_nom',
+            'entite_nom',
+            'type_droit',
+            'date_debut',
+            'date_fin',
+            'statut',
+        ].join(',');
+        const body = items
+            .map((item) => [
+            item.id_delegation,
+            item.delegant_nom ?? '',
+            item.delegataire_nom ?? '',
+            item.entite_nom ?? '',
+            item.type_droit ?? '',
+            item.date_debut,
+            item.date_fin ?? '',
+            item.statut,
+        ]
+            .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+            .join(','))
+            .join('\n');
+        return `${header}\n${body}`;
+    }
     mapDelegation(item) {
         return {
             id_delegation: Number(item.id_delegation),
@@ -88,6 +144,9 @@ let DelegationsService = class DelegationsService {
             delegataire_nom: item.utilisateur_delegation_delegataire_idToutilisateur?.nom ?? null,
             entite_nom: item.entite_structure?.nom ?? null,
         };
+    }
+    isServicesCentraux(user) {
+        return user.affectations.some((affectation) => affectation.roleId === roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX);
     }
 };
 exports.DelegationsService = DelegationsService;

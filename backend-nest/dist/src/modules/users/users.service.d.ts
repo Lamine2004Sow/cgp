@@ -3,6 +3,7 @@ import { type PageResult } from '../../common/utils/pagination';
 import type { UsersListQueryDto } from './dto/users-list-query.dto';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
+import type { CurrentUser } from '../../common/types/current-user';
 export interface UserRoleRow {
     role: string;
     entite: string;
@@ -23,12 +24,16 @@ export interface UserListItem {
 export declare class UsersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    findAll(query: UsersListQueryDto): Promise<PageResult<UserListItem>>;
-    findOne(id: string): Promise<UserListItem | null>;
+    findAll(query: UsersListQueryDto, currentUser: CurrentUser): Promise<PageResult<UserListItem>>;
+    findOne(id: string, currentUser?: CurrentUser): Promise<UserListItem | null>;
     create(payload: CreateUserDto): Promise<UserListItem>;
     update(id: string, payload: UpdateUserDto): Promise<UserListItem>;
     remove(id: string): Promise<void>;
     private toUserListItem;
     private buildQuery;
     private parseSort;
+    private applyListScope;
+    private expandUserEntiteScope;
+    private isInSeedTree;
+    private isPrivilegedReader;
 }

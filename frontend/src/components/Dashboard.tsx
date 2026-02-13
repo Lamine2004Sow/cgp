@@ -1,4 +1,15 @@
-import { User, View, AcademicYear, canManageDelegations, canManageYears } from '../types';
+import {
+  User,
+  View,
+  AcademicYear,
+  canAccessFilteredQueries,
+  canImportData,
+  canManageDelegations,
+  canManageUsers,
+  canManageYears,
+  canRequestCustomRole,
+  canReviewRoleRequests,
+} from '../types';
 import { Search, Users, Shield, GitBranch, Download, Upload, BarChart3, UserCog, Calendar as CalendarIcon, AlertTriangle, UserCircle } from 'lucide-react';
 
 interface DashboardProps {
@@ -31,7 +42,7 @@ export function Dashboard({ user, currentYear, onNavigate }: DashboardProps) {
       icon: Users,
       color: 'bg-green-500',
       view: 'manage-responsibles' as View,
-      available: user.role !== 'utilisateur-simple' && user.role !== 'responsable-annee'
+      available: canManageUsers(user.role)
     },
     {
       title: 'Droits et rôles',
@@ -39,7 +50,7 @@ export function Dashboard({ user, currentYear, onNavigate }: DashboardProps) {
       icon: Shield,
       color: 'bg-purple-500',
       view: 'manage-roles' as View,
-      available: user.role === 'administrateur'
+      available: canReviewRoleRequests(user.role) || canRequestCustomRole(user.role)
     },
     {
       title: 'Organigramme',
@@ -55,7 +66,7 @@ export function Dashboard({ user, currentYear, onNavigate }: DashboardProps) {
       icon: Upload,
       color: 'bg-indigo-500',
       view: 'import-export' as View,
-      available: true
+      available: canImportData(user.role) || canAccessFilteredQueries(user.role)
     },
     {
       title: 'Délégations',
@@ -72,6 +83,14 @@ export function Dashboard({ user, currentYear, onNavigate }: DashboardProps) {
       color: 'bg-violet-500',
       view: 'year-management' as View,
       available: canManageYears(user.role)
+    },
+    {
+      title: 'Journal d\'audit',
+      description: 'Consulter et exporter les traces des actions',
+      icon: Shield,
+      color: 'bg-slate-700',
+      view: 'audit-logs' as View,
+      available: user.role === 'services-centraux'
     },
     {
       title: 'Signalements',

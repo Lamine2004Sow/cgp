@@ -93,6 +93,27 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
     }
   };
 
+  const handleStatusChange = async (yearId: string, statut: "EN_COURS" | "ARCHIVEE" | "PREPARATION") => {
+    if (!authLogin) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await apiFetch(`/years/${yearId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ statut }),
+        login: authLogin,
+      });
+      await loadYears();
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de mise a jour");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -145,6 +166,9 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Source
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -171,6 +195,26 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500">
                       {year.id === currentYear.id ? "Annee courante" : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        {year.status !== "en-cours" && (
+                          <button
+                            onClick={() => handleStatusChange(year.id, "EN_COURS")}
+                            className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200"
+                          >
+                            Passer en cours
+                          </button>
+                        )}
+                        {year.status === "en-cours" && (
+                          <button
+                            onClick={() => handleStatusChange(year.id, "ARCHIVEE")}
+                            className="px-3 py-1 bg-slate-100 text-slate-700 rounded text-xs hover:bg-slate-200"
+                          >
+                            Archiver
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

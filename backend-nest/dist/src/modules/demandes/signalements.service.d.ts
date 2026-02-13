@@ -1,10 +1,11 @@
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateSignalementDto } from './dto/create-signalement.dto';
 import { UpdateSignalementDto } from './dto/update-signalement.dto';
+import type { CurrentUser } from '../../common/types/current-user';
 export declare class SignalementsService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    list(statut?: string): Promise<{
+    list(user: CurrentUser, statut?: string): Promise<{
         id_signalement: number;
         auteur_id: number;
         traitant_id: number | null;
@@ -38,7 +39,7 @@ export declare class SignalementsService {
         commentaire_prise_en_charge: string | null;
         commentaire_cloture: string | null;
     }>;
-    update(id: string, userId: string, payload: UpdateSignalementDto): Promise<{
+    update(id: string, user: CurrentUser, payload: UpdateSignalementDto): Promise<{
         id_signalement: number;
         auteur_id: number;
         traitant_id: number | null;
@@ -53,4 +54,8 @@ export declare class SignalementsService {
         commentaire_cloture: string | null;
     }>;
     private mapSignalement;
+    private isServicesCentraux;
+    private isManager;
+    private expandUserEntiteScope;
+    private isInSeedTree;
 }

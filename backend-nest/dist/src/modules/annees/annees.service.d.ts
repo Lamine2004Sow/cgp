@@ -19,4 +19,12 @@ export declare class AnneesService {
         statut: import("@prisma/client").$Enums.annee_statut;
         id_annee_source: number | null;
     }>;
+    updateStatus(id: string, statut: string): Promise<{
+        id_annee: number;
+        libelle: string;
+        date_debut: string;
+        date_fin: string;
+        statut: import("@prisma/client").$Enums.annee_statut;
+        id_annee_source: number | null;
+    }>;
 }

@@ -1,7 +1,8 @@
-import type { Request } from 'express';
 import { OrganigrammesService, type ApiOrgNode } from './organigrammes.service';
 import { OrganigrammesListQueryDto } from './dto/organigrammes-list-query.dto';
 import { OrganigrammeGenerateDto } from './dto/organigramme-generate.dto';
+import { OrganigrammeExportQueryDto } from './dto/organigramme-export-query.dto';
+import type { CurrentUser as CurrentUserType } from '../../common/types/current-user';
 type OrganigrammeDto = {
     id_organigramme: number;
     id_annee: number;
@@ -16,23 +17,28 @@ type OrganigrammeDto = {
 export declare class OrganigrammesController {
     private readonly organigrammesService;
     constructor(organigrammesService: OrganigrammesService);
-    list(query: OrganigrammesListQueryDto): Promise<{
+    list(user: CurrentUserType, query: OrganigrammesListQueryDto): Promise<{
         items: OrganigrammeDto[];
     }>;
-    latest(query: OrganigrammesListQueryDto): Promise<{
+    latest(user: CurrentUserType, query: OrganigrammesListQueryDto): Promise<{
         organigramme: OrganigrammeDto | null;
         arbre: ApiOrgNode | null;
     }>;
-    generate(request: Request, payload: OrganigrammeGenerateDto): Promise<{
+    generate(user: CurrentUserType, payload: OrganigrammeGenerateDto): Promise<{
         organigramme: OrganigrammeDto;
         arbre: ApiOrgNode | null;
     }>;
-    tree(id: string): Promise<{
+    tree(user: CurrentUserType, id: string): Promise<{
         organigramme: OrganigrammeDto;
         arbre: ApiOrgNode | null;
     }>;
     freeze(id: string): Promise<{
         organigramme: OrganigrammeDto;
+    }>;
+    export(user: CurrentUserType, id: string, query: OrganigrammeExportQueryDto): Promise<{
+        fileName: string;
+        mimeType: string;
+        contentBase64: string;
     }>;
 }
 export {};

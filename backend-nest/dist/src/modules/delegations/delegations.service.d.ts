@@ -1,9 +1,11 @@
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateDelegationDto } from './dto/create-delegation.dto';
+import type { CurrentUser } from '../../common/types/current-user';
+import { DelegationsListQueryDto } from './dto/delegations-list-query.dto';
 export declare class DelegationsService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    list(): Promise<{
+    list(user: CurrentUser, query?: DelegationsListQueryDto): Promise<{
         id_delegation: number;
         delegant_id: number;
         delegataire_id: number;
@@ -31,7 +33,7 @@ export declare class DelegationsService {
         delegataire_nom: string | null;
         entite_nom: string | null;
     }>;
-    revoke(id: string): Promise<{
+    revoke(user: CurrentUser, id: string): Promise<{
         id_delegation: number;
         delegant_id: number;
         delegataire_id: number;
@@ -45,5 +47,7 @@ export declare class DelegationsService {
         delegataire_nom: string | null;
         entite_nom: string | null;
     }>;
+    exportCsv(user: CurrentUser, query?: DelegationsListQueryDto): Promise<string>;
     private mapDelegation;
+    private isServicesCentraux;
 }

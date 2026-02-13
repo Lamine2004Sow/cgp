@@ -14,50 +14,69 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DelegationsController = void 0;
 const common_1 = require("@nestjs/common");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const delegations_service_1 = require("./delegations.service");
 const create_delegation_dto_1 = require("./dto/create-delegation.dto");
+const delegations_list_query_dto_1 = require("./dto/delegations-list-query.dto");
 let DelegationsController = class DelegationsController {
     delegationsService;
     constructor(delegationsService) {
         this.delegationsService = delegationsService;
     }
-    async list() {
-        const items = await this.delegationsService.list();
+    async list(user, query) {
+        const items = await this.delegationsService.list(user, query);
         return { items };
     }
-    async create(request, payload) {
-        const userId = request.user?.userId;
-        if (!userId) {
-            throw new common_1.UnauthorizedException();
-        }
-        const delegation = await this.delegationsService.create(userId, payload);
+    async create(user, payload) {
+        const delegation = await this.delegationsService.create(user.userId, payload);
         return { delegation };
     }
-    async revoke(id) {
-        const delegation = await this.delegationsService.revoke(id);
+    async export(user, query) {
+        const csv = await this.delegationsService.exportCsv(user, query);
+        return { csv };
+    }
+    async revoke(user, id) {
+        const delegation = await this.delegationsService.revoke(user, id);
         return { delegation };
     }
 };
 exports.DelegationsController = DelegationsController;
 __decorate([
     (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object, delegations_list_query_dto_1.DelegationsListQueryDto]),
     __metadata("design:returntype", Promise)
 ], DelegationsController.prototype, "list", null);
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Req)()),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, create_delegation_dto_1.CreateDelegationDto]),
     __metadata("design:returntype", Promise)
 ], DelegationsController.prototype, "create", null);
 __decorate([
-    (0, common_1.Patch)(':id/revoke'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)('export'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, delegations_list_query_dto_1.DelegationsListQueryDto]),
+    __metadata("design:returntype", Promise)
+], DelegationsController.prototype, "export", null);
+__decorate([
+    (0, common_1.Patch)(':id/revoke'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], DelegationsController.prototype, "revoke", null);
 exports.DelegationsController = DelegationsController = __decorate([

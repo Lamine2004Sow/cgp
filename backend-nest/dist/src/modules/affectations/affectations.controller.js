@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AffectationsController = void 0;
 const common_1 = require("@nestjs/common");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const affectations_service_1 = require("./affectations.service");
 const create_affectation_dto_1 = require("./dto/create-affectation.dto");
 let AffectationsController = class AffectationsController {
@@ -29,6 +31,7 @@ let AffectationsController = class AffectationsController {
 exports.AffectationsController = AffectationsController;
 __decorate([
     (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_affectation_dto_1.CreateAffectationDto]),

@@ -17,6 +17,8 @@ const prisma_module_1 = require("./common/prisma/prisma.module");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const mock_auth_guard_1 = require("./common/guards/mock-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
+const scope_guard_1 = require("./common/guards/scope.guard");
+const year_guard_1 = require("./common/guards/year.guard");
 const audit_interceptor_1 = require("./common/interceptors/audit.interceptor");
 const affectations_module_1 = require("./modules/affectations/affectations.module");
 const annees_module_1 = require("./modules/annees/annees.module");
@@ -28,6 +30,7 @@ const exports_module_1 = require("./modules/exports/exports.module");
 const imports_module_1 = require("./modules/imports/imports.module");
 const organigrammes_module_1 = require("./modules/organigrammes/organigrammes.module");
 const roles_module_1 = require("./modules/roles/roles.module");
+const search_module_1 = require("./modules/search/search.module");
 const users_module_1 = require("./modules/users/users.module");
 let AppModule = class AppModule {
 };
@@ -44,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             roles_module_1.RolesModule,
+            search_module_1.SearchModule,
             affectations_module_1.AffectationsModule,
             annees_module_1.AnneesModule,
             entites_module_1.EntitesModule,
@@ -61,6 +65,8 @@ exports.AppModule = AppModule = __decorate([
             { provide: core_1.APP_INTERCEPTOR, useClass: audit_interceptor_1.AuditInterceptor },
             { provide: core_1.APP_GUARD, useClass: mock_auth_guard_1.MockAuthGuard },
             { provide: core_1.APP_GUARD, useClass: roles_guard_1.RolesGuard },
+            { provide: core_1.APP_GUARD, useClass: scope_guard_1.ScopeGuard },
+            { provide: core_1.APP_GUARD, useClass: year_guard_1.YearGuard },
         ],
     })
 ], AppModule);

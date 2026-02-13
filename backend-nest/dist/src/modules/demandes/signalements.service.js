@@ -12,14 +12,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SignalementsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
+const roles_constants_1 = require("../../auth/roles.constants");
 let SignalementsService = class SignalementsService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async list(statut) {
+    async list(user, statut) {
+        const isCentral = this.isServicesCentraux(user);
+        const isManager = this.isManager(user);
+        const userId = BigInt(user.userId);
+        const entiteScope = isCentral
+            ? []
+            : isManager
+                ? await this.expandUserEntiteScope(user)
+                : [];
+        const where = {
+            ...(statut ? { statut: statut } : {}),
+            ...(isCentral
+                ? {}
+                : isManager
+                    ? {
+                        OR: [
+                            { auteur_id: userId },
+                            {
+                                id_entite_cible: {
+                                    in: entiteScope.map((id) => BigInt(id)),
+                                },
+                            },
+                        ],
+                    }
+                    : { auteur_id: userId }),
+        };
         const items = await this.prisma.signalement.findMany({
-            where: statut ? { statut: statut } : undefined,
+            where,
             orderBy: { date_creation: 'desc' },
             include: {
                 utilisateur_signalement_auteur_idToutilisateur: true,
@@ -59,7 +85,7 @@ let SignalementsService = class SignalementsService {
         });
         return this.mapSignalement(created);
     }
-    async update(id, userId, payload) {
+    async update(id, user, payload) {
         let parsedId;
         try {
             parsedId = BigInt(id);
@@ -67,19 +93,43 @@ let SignalementsService = class SignalementsService {
         catch {
             throw new common_1.NotFoundException('Signalement not found');
         }
+        const existing = await this.prisma.signalement.findUnique({
+            where: { id_signalement: parsedId },
+        });
+        if (!existing) {
+            throw new common_1.NotFoundException('Signalement not found');
+        }
+        const isCentral = this.isServicesCentraux(user);
+        const isManager = this.isManager(user);
+        const userId = BigInt(user.userId);
+        if (!isCentral && isManager && existing.id_entite_cible) {
+            const entiteScope = await this.expandUserEntiteScope(user);
+            if (!entiteScope.includes(String(existing.id_entite_cible))) {
+                throw new common_1.ForbiddenException('Signalement out of scope');
+            }
+        }
+        if (!isCentral && !isManager && existing.auteur_id !== userId) {
+            throw new common_1.ForbiddenException('You can only update your own signalements');
+        }
         const data = {};
         if (payload.statut) {
+            if (!isCentral && !isManager) {
+                throw new common_1.ForbiddenException('Only managers can change statut');
+            }
             data.statut = payload.statut;
         }
         if (payload.statut === 'EN_COURS') {
-            data.traitant_id = BigInt(userId);
+            data.traitant_id = userId;
             data.date_prise_en_charge = new Date();
             data.commentaire_prise_en_charge = payload.commentaire ?? null;
         }
         if (payload.statut === 'CLOTURE') {
-            data.cloture_par_id = BigInt(userId);
+            if (!payload.commentaire?.trim()) {
+                throw new common_1.BadRequestException('commentaire is required when closing');
+            }
+            data.cloture_par_id = userId;
             data.date_traitement = new Date();
-            data.commentaire_cloture = payload.commentaire ?? null;
+            data.commentaire_cloture = payload.commentaire.trim();
         }
         const updated = await this.prisma.signalement.update({
             where: { id_signalement: parsedId },
@@ -102,6 +152,60 @@ let SignalementsService = class SignalementsService {
             commentaire_prise_en_charge: item.commentaire_prise_en_charge ?? null,
             commentaire_cloture: item.commentaire_cloture ?? null,
         };
+    }
+    isServicesCentraux(user) {
+        return user.affectations.some((affectation) => affectation.roleId === roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX);
+    }
+    isManager(user) {
+        const managerRoles = new Set([
+            roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE,
+            roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
+            roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
+        ]);
+        return user.affectations.some((affectation) => managerRoles.has(affectation.roleId));
+    }
+    async expandUserEntiteScope(user) {
+        const yearIds = Array.from(new Set(user.affectations.map((affectation) => affectation.anneeId)));
+        const seeds = new Set(user.affectations.map((affectation) => affectation.entiteId));
+        if (yearIds.length === 0 || seeds.size === 0) {
+            return [];
+        }
+        const entites = await this.prisma.entite_structure.findMany({
+            where: {
+                id_annee: {
+                    in: yearIds.map((yearId) => BigInt(yearId)),
+                },
+            },
+            select: {
+                id_entite: true,
+                id_entite_parent: true,
+            },
+        });
+        const parentById = new Map();
+        for (const entite of entites) {
+            parentById.set(String(entite.id_entite), entite.id_entite_parent ? String(entite.id_entite_parent) : null);
+        }
+        const scope = new Set();
+        for (const entite of entites) {
+            const entiteId = String(entite.id_entite);
+            if (this.isInSeedTree(entiteId, seeds, parentById)) {
+                scope.add(entiteId);
+            }
+        }
+        return Array.from(scope);
+    }
+    isInSeedTree(entiteId, seeds, parentById) {
+        if (seeds.has(entiteId)) {
+            return true;
+        }
+        let current = parentById.get(entiteId) ?? null;
+        for (let depth = 0; depth < 32 && current; depth += 1) {
+            if (seeds.has(current)) {
+                return true;
+            }
+            current = parentById.get(current) ?? null;
+        }
+        return false;
     }
 };
 exports.SignalementsService = SignalementsService;

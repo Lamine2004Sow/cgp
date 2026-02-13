@@ -1,4 +1,5 @@
 import { PrismaService } from '../../common/prisma/prisma.service';
+import type { CurrentUser } from '../../common/types/current-user';
 export interface ApiResponsable {
     nom: string;
     prenom: string;
@@ -15,7 +16,7 @@ export interface ApiOrgNode {
 export declare class OrganigrammesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    list(yearId?: number): Promise<{
+    list(user: CurrentUser, yearId?: number): Promise<{
         id_organigramme: number;
         id_annee: number;
         id_entite_racine: number;
@@ -26,21 +27,7 @@ export declare class OrganigrammesService {
         export_format: string;
         visibility_scope: string | null;
     }[]>;
-    latest(yearId: number): Promise<{
-        organigramme: {
-            id_organigramme: number;
-            id_annee: number;
-            id_entite_racine: number;
-            generated_by: number;
-            generated_at: string;
-            est_fige: boolean;
-            export_path: string | null;
-            export_format: string;
-            visibility_scope: string | null;
-        } | null;
-        arbre: ApiOrgNode | null;
-    }>;
-    getTreeById(id: string): Promise<{
+    latest(user: CurrentUser, yearId: number): Promise<{
         organigramme: {
             id_organigramme: number;
             id_annee: number;
@@ -54,7 +41,21 @@ export declare class OrganigrammesService {
         };
         arbre: ApiOrgNode | null;
     }>;
-    generate(yearId: number, rootId: number, userId: string): Promise<{
+    getTreeById(user: CurrentUser, id: string): Promise<{
+        organigramme: {
+            id_organigramme: number;
+            id_annee: number;
+            id_entite_racine: number;
+            generated_by: number;
+            generated_at: string;
+            est_fige: boolean;
+            export_path: string | null;
+            export_format: string;
+            visibility_scope: string | null;
+        };
+        arbre: ApiOrgNode | null;
+    }>;
+    generate(user: CurrentUser, yearId: number, rootId: number): Promise<{
         organigramme: {
             id_organigramme: number;
             id_annee: number;
@@ -81,6 +82,15 @@ export declare class OrganigrammesService {
             visibility_scope: string | null;
         };
     }>;
+    export(user: CurrentUser, id: string, format: string): Promise<{
+        fileName: string;
+        mimeType: string;
+        contentBase64: string;
+    }>;
     private buildTree;
     private mapOrganigramme;
+    private toCsv;
+    private toPdf;
+    private isServicesCentraux;
+    private canAccessEntiteInYear;
 }

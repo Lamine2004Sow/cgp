@@ -10,14 +10,20 @@ import { Delegations } from "./components/Delegations";
 import { YearManagement } from "./components/YearManagement";
 import { ErrorReports } from "./components/ErrorReports";
 import { UserProfile } from "./components/UserProfile";
+import { AuditLogs } from "./components/AuditLogs";
 import {
   AcademicYear,
+  canAccessFilteredQueries,
+  canImportData,
+  canManageDelegations,
+  canManageUsers,
+  canRequestCustomRole,
   EntiteStructure,
   User,
   UserRole,
   View,
-  canManageDelegations,
   canManageYears,
+  canReviewRoleRequests,
   getRoleLabel,
 } from "./types";
 import {
@@ -116,7 +122,7 @@ const navSections: NavSection[] = [
         id: "import-export",
         label: "Import / Export",
         icon: Download,
-        isVisible: () => true,
+        isVisible: (role) => canImportData(role) || canAccessFilteredQueries(role),
       },
     ],
   },
@@ -127,13 +133,13 @@ const navSections: NavSection[] = [
         id: "manage-responsibles",
         label: "Responsables",
         icon: Users,
-        isVisible: (role) => role !== "utilisateur-simple" && role !== "responsable-annee",
+        isVisible: (role) => canManageUsers(role),
       },
       {
         id: "manage-roles",
-        label: "Roles",
+        label: "Demandes roles",
         icon: Shield,
-        isVisible: (role) => role === "administrateur" || role === "services-centraux",
+        isVisible: (role) => canReviewRoleRequests(role) || canRequestCustomRole(role),
       },
       {
         id: "delegations",
@@ -146,6 +152,12 @@ const navSections: NavSection[] = [
         label: "Annees",
         icon: Calendar,
         isVisible: (role) => canManageYears(role),
+      },
+      {
+        id: "audit-logs",
+        label: "Audit",
+        icon: Shield,
+        isVisible: (role) => role === "services-centraux",
       },
       {
         id: "error-reports",
@@ -694,7 +706,11 @@ export default function App() {
               />
             )}
             {currentView === "manage-roles" && (
-              <ManageRoles currentYear={currentYear} authLogin={authLogin} />
+              <ManageRoles
+                currentYear={currentYear}
+                authLogin={authLogin}
+                userRole={currentUser.role}
+              />
             )}
             {currentView === "org-chart" && (
               <OrgChart
@@ -728,6 +744,7 @@ export default function App() {
                 onRefresh={refreshYears}
               />
             )}
+            {currentView === "audit-logs" && <AuditLogs authLogin={authLogin} />}
             {currentView === "error-reports" && (
               <ErrorReports
                 userRole={currentUser.role}

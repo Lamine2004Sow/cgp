@@ -8,6 +8,8 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MockAuthGuard } from './common/guards/mock-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { ScopeGuard } from './common/guards/scope.guard';
+import { YearGuard } from './common/guards/year.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AffectationsModule } from './modules/affectations/affectations.module';
 import { AnneesModule } from './modules/annees/annees.module';
@@ -19,6 +21,7 @@ import { ExportsModule } from './modules/exports/exports.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { OrganigrammesModule } from './modules/organigrammes/organigrammes.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { SearchModule } from './modules/search/search.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -32,6 +35,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     UsersModule,
     RolesModule,
+    SearchModule,
     AffectationsModule,
     AnneesModule,
     EntitesModule,
@@ -49,6 +53,8 @@ import { UsersModule } from './modules/users/users.module';
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     { provide: APP_GUARD, useClass: MockAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: ScopeGuard },
+    { provide: APP_GUARD, useClass: YearGuard },
   ],
 })
 export class AppModule {}

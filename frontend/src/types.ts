@@ -168,6 +168,7 @@ export type View =
   | 'search' 
   | 'manage-responsibles' 
   | 'manage-roles' 
+  | 'audit-logs'
   | 'org-chart' 
   | 'import-export'
   | 'delegations'
@@ -203,18 +204,15 @@ export function getAcademicYearStatusLabel(status: AcademicYearStatus): string {
 }
 
 export function canGenerateOrgChart(role: UserRole): boolean {
-  // Seuls les rôles à partir de directeur de spécialité/mention peuvent générer
   const allowedRoles: UserRole[] = [
+    'services-centraux',
     'directeur-composante',
     'directeur-administratif',
     'directeur-administratif-adjoint',
     'directeur-departement',
     'directeur-mention',
     'directeur-specialite',
-    'responsable-formation',
-    'responsable-annee',
-    'administrateur',
-    'services-centraux'
+    'responsable-formation'
   ];
   return allowedRoles.includes(role);
 }
@@ -223,9 +221,7 @@ export function canManageUsers(role: UserRole): boolean {
   const allowedRoles: UserRole[] = [
     'directeur-composante',
     'directeur-administratif',
-    'directeur-administratif-adjoint',
-    'administrateur',
-    'services-centraux'
+    'directeur-administratif-adjoint'
   ];
   return allowedRoles.includes(role);
 }
@@ -239,26 +235,41 @@ export function canImportData(role: UserRole): boolean {
   const allowedRoles: UserRole[] = [
     'directeur-composante',
     'directeur-administratif',
-    'administrateur',
-    'services-centraux'
+    'directeur-administratif-adjoint'
   ];
   return allowedRoles.includes(role);
 }
 
 export function canManageDelegations(role: UserRole): boolean {
   const allowedRoles: UserRole[] = [
+    'services-centraux',
     'directeur-composante',
     'directeur-administratif',
-    'administrateur',
-    'services-centraux'
+    'directeur-administratif-adjoint'
   ];
   return allowedRoles.includes(role);
 }
 
 export function canManageYears(role: UserRole): boolean {
-  return role === 'services-centraux' || role === 'administrateur';
+  return role === 'services-centraux';
 }
 
 export function canAccessFilteredQueries(role: UserRole): boolean {
-  return role === 'services-centraux' || role === 'administrateur';
+  return role === 'services-centraux';
+}
+
+export function canReviewRoleRequests(role: UserRole): boolean {
+  return role === 'services-centraux';
+}
+
+export function canRequestCustomRole(role: UserRole): boolean {
+  return (
+    role === 'directeur-composante' ||
+    role === 'directeur-administratif' ||
+    role === 'directeur-administratif-adjoint' ||
+    role === 'directeur-departement' ||
+    role === 'directeur-mention' ||
+    role === 'directeur-specialite' ||
+    role === 'responsable-formation'
+  );
 }

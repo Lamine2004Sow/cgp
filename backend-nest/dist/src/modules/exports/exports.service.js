@@ -17,10 +17,14 @@ let ExportsService = class ExportsService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async exportResponsables(yearId) {
-        const where = yearId ? { id_annee: BigInt(yearId) } : undefined;
+    async exportResponsables(params) {
+        const where = {
+            ...(params.yearId ? { id_annee: BigInt(params.yearId) } : {}),
+            ...(params.entiteId ? { id_entite: BigInt(params.entiteId) } : {}),
+            ...(params.roleId ? { id_role: params.roleId } : {}),
+        };
         const affectations = await this.prisma.affectation.findMany({
-            where,
+            where: Object.keys(where).length ? where : undefined,
             include: {
                 utilisateur: true,
                 role: true,

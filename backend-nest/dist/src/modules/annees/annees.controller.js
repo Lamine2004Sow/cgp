@@ -14,9 +14,12 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnneesController = void 0;
 const common_1 = require("@nestjs/common");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const annees_service_1 = require("./annees.service");
 const years_list_query_dto_1 = require("./dto/years-list-query.dto");
 const clone_year_dto_1 = require("./dto/clone-year.dto");
+const update_year_status_dto_1 = require("./dto/update-year-status.dto");
 let AnneesController = class AnneesController {
     anneesService;
     constructor(anneesService) {
@@ -30,10 +33,15 @@ let AnneesController = class AnneesController {
         const year = await this.anneesService.cloneYear(id, payload);
         return { year };
     }
+    async updateStatus(id, payload) {
+        const year = await this.anneesService.updateStatus(id, payload.statut);
+        return { year };
+    }
 };
 exports.AnneesController = AnneesController;
 __decorate([
     (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [years_list_query_dto_1.YearsListQueryDto]),
@@ -41,12 +49,22 @@ __decorate([
 ], AnneesController.prototype, "list", null);
 __decorate([
     (0, common_1.Post)(':id/clone'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, clone_year_dto_1.CloneYearDto]),
     __metadata("design:returntype", Promise)
 ], AnneesController.prototype, "clone", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_year_status_dto_1.UpdateYearStatusDto]),
+    __metadata("design:returntype", Promise)
+], AnneesController.prototype, "updateStatus", null);
 exports.AnneesController = AnneesController = __decorate([
     (0, common_1.Controller)('years'),
     __metadata("design:paramtypes", [annees_service_1.AnneesService])

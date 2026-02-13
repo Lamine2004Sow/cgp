@@ -48,7 +48,7 @@ const downloadFile = (content: string, filename: string, type: string) => {
 };
 
 export function ImportExport({ userRole, currentYear, authLogin }: ImportExportProps) {
-  const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
+  const [importStatus, setImportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [importMessage, setImportMessage] = useState("");
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
@@ -56,13 +56,104 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
   const canImport = canImportData(userRole);
   const canQuery = canAccessFilteredQueries(userRole);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const parseCsvLine = (line: string) => {
+    const values: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const char = line[i];
+      const next = line[i + 1];
+      if (char === '"' && inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+        continue;
+      }
+      if (char === '"') {
+        inQuotes = !inQuotes;
+        continue;
+      }
+      if (char === "," && !inQuotes) {
+        values.push(current.trim());
+        current = "";
+        continue;
+      }
+      current += char;
+    }
+    values.push(current.trim());
+    return values.map((value) => value.replace(/^"(.*)"$/, "$1"));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setTimeout(() => {
-        setImportStatus("success");
-        setImportMessage(`Fichier "${file.name}" importe avec succes.`);
-      }, 1000);
+    if (!file || !authLogin) {
+      return;
+    }
+
+    const isCsv = file.name.toLowerCase().endsWith(".csv");
+    if (!isCsv) {
+      setImportStatus("error");
+      setImportMessage("Import Excel natif indisponible ici. Convertissez le fichier en CSV.");
+      return;
+    }
+
+    setImportStatus("loading");
+    setImportMessage("Import en cours...");
+
+    try {
+      const content = await file.text();
+      const lines = content
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (lines.length < 2) {
+        throw new Error("Fichier CSV vide");
+      }
+
+      const header = parseCsvLine(lines[0]).map((item) => item.toLowerCase());
+      const idx = (name: string) => header.indexOf(name.toLowerCase());
+
+      const required = [
+        "login",
+        "nom",
+        "prenom",
+        "id_role",
+        "id_entite",
+        "id_annee",
+        "date_debut",
+      ];
+      const missing = required.filter((field) => idx(field) === -1);
+      if (missing.length > 0) {
+        throw new Error(`Colonnes manquantes: ${missing.join(", ")}`);
+      }
+
+      const rows = lines.slice(1).map((line) => {
+        const cols = parseCsvLine(line);
+        return {
+          login: cols[idx("login")] || "",
+          nom: cols[idx("nom")] || "",
+          prenom: cols[idx("prenom")] || "",
+          email_institutionnel: cols[idx("email_institutionnel")] || null,
+          telephone: cols[idx("telephone")] || null,
+          bureau: cols[idx("bureau")] || null,
+          id_role: cols[idx("id_role")] || "",
+          id_entite: Number(cols[idx("id_entite")]),
+          id_annee: Number(cols[idx("id_annee")]),
+          date_debut: cols[idx("date_debut")] || "",
+          date_fin: cols[idx("date_fin")] || null,
+        };
+      });
+
+      await apiFetch("/imports/responsables", {
+        method: "POST",
+        login: authLogin,
+        body: JSON.stringify({ rows }),
+      });
+
+      setImportStatus("success");
+      setImportMessage(`Fichier "${file.name}" importe avec succes.`);
+    } catch (err) {
+      setImportStatus("error");
+      setImportMessage(err instanceof Error ? err.message : "Erreur lors de l'import");
     }
   };
 
@@ -122,10 +213,22 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
                 >
                   {importStatus === "success" ? (
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                  ) : importStatus === "loading" ? (
+                    <AlertCircle className="w-5 h-5 text-indigo-600 mt-0.5" />
                   ) : (
                     <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
                   )}
-                  <p className={importStatus === "success" ? "text-green-900" : "text-red-900"}>{importMessage}</p>
+                  <p
+                    className={
+                      importStatus === "success"
+                        ? "text-green-900"
+                        : importStatus === "loading"
+                          ? "text-indigo-900"
+                          : "text-red-900"
+                    }
+                  >
+                    {importMessage}
+                  </p>
                 </div>
               )}
             </div>

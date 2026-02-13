@@ -1,0 +1,161 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SearchService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../common/prisma/prisma.service");
+let SearchService = class SearchService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async responsables(query) {
+        const where = {
+            ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
+            ...(query.roleId ? { id_role: query.roleId } : {}),
+            ...(query.q
+                ? {
+                    OR: [
+                        { utilisateur: { nom: { contains: query.q, mode: 'insensitive' } } },
+                        { utilisateur: { prenom: { contains: query.q, mode: 'insensitive' } } },
+                        {
+                            utilisateur: {
+                                email_institutionnel: { contains: query.q, mode: 'insensitive' },
+                            },
+                        },
+                        { entite_structure: { nom: { contains: query.q, mode: 'insensitive' } } },
+                    ],
+                }
+                : {}),
+        };
+        const items = await this.prisma.affectation.findMany({
+            where,
+            include: {
+                utilisateur: true,
+                role: true,
+                entite_structure: true,
+            },
+            orderBy: [{ id_annee: 'desc' }, { id_affectation: 'asc' }],
+            take: 1000,
+        });
+        return items.map((item) => ({
+            id_affectation: Number(item.id_affectation),
+            id_user: Number(item.id_user),
+            nom: item.utilisateur.nom,
+            prenom: item.utilisateur.prenom,
+            email_institutionnel: item.utilisateur.email_institutionnel,
+            role_id: item.id_role,
+            role_label: item.role?.libelle ?? item.id_role,
+            id_entite: Number(item.id_entite),
+            entite_nom: item.entite_structure?.nom ?? null,
+            type_entite: item.entite_structure?.type_entite ?? null,
+            id_annee: Number(item.id_annee),
+        }));
+    }
+    async formations(query) {
+        const formationTypes = ['MENTION', 'PARCOURS', 'NIVEAU'];
+        const where = {
+            ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
+            type_entite: { in: formationTypes },
+            ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
+        };
+        const entites = await this.prisma.entite_structure.findMany({
+            where,
+            include: {
+                affectation: {
+                    include: {
+                        utilisateur: true,
+                        role: true,
+                    },
+                },
+            },
+            orderBy: [{ type_entite: 'asc' }, { nom: 'asc' }],
+            take: 1000,
+        });
+        return entites.map((entite) => ({
+            id_entite: Number(entite.id_entite),
+            id_annee: Number(entite.id_annee),
+            type_entite: entite.type_entite,
+            nom: entite.nom,
+            tel_service: entite.tel_service,
+            bureau_service: entite.bureau_service,
+            responsables: entite.affectation.map((affectation) => ({
+                id_user: Number(affectation.id_user),
+                nom: affectation.utilisateur.nom,
+                prenom: affectation.utilisateur.prenom,
+                role_id: affectation.id_role,
+                role_label: affectation.role?.libelle ?? affectation.id_role,
+            })),
+        }));
+    }
+    async structures(query) {
+        const typedEntite = this.toEntiteType(query.typeEntite);
+        const where = {
+            ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
+            ...(typedEntite ? { type_entite: typedEntite } : {}),
+            ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
+        };
+        const entites = await this.prisma.entite_structure.findMany({
+            where,
+            orderBy: [{ type_entite: 'asc' }, { nom: 'asc' }],
+            take: 1000,
+        });
+        return entites.map((entite) => ({
+            id_entite: Number(entite.id_entite),
+            id_annee: Number(entite.id_annee),
+            id_entite_parent: entite.id_entite_parent ? Number(entite.id_entite_parent) : null,
+            type_entite: entite.type_entite,
+            nom: entite.nom,
+            tel_service: entite.tel_service,
+            bureau_service: entite.bureau_service,
+        }));
+    }
+    async secretariats(query) {
+        const where = {
+            ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
+            ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
+            OR: [{ tel_service: { not: null } }, { bureau_service: { not: null } }],
+        };
+        const entites = await this.prisma.entite_structure.findMany({
+            where,
+            orderBy: [{ type_entite: 'asc' }, { nom: 'asc' }],
+            take: 1000,
+        });
+        return entites.map((entite) => ({
+            id_entite: Number(entite.id_entite),
+            id_annee: Number(entite.id_annee),
+            type_entite: entite.type_entite,
+            nom: entite.nom,
+            tel_service: entite.tel_service,
+            bureau_service: entite.bureau_service,
+        }));
+    }
+    toEntiteType(value) {
+        if (!value) {
+            return undefined;
+        }
+        const normalized = value.toUpperCase();
+        if (normalized === 'COMPOSANTE' ||
+            normalized === 'DEPARTEMENT' ||
+            normalized === 'MENTION' ||
+            normalized === 'PARCOURS' ||
+            normalized === 'NIVEAU') {
+            return normalized;
+        }
+        return undefined;
+    }
+};
+exports.SearchService = SearchService;
+exports.SearchService = SearchService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], SearchService);
+//# sourceMappingURL=search.service.js.map

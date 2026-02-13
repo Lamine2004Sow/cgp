@@ -5,11 +5,19 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 export class ExportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async exportResponsables(yearId?: number) {
-    const where = yearId ? { id_annee: BigInt(yearId) } : undefined;
+  async exportResponsables(params: {
+    yearId?: number;
+    entiteId?: number;
+    roleId?: string;
+  }) {
+    const where = {
+      ...(params.yearId ? { id_annee: BigInt(params.yearId) } : {}),
+      ...(params.entiteId ? { id_entite: BigInt(params.entiteId) } : {}),
+      ...(params.roleId ? { id_role: params.roleId } : {}),
+    };
 
     const affectations = await this.prisma.affectation.findMany({
-      where,
+      where: Object.keys(where).length ? where : undefined,
       include: {
         utilisateur: true,
         role: true,

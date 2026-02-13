@@ -17,53 +17,61 @@ const common_1 = require("@nestjs/common");
 const organigrammes_service_1 = require("./organigrammes.service");
 const organigrammes_list_query_dto_1 = require("./dto/organigrammes-list-query.dto");
 const organigramme_generate_dto_1 = require("./dto/organigramme-generate.dto");
+const organigramme_export_query_dto_1 = require("./dto/organigramme-export-query.dto");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let OrganigrammesController = class OrganigrammesController {
     organigrammesService;
     constructor(organigrammesService) {
         this.organigrammesService = organigrammesService;
     }
-    async list(query) {
-        const items = await this.organigrammesService.list(query.yearId);
+    async list(user, query) {
+        const items = await this.organigrammesService.list(user, query.yearId);
         return { items };
     }
-    async latest(query) {
+    async latest(user, query) {
         if (!query.yearId) {
             return { organigramme: null, arbre: null };
         }
-        return this.organigrammesService.latest(query.yearId);
+        return this.organigrammesService.latest(user, query.yearId);
     }
-    async generate(request, payload) {
-        const userId = request.user?.userId;
-        if (!userId) {
-            throw new common_1.UnauthorizedException();
-        }
-        return this.organigrammesService.generate(payload.id_annee, payload.id_entite_racine, userId);
+    async generate(user, payload) {
+        return this.organigrammesService.generate(user, payload.id_annee, payload.id_entite_racine);
     }
-    async tree(id) {
-        return this.organigrammesService.getTreeById(id);
+    async tree(user, id) {
+        return this.organigrammesService.getTreeById(user, id);
     }
     async freeze(id) {
         return this.organigrammesService.freeze(id);
+    }
+    async export(user, id, query) {
+        return this.organigrammesService.export(user, id, query.format || 'PDF');
     }
 };
 exports.OrganigrammesController = OrganigrammesController;
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)()),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [organigrammes_list_query_dto_1.OrganigrammesListQueryDto]),
+    __metadata("design:paramtypes", [Object, organigrammes_list_query_dto_1.OrganigrammesListQueryDto]),
     __metadata("design:returntype", Promise)
 ], OrganigrammesController.prototype, "list", null);
 __decorate([
     (0, common_1.Get)('latest'),
-    __param(0, (0, common_1.Query)()),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [organigrammes_list_query_dto_1.OrganigrammesListQueryDto]),
+    __metadata("design:paramtypes", [Object, organigrammes_list_query_dto_1.OrganigrammesListQueryDto]),
     __metadata("design:returntype", Promise)
 ], OrganigrammesController.prototype, "latest", null);
 __decorate([
     (0, common_1.Post)('generate'),
-    __param(0, (0, common_1.Req)()),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT, roles_constants_1.ROLE_IDS.DIRECTEUR_DEPARTEMENT, roles_constants_1.ROLE_IDS.DIRECTEUR_MENTION, roles_constants_1.ROLE_IDS.DIRECTEUR_SPECIALITE, roles_constants_1.ROLE_IDS.RESPONSABLE_FORMATION),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, organigramme_generate_dto_1.OrganigrammeGenerateDto]),
@@ -71,18 +79,31 @@ __decorate([
 ], OrganigrammesController.prototype, "generate", null);
 __decorate([
     (0, common_1.Get)(':id/tree'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], OrganigrammesController.prototype, "tree", null);
 __decorate([
     (0, common_1.Patch)(':id/freeze'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], OrganigrammesController.prototype, "freeze", null);
+__decorate([
+    (0, common_1.Get)(':id/export'),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, organigramme_export_query_dto_1.OrganigrammeExportQueryDto]),
+    __metadata("design:returntype", Promise)
+], OrganigrammesController.prototype, "export", null);
 exports.OrganigrammesController = OrganigrammesController = __decorate([
     (0, common_1.Controller)('organigrammes'),
     __metadata("design:paramtypes", [organigrammes_service_1.OrganigrammesService])

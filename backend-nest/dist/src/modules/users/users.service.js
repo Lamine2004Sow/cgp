@@ -13,6 +13,7 @@ exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
 const pagination_1 = require("../../common/utils/pagination");
+const roles_constants_1 = require("../../auth/roles.constants");
 const SORT_FIELDS = {
     login: { login: 'asc' },
     nom: { nom: 'asc' },
@@ -23,16 +24,25 @@ let UsersService = class UsersService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async findAll(query) {
+    async findAll(query, currentUser) {
         const { page, pageSize, skip } = (0, pagination_1.normalizePagination)({
             page: query.page,
             pageSize: query.pageSize,
         });
         const yearFilter = query.yearId ? BigInt(query.yearId) : undefined;
         const { where, orderBy } = this.buildQuery(query, yearFilter);
+        const scopedWhere = await this.applyListScope(where, currentUser, query.yearId);
+        if (!scopedWhere) {
+            return {
+                items: [],
+                page,
+                pageSize,
+                total: 0,
+            };
+        }
         const [items, total] = await this.prisma.$transaction([
             this.prisma.utilisateur.findMany({
-                where,
+                where: scopedWhere,
                 orderBy,
                 skip,
                 take: pageSize,
@@ -43,7 +53,7 @@ let UsersService = class UsersService {
                     },
                 },
             }),
-            this.prisma.utilisateur.count({ where }),
+            this.prisma.utilisateur.count({ where: scopedWhere }),
         ]);
         return {
             items: items.map((item) => this.toUserListItem(item)),
@@ -52,7 +62,7 @@ let UsersService = class UsersService {
             total,
         };
     }
-    async findOne(id) {
+    async findOne(id, currentUser) {
         let parsedId;
         try {
             parsedId = BigInt(id);
@@ -68,7 +78,26 @@ let UsersService = class UsersService {
                 },
             },
         });
-        return user ? this.toUserListItem(user) : null;
+        if (!user) {
+            return null;
+        }
+        if (!currentUser || this.isPrivilegedReader(currentUser)) {
+            return this.toUserListItem(user);
+        }
+        if (currentUser.userId === String(user.id_user)) {
+            return this.toUserListItem(user);
+        }
+        const targetYearIds = Array.from(new Set((user.affectation || []).map((affectation) => String(affectation.id_annee))));
+        const scope = await this.expandUserEntiteScope(currentUser, targetYearIds);
+        if (scope.size === 0) {
+            return null;
+        }
+        const canAccess = (user.affectation || []).some((affectation) => scope.has(String(affectation.id_entite)) &&
+            targetYearIds.includes(String(affectation.id_annee)));
+        if (!canAccess) {
+            return null;
+        }
+        return this.toUserListItem(user);
     }
     async create(payload) {
         const created = await this.prisma.$transaction(async (tx) => {
@@ -192,6 +221,82 @@ let UsersService = class UsersService {
             return { [field]: normalizedDirection };
         }
         return { nom: 'asc' };
+    }
+    async applyListScope(where, user, yearId) {
+        if (this.isPrivilegedReader(user)) {
+            return where;
+        }
+        const yearIds = yearId
+            ? [String(yearId)]
+            : Array.from(new Set(user.affectations.map((affectation) => affectation.anneeId)));
+        if (yearIds.length === 0) {
+            return null;
+        }
+        const entiteScope = await this.expandUserEntiteScope(user, yearIds);
+        if (entiteScope.size === 0) {
+            return null;
+        }
+        const scopeFilter = {
+            affectation: {
+                some: {
+                    id_entite: {
+                        in: Array.from(entiteScope).map((id) => BigInt(id)),
+                    },
+                    id_annee: {
+                        in: yearIds.map((id) => BigInt(id)),
+                    },
+                },
+            },
+        };
+        return { AND: [where, scopeFilter] };
+    }
+    async expandUserEntiteScope(user, yearIds) {
+        const seeds = new Set(user.affectations
+            .filter((affectation) => yearIds.includes(affectation.anneeId))
+            .map((affectation) => affectation.entiteId));
+        if (seeds.size === 0) {
+            return new Set();
+        }
+        const entites = await this.prisma.entite_structure.findMany({
+            where: {
+                id_annee: {
+                    in: yearIds.map((yearId) => BigInt(yearId)),
+                },
+            },
+            select: {
+                id_entite: true,
+                id_entite_parent: true,
+            },
+        });
+        const parentById = new Map();
+        for (const entite of entites) {
+            parentById.set(String(entite.id_entite), entite.id_entite_parent ? String(entite.id_entite_parent) : null);
+        }
+        const scope = new Set();
+        for (const entite of entites) {
+            const entiteId = String(entite.id_entite);
+            if (this.isInSeedTree(entiteId, seeds, parentById)) {
+                scope.add(entiteId);
+            }
+        }
+        return scope;
+    }
+    isInSeedTree(entiteId, seeds, parentById) {
+        if (seeds.has(entiteId)) {
+            return true;
+        }
+        let current = parentById.get(entiteId) ?? null;
+        for (let depth = 0; depth < 32 && current; depth += 1) {
+            if (seeds.has(current)) {
+                return true;
+            }
+            current = parentById.get(current) ?? null;
+        }
+        return false;
+    }
+    isPrivilegedReader(user) {
+        return user.affectations.some((affectation) => affectation.roleId === roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX ||
+            affectation.roleId === roles_constants_1.ROLE_IDS.ADMINISTRATEUR);
     }
 };
 exports.UsersService = UsersService;

@@ -14,6 +14,8 @@ const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class ExportsQueryDto {
     yearId;
+    entiteId;
+    roleId;
 }
 exports.ExportsQueryDto = ExportsQueryDto;
 __decorate([
@@ -23,4 +25,16 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], ExportsQueryDto.prototype, "yearId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], ExportsQueryDto.prototype, "entiteId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ExportsQueryDto.prototype, "roleId", void 0);
 //# sourceMappingURL=exports-query.dto.js.map

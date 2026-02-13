@@ -52,7 +52,6 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
     userRole === "directeur-composante" ||
     userRole === "directeur-administratif" ||
     userRole === "directeur-administratif-adjoint" ||
-    userRole === "administrateur" ||
     userRole === "services-centraux";
 
   const loadReports = async () => {

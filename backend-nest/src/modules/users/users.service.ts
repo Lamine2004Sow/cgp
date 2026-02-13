@@ -5,6 +5,8 @@ import { normalizePagination, type PageResult } from '../../common/utils/paginat
 import type { UsersListQueryDto } from './dto/users-list-query.dto';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
+import type { CurrentUser } from '../../common/types/current-user';
+import { ROLE_IDS } from '../../auth/roles.constants';
 
 const SORT_FIELDS: Record<string, Prisma.utilisateurOrderByWithRelationInput> = {
   login: { login: 'asc' },
@@ -35,7 +37,10 @@ export interface UserListItem {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: UsersListQueryDto): Promise<PageResult<UserListItem>> {
+  async findAll(
+    query: UsersListQueryDto,
+    currentUser: CurrentUser,
+  ): Promise<PageResult<UserListItem>> {
     const { page, pageSize, skip } = normalizePagination({
       page: query.page,
       pageSize: query.pageSize,
@@ -43,10 +48,20 @@ export class UsersService {
 
     const yearFilter = query.yearId ? BigInt(query.yearId) : undefined;
     const { where, orderBy } = this.buildQuery(query, yearFilter);
+    const scopedWhere = await this.applyListScope(where, currentUser, query.yearId);
+
+    if (!scopedWhere) {
+      return {
+        items: [],
+        page,
+        pageSize,
+        total: 0,
+      };
+    }
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.utilisateur.findMany({
-        where,
+        where: scopedWhere,
         orderBy,
         skip,
         take: pageSize,
@@ -57,7 +72,7 @@ export class UsersService {
           },
         },
       }),
-      this.prisma.utilisateur.count({ where }),
+      this.prisma.utilisateur.count({ where: scopedWhere }),
     ]);
 
     return {
@@ -68,7 +83,7 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string): Promise<UserListItem | null> {
+  async findOne(id: string, currentUser?: CurrentUser): Promise<UserListItem | null> {
     let parsedId: bigint;
     try {
       parsedId = BigInt(id);
@@ -85,7 +100,36 @@ export class UsersService {
       },
     });
 
-    return user ? this.toUserListItem(user) : null;
+    if (!user) {
+      return null;
+    }
+
+    if (!currentUser || this.isPrivilegedReader(currentUser)) {
+      return this.toUserListItem(user);
+    }
+
+    if (currentUser.userId === String(user.id_user)) {
+      return this.toUserListItem(user);
+    }
+
+    const targetYearIds = Array.from(
+      new Set((user.affectation || []).map((affectation) => String(affectation.id_annee))),
+    );
+    const scope = await this.expandUserEntiteScope(currentUser, targetYearIds);
+    if (scope.size === 0) {
+      return null;
+    }
+
+    const canAccess = (user.affectation || []).some(
+      (affectation) =>
+        scope.has(String(affectation.id_entite)) &&
+        targetYearIds.includes(String(affectation.id_annee)),
+    );
+    if (!canAccess) {
+      return null;
+    }
+
+    return this.toUserListItem(user);
   }
 
   async create(payload: CreateUserDto): Promise<UserListItem> {
@@ -247,5 +291,113 @@ export class UsersService {
     }
 
     return { nom: 'asc' };
+  }
+
+  private async applyListScope(
+    where: Prisma.utilisateurWhereInput,
+    user: CurrentUser,
+    yearId?: number,
+  ): Promise<Prisma.utilisateurWhereInput | null> {
+    if (this.isPrivilegedReader(user)) {
+      return where;
+    }
+
+    const yearIds = yearId
+      ? [String(yearId)]
+      : Array.from(new Set(user.affectations.map((affectation) => affectation.anneeId)));
+    if (yearIds.length === 0) {
+      return null;
+    }
+
+    const entiteScope = await this.expandUserEntiteScope(user, yearIds);
+    if (entiteScope.size === 0) {
+      return null;
+    }
+
+    const scopeFilter: Prisma.utilisateurWhereInput = {
+      affectation: {
+        some: {
+          id_entite: {
+            in: Array.from(entiteScope).map((id) => BigInt(id)),
+          },
+          id_annee: {
+            in: yearIds.map((id) => BigInt(id)),
+          },
+        },
+      },
+    };
+
+    return { AND: [where, scopeFilter] };
+  }
+
+  private async expandUserEntiteScope(
+    user: CurrentUser,
+    yearIds: string[],
+  ): Promise<Set<string>> {
+    const seeds = new Set(
+      user.affectations
+        .filter((affectation) => yearIds.includes(affectation.anneeId))
+        .map((affectation) => affectation.entiteId),
+    );
+    if (seeds.size === 0) {
+      return new Set();
+    }
+
+    const entites = await this.prisma.entite_structure.findMany({
+      where: {
+        id_annee: {
+          in: yearIds.map((yearId) => BigInt(yearId)),
+        },
+      },
+      select: {
+        id_entite: true,
+        id_entite_parent: true,
+      },
+    });
+
+    const parentById = new Map<string, string | null>();
+    for (const entite of entites) {
+      parentById.set(
+        String(entite.id_entite),
+        entite.id_entite_parent ? String(entite.id_entite_parent) : null,
+      );
+    }
+
+    const scope = new Set<string>();
+    for (const entite of entites) {
+      const entiteId = String(entite.id_entite);
+      if (this.isInSeedTree(entiteId, seeds, parentById)) {
+        scope.add(entiteId);
+      }
+    }
+
+    return scope;
+  }
+
+  private isInSeedTree(
+    entiteId: string,
+    seeds: Set<string>,
+    parentById: Map<string, string | null>,
+  ): boolean {
+    if (seeds.has(entiteId)) {
+      return true;
+    }
+
+    let current: string | null = parentById.get(entiteId) ?? null;
+    for (let depth = 0; depth < 32 && current; depth += 1) {
+      if (seeds.has(current)) {
+        return true;
+      }
+      current = parentById.get(current) ?? null;
+    }
+    return false;
+  }
+
+  private isPrivilegedReader(user: CurrentUser): boolean {
+    return user.affectations.some(
+      (affectation) =>
+        affectation.roleId === ROLE_IDS.SERVICES_CENTRAUX ||
+        affectation.roleId === ROLE_IDS.ADMINISTRATEUR,
+    );
   }
 }

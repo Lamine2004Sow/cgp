@@ -53,13 +53,13 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
   const [organigrammes, setOrganigrammes] = useState<ApiOrganigramme[]>([]);
   const [selectedOrgaId, setSelectedOrgaId] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canGenerate = canGenerateOrgChart(userRole);
-  const canFreeze = userRole === "services-centraux" || userRole === "administrateur";
+  const canFreeze = userRole === "services-centraux";
   const isTopLevel =
     userRole === "services-centraux" ||
-    userRole === "administrateur" ||
     userRole === "directeur-composante" ||
     userRole === "directeur-administratif" ||
     userRole === "directeur-administratif-adjoint";
@@ -201,6 +201,38 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
       setError(err instanceof Error ? err.message : "Erreur lors du gel");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async (format: "PDF" | "CSV" | "JSON") => {
+    if (!authLogin || !orgaMeta) return;
+    setExportLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetch<{
+        fileName: string;
+        mimeType: string;
+        contentBase64: string;
+      }>(`/organigrammes/${orgaMeta.id_organigramme}/export?format=${format}`, {
+        login: authLogin,
+      });
+
+      const binary = atob(data.contentBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: data.mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur export");
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -389,14 +421,22 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         <h3 className="text-slate-900 mb-4">Exports</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {['PDF', 'SVG', 'PNG'].map((format) => (
+          {(["PDF", "CSV", "JSON"] as const).map((format) => (
             <button
               key={format}
-              className="p-4 border-2 border-slate-200 rounded-lg text-left text-slate-600 hover:border-indigo-300 hover:text-indigo-700 transition-colors"
+              onClick={() => {
+                handleExport(format);
+              }}
+              disabled={!orgaMeta || exportLoading}
+              className="p-4 border-2 border-slate-200 rounded-lg text-left text-slate-600 hover:border-indigo-300 hover:text-indigo-700 transition-colors disabled:opacity-50"
             >
               <Download className="w-6 h-6 mb-2" />
               Export {format}
-              <div className="text-xs text-slate-400">Fonctionnalite a connecter</div>
+              <div className="text-xs text-slate-400">
+                {!orgaMeta
+                  ? "Generez un organigramme d'abord"
+                  : "Export disponible"}
+              </div>
             </button>
           ))}
         </div>

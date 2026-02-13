@@ -14,6 +14,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
+const roles_constants_1 = require("../../auth/roles.constants");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const users_service_1 = require("./users.service");
 const users_list_query_dto_1 = require("./dto/users-list-query.dto");
 const create_user_dto_1 = require("./dto/create-user.dto");
@@ -23,11 +26,11 @@ let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
     }
-    async list(query) {
-        return this.usersService.findAll(query);
+    async list(user, query) {
+        return this.usersService.findAll(query, user);
     }
-    async get(id) {
-        const user = await this.usersService.findOne(id);
+    async get(currentUser, id) {
+        const user = await this.usersService.findOne(id, currentUser);
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
@@ -37,11 +40,40 @@ let UsersController = class UsersController {
         const user = await this.usersService.create(payload);
         return { user };
     }
-    async update(id, payload) {
+    async update(currentUser, id, payload) {
+        const isSelf = currentUser.userId === id;
+        if (isSelf) {
+            if (payload.nom !== undefined ||
+                payload.prenom !== undefined ||
+                payload.email_institutionnel !== undefined) {
+                throw new common_1.ForbiddenException('You can only update telephone and bureau on your own profile');
+            }
+        }
+        else {
+            const managerRoles = new Set([
+                roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE,
+                roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
+                roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
+            ]);
+            const canManageOthers = currentUser.affectations.some((affectation) => {
+                return managerRoles.has(affectation.roleId);
+            });
+            if (!canManageOthers) {
+                throw new common_1.ForbiddenException('Insufficient role to update another user');
+            }
+            const target = await this.usersService.findOne(id, currentUser);
+            if (!target) {
+                throw new common_1.NotFoundException('User not found');
+            }
+        }
         const user = await this.usersService.update(id, payload);
         return { user };
     }
-    async remove(id) {
+    async remove(currentUser, id) {
+        const target = await this.usersService.findOne(id, currentUser);
+        if (!target) {
+            throw new common_1.NotFoundException('User not found');
+        }
         await this.usersService.remove(id);
         return { status: 'deleted' };
     }
@@ -49,20 +81,23 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [users_list_query_dto_1.UsersListQueryDto]),
+    __metadata("design:paramtypes", [Object, users_list_query_dto_1.UsersListQueryDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "list", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "get", null);
 __decorate([
     (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
@@ -70,21 +105,26 @@ __decorate([
 ], UsersController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT, roles_constants_1.ROLE_IDS.DIRECTEUR_DEPARTEMENT, roles_constants_1.ROLE_IDS.DIRECTEUR_MENTION, roles_constants_1.ROLE_IDS.DIRECTEUR_SPECIALITE, roles_constants_1.ROLE_IDS.RESPONSABLE_FORMATION, roles_constants_1.ROLE_IDS.RESPONSABLE_ANNEE, roles_constants_1.ROLE_IDS.UTILISATEUR_SIMPLE, roles_constants_1.ROLE_IDS.LECTURE_SEULE, roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.ADMINISTRATEUR),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:paramtypes", [Object, String, update_user_dto_1.UpdateUserDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "remove", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

@@ -1,7 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const adapter_pg_1 = require("@prisma/adapter-pg");
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+    throw new Error('DATABASE_URL is not defined');
+}
+const prisma = new client_1.PrismaClient({
+    adapter: new adapter_pg_1.PrismaPg({ connectionString: databaseUrl }),
+});
 async function ensureRole(params) {
     await prisma.role.upsert({
         where: { id_role: params.id },
@@ -78,6 +85,7 @@ async function main() {
         { login: 'dir.dept.info', nom: 'Info', prenom: 'Departement', roleId: 'directeur-departement', entiteId: entites.departement },
         { login: 'dir.mention.l3', nom: 'L3', prenom: 'Mention', roleId: 'directeur-mention', entiteId: entites.mention },
         { login: 'dir.spec.ia', nom: 'IA', prenom: 'Specialite', roleId: 'directeur-specialite', entiteId: entites.parcours },
+        { login: 'resp.form.info', nom: 'Info', prenom: 'Formation', roleId: 'responsable-formation', entiteId: entites.parcours },
         { login: 'resp.annee.l2', nom: 'L2', prenom: 'Annee', roleId: 'responsable-annee', entiteId: entites.niveau },
         { login: 'ens.dupont', nom: 'Dupont', prenom: 'Enseignant', roleId: 'utilisateur-simple', entiteId: entites.departement },
         { login: 'viewer.readonly', nom: 'Viewer', prenom: 'Readonly', roleId: 'lecture-seule', entiteId: entites.departement },
