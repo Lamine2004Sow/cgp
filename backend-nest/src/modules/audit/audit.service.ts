@@ -140,6 +140,7 @@ export class AuditService {
       ...(query.userId ? { id_user_auteur: BigInt(query.userId) } : {}),
       ...(query.action ? { type_action: query.action } : {}),
       ...(query.targetType ? { cible_type: query.targetType } : {}),
+      ...(query.targetId != null && query.targetId !== '' ? { cible_id: query.targetId } : {}),
       ...(startDate || endDate
         ? {
             horodatage: {

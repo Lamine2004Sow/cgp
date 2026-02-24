@@ -4,6 +4,7 @@ export declare class AuditListQueryDto {
     userId?: number;
     action?: string;
     targetType?: string;
+    targetId?: string;
     startDate?: string;
     endDate?: string;
 }

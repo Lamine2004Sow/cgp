@@ -11,6 +11,7 @@ import { YearManagement } from "./components/YearManagement";
 import { ErrorReports } from "./components/ErrorReports";
 import { UserProfile } from "./components/UserProfile";
 import { AuditLogs } from "./components/AuditLogs";
+import { ManageStructures } from "./components/ManageStructures";
 import {
   AcademicYear,
   canAccessFilteredQueries,
@@ -23,6 +24,7 @@ import {
   UserRole,
   View,
   canManageYears,
+  canManageStructures,
   canReviewRoleRequests,
   getRoleLabel,
 } from "./types";
@@ -39,6 +41,7 @@ import {
   UserCircle,
   Users,
   Download,
+  Building2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { apiFetch, clearStoredLogin, getStoredLogin, setStoredLogin } from "./lib/api";
@@ -133,23 +136,29 @@ const navSections: NavSection[] = [
         id: "manage-responsibles",
         label: "Responsables",
         icon: Users,
-        isVisible: (role) => canManageUsers(role),
+        isVisible: () => true,
+      },
+      {
+        id: "manage-structures",
+        label: "Fiches structures",
+        icon: Building2,
+        isVisible: (role) => canManageStructures(role),
       },
       {
         id: "manage-roles",
-        label: "Demandes roles",
+        label: "Demandes de rôles",
         icon: Shield,
         isVisible: (role) => canReviewRoleRequests(role) || canRequestCustomRole(role),
       },
       {
         id: "delegations",
-        label: "Delegations",
+        label: "Délégations",
         icon: UserCircle,
         isVisible: (role) => canManageDelegations(role),
       },
       {
         id: "year-management",
-        label: "Annees",
+        label: "Années",
         icon: Calendar,
         isVisible: (role) => canManageYears(role),
       },
@@ -705,6 +714,14 @@ export default function App() {
                 authLogin={authLogin}
               />
             )}
+            {currentView === "manage-structures" && (
+              <ManageStructures
+                userRole={currentUser.role}
+                currentYear={currentYear}
+                entites={entites}
+                authLogin={authLogin}
+              />
+            )}
             {currentView === "manage-roles" && (
               <ManageRoles
                 currentYear={currentYear}
@@ -742,9 +759,16 @@ export default function App() {
                 currentYear={currentYear}
                 authLogin={authLogin}
                 onRefresh={refreshYears}
+                onNavigateToImport={() => handleNavigate("import-export")}
               />
             )}
-            {currentView === "audit-logs" && <AuditLogs authLogin={authLogin} />}
+            {currentView === "audit-logs" && (
+              <AuditLogs
+                authLogin={authLogin}
+                currentYear={currentYear}
+                entites={entites}
+              />
+            )}
             {currentView === "error-reports" && (
               <ErrorReports
                 userRole={currentUser.role}

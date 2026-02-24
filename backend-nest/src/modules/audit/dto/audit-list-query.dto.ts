@@ -28,6 +28,11 @@ export class AuditListQueryDto {
   @IsString()
   targetType?: string;
 
+  /** Filtre par cible (ex. id_user pour fiche responsable, id_entite pour structure/composante) */
+  @IsOptional()
+  @IsString()
+  targetId?: string;
+
   @IsOptional()
   @IsString()
   startDate?: string;

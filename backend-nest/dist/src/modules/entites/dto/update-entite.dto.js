@@ -9,64 +9,65 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuditListQueryDto = void 0;
-const class_transformer_1 = require("class-transformer");
+exports.UpdateEntiteDto = void 0;
 const class_validator_1 = require("class-validator");
-class AuditListQueryDto {
-    page;
-    pageSize;
-    userId;
-    action;
-    targetType;
-    targetId;
-    startDate;
-    endDate;
+class UpdateEntiteDto {
+    nom;
+    tel_service;
+    bureau_service;
+    site_web;
+    code_interne;
+    type_diplome;
+    code_parcours;
+    libelle_court;
 }
-exports.AuditListQueryDto = AuditListQueryDto;
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(1),
-    __metadata("design:type", Number)
-], AuditListQueryDto.prototype, "page", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(1),
-    __metadata("design:type", Number)
-], AuditListQueryDto.prototype, "pageSize", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(1),
-    __metadata("design:type", Number)
-], AuditListQueryDto.prototype, "userId", void 0);
+exports.UpdateEntiteDto = UpdateEntiteDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(500),
     __metadata("design:type", String)
-], AuditListQueryDto.prototype, "action", void 0);
+], UpdateEntiteDto.prototype, "nom", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], AuditListQueryDto.prototype, "targetType", void 0);
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "tel_service", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], AuditListQueryDto.prototype, "targetId", void 0);
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "bureau_service", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], AuditListQueryDto.prototype, "startDate", void 0);
+    (0, class_validator_1.MaxLength)(500),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "site_web", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], AuditListQueryDto.prototype, "endDate", void 0);
-//# sourceMappingURL=audit-list-query.dto.js.map
+    (0, class_validator_1.MaxLength)(50),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "code_interne", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "type_diplome", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(50),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "code_parcours", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", Object)
+], UpdateEntiteDto.prototype, "libelle_court", void 0);
+//# sourceMappingURL=update-entite.dto.js.map
