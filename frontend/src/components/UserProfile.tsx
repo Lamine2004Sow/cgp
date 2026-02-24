@@ -217,7 +217,7 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
 
       {otherRoles.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-slate-900 mb-6">Historique des roles (autres annees)</h3>
+          <h3 className="text-slate-900 mb-6">Historique des rôles (autres années)</h3>
           <div className="space-y-3">
             {otherRoles.map((role, index) => (
               <div key={`${role.roleId}-${index}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">

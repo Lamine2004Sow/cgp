@@ -35,7 +35,7 @@ type ApiSignalement = {
 const statusMap = {
   OUVERT: { label: "Ouvert", color: "bg-orange-100 text-orange-700", icon: Clock },
   EN_COURS: { label: "En cours", color: "bg-blue-100 text-blue-700", icon: Clock },
-  CLOTURE: { label: "Cloture", color: "bg-green-100 text-green-700", icon: CheckCircle },
+  CLOTURE: { label: "Clôturé", color: "bg-green-100 text-green-700", icon: CheckCircle },
 };
 
 export function ErrorReports({ userRole, currentYear, authLogin, entites, currentUserId }: ErrorReportsProps) {
@@ -124,7 +124,7 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
   const handleCloseReport = async (reportId: number) => {
     if (!authLogin) return;
     if (!closingComment.trim()) {
-      setError("Le commentaire de cloture est obligatoire");
+      setError("Le commentaire de clôture est obligatoire");
       return;
     }
     setLoading(true);
@@ -139,7 +139,7 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
       setClosingComment("");
       await loadReports();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la cloture");
+      setError(err instanceof Error ? err.message : "Erreur lors de la clôture");
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,11 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-slate-900 mb-2">Signalements d'erreurs</h2>
-          <p className="text-slate-600">Signaler une erreur dans l'annuaire</p>
+          <p className="text-slate-600">
+            {canManage
+              ? "Consulter et traiter les signalements (prise en charge, clôture)."
+              : "Signaler une erreur dans l'annuaire. Le suivi des signalements est assuré par les directeurs et les services centraux."}
+          </p>
         </div>
         <button
           onClick={() => setShowReportForm(!showReportForm)}
@@ -183,7 +187,7 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
                 onChange={(e) => setForm({ ...form, entiteId: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
-                <option value="">Selectionner une structure</option>
+                <option value="">Sélectionner une structure</option>
                 {entites.map((entite) => (
                   <option key={entite.id_entite} value={entite.id_entite}>
                     {entite.nom} ({entite.type_entite})
@@ -201,7 +205,7 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Decrivez l'erreur constatee et la correction a apporter..."
+                placeholder="Décrivez l'erreur constatée et la correction à apporter..."
               />
             </div>
 

@@ -161,7 +161,7 @@ export function ManageResponsibles({
           firstName: user.prenom,
           lastName: user.nom,
           email: user.email_institutionnel || "",
-          role: roleLabels.join(" / ") || "Sans role",
+          role: roleLabels.join(" / ") || "Sans rôle",
           department,
           component,
           phone: user.telephone || undefined,
@@ -334,8 +334,14 @@ export function ManageResponsibles({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-slate-900 mb-2">Gerer les Responsables</h2>
-          <p className="text-slate-600">Modifier les fiches des responsables de formation (UC3)</p>
+          <h2 className="text-slate-900 mb-2">
+            {canEdit ? "Gérer les responsables" : "Consulter les responsables"}
+          </h2>
+          <p className="text-slate-600">
+            {canEdit
+              ? "Modifier les fiches et affectations des responsables de formation (UC3)."
+              : "Liste des responsables — consultation seule. Les modifications sont réservées au directeur de composante et aux DA."}
+          </p>
         </div>
         {canEdit && (
           <button
@@ -373,11 +379,11 @@ export function ManageResponsibles({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
-                label="Role"
+                label="Rôle"
                 value={newUser.id_role}
                 onChange={(value) => setNewUser({ ...newUser, id_role: value })}
                 options={roles.map((role) => ({ value: getRoleId(role), label: role.libelle }))}
-                placeholder="Selectionner un role"
+                placeholder="Sélectionner un rôle"
               />
               <Select
                 label="Structure"
@@ -387,10 +393,10 @@ export function ManageResponsibles({
                   value: String(entite.id_entite),
                   label: `${entite.nom} (${entite.type_entite})`,
                 }))}
-                placeholder="Selectionner une structure"
+                placeholder="Sélectionner une structure"
               />
               <Field
-                label="Date debut"
+                label="Date de début"
                 type="date"
                 value={newUser.date_debut}
                 onChange={(value) => setNewUser({ ...newUser, date_debut: value })}
@@ -541,11 +547,11 @@ export function ManageResponsibles({
                   <h4 className="text-slate-900 mb-3">Ajouter une affectation</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Select
-                      label="Role"
+                      label="Rôle"
                       value={affectationForm.id_role}
                       onChange={(value) => setAffectationForm({ ...affectationForm, id_role: value })}
                       options={roles.map((role) => ({ value: getRoleId(role), label: role.libelle }))}
-                      placeholder="Selectionner un role"
+                      placeholder="Sélectionner un rôle"
                     />
                     <Select
                       label="Structure"
@@ -557,10 +563,10 @@ export function ManageResponsibles({
                         value: String(entite.id_entite),
                         label: `${entite.nom} (${entite.type_entite})`,
                       }))}
-                      placeholder="Selectionner une structure"
+                      placeholder="Sélectionner une structure"
                     />
                     <Field
-                      label="Date debut"
+                      label="Date de début"
                       type="date"
                       value={affectationForm.date_debut}
                       onChange={(value) => setAffectationForm({ ...affectationForm, date_debut: value })}

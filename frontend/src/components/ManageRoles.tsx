@@ -109,7 +109,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
   const handleSubmitRequest = async () => {
     if (!authLogin) return;
     if (!newRequest.roleName.trim() || !newRequest.description.trim()) {
-      setError("Veuillez renseigner le role et la description");
+      setError("Veuillez renseigner le rôle et la description");
       return;
     }
 
@@ -163,12 +163,12 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
     <div className="space-y-8">
       <div>
         <h2 className="text-slate-900 mb-2">
-          {canReview ? "Gestion des roles" : "Demandes de roles specifiques"}
+          {canReview ? "Gestion des rôles" : "Demandes de rôles spécifiques"}
         </h2>
         <p className="text-slate-600">
           {canReview
-            ? "Roles preetablis et demandes de roles specifiques"
-            : "Soumettre et suivre vos demandes de roles specifiques"}
+            ? "Rôles préétablis et demandes de rôles spécifiques"
+            : "Soumettre et suivre vos demandes de rôles spécifiques"}
         </p>
       </div>
 
@@ -184,10 +184,10 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <h3 className="text-slate-900 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-indigo-600" />
-                Roles preetablis (globaux)
+                Rôles préétablis (globaux)
               </h3>
               <p className="text-sm text-slate-600 mt-1">
-                Roles communs a toutes les composantes
+                Rôles communs à toutes les composantes
               </p>
             </div>
             <div className="p-6">
@@ -208,7 +208,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                           </span>
                         </div>
                         <p className="text-sm text-slate-600">
-                          {role.description || getRoleId(role)}
+                          {role.description || role.libelle || getRoleId(role)}
                         </p>
                       </div>
                       <div className="ml-4">
@@ -220,7 +220,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                     </div>
                   ))}
                   {globalRoles.length === 0 && (
-                    <div className="text-slate-500">Aucun role global</div>
+                    <div className="text-slate-500">Aucun rôle global</div>
                   )}
                 </div>
               )}
@@ -231,13 +231,13 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <h3 className="text-slate-900 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-amber-600" />
-                Roles specifiques
+                Rôles spécifiques
               </h3>
-              <p className="text-sm text-slate-600 mt-1">Roles valides par services centraux</p>
+              <p className="text-sm text-slate-600 mt-1">Rôles validés par les services centraux</p>
             </div>
             <div className="p-6">
               {customRoles.length === 0 ? (
-                <div className="text-slate-500">Aucun role specifique</div>
+                <div className="text-slate-500">Aucun rôle spécifique</div>
               ) : (
                 <div className="space-y-3">
                   {customRoles.map((role) => (
@@ -246,11 +246,11 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                         <div>
                           <div className="text-slate-900 font-medium">{role.libelle}</div>
                           <div className="text-sm text-slate-600">
-                            {role.description || getRoleId(role)}
+                            {role.description || role.libelle || getRoleId(role)}
                           </div>
                         </div>
                         <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">
-                          Specifique
+                          Spécifique
                         </span>
                       </div>
                     </div>
@@ -267,7 +267,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
           <div>
             <h3 className="text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-orange-600" />
-              Demandes de roles
+              Demandes de rôles
             </h3>
             <p className="text-sm text-slate-600 mt-1">
               Roles propres a certaines composantes - validation par services centraux
@@ -286,11 +286,11 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
 
         {showRequestForm && canRequest && (
           <div className="p-6 border-b border-slate-200 bg-orange-50">
-            <h4 className="text-slate-900 mb-4">Demander un role specifique</h4>
+            <h4 className="text-slate-900 mb-4">Demander un rôle spécifique</h4>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nom du role propose <span className="text-red-500">*</span>
+                  Nom du rôle proposé <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -309,7 +309,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                   onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
                   rows={4}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Decrivez le role et la justification"
+                  placeholder="Décrivez le rôle et la justification"
                 />
               </div>
               <div>

@@ -35,6 +35,7 @@ services:
       - "${BACKEND_PORT:-3001}:3001"
     volumes:
       - ./backend-nest:/app
+      - ./files:/app/files:ro
       - backend-nest-node-modules:/app/node_modules
 
   frontend:

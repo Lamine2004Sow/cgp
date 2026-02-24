@@ -37,16 +37,20 @@ export function Dashboard({ user, currentYear, onNavigate }: DashboardProps) {
       available: true
     },
     {
-      title: 'Gérer les responsables',
-      description: 'Modifier les fiches des responsables de formation',
+      title: canManageUsers(user.role) ? 'Gérer les responsables' : 'Consulter les responsables',
+      description: canManageUsers(user.role)
+        ? 'Modifier les fiches et affectations des responsables de formation'
+        : 'Voir la liste des responsables (consultation seule)',
       icon: Users,
       color: 'bg-green-500',
       view: 'manage-responsibles' as View,
-      available: canManageUsers(user.role)
+      available: true
     },
     {
-      title: 'Droits et rôles',
-      description: 'Administrer les permissions et rôles (préétablis + demandes)',
+      title: 'Demandes de rôles',
+      description: canReviewRoleRequests(user.role)
+        ? 'Valider les demandes de rôles spécifiques et consulter les rôles préétablis (Services centraux).'
+        : 'Demander un rôle spécifique pour votre structure ou consulter vos demandes.',
       icon: Shield,
       color: 'bg-purple-500',
       view: 'manage-roles' as View,

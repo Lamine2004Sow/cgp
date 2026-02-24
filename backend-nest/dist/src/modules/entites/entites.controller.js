@@ -18,6 +18,7 @@ const roles_constants_1 = require("../../auth/roles.constants");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const entites_service_1 = require("./entites.service");
 const entites_list_query_dto_1 = require("./dto/entites-list-query.dto");
+const update_entite_dto_1 = require("./dto/update-entite.dto");
 let EntitesController = class EntitesController {
     entitesService;
     constructor(entitesService) {
@@ -26,6 +27,22 @@ let EntitesController = class EntitesController {
     async list(query) {
         const items = await this.entitesService.list(query.yearId);
         return { items };
+    }
+    async getOne(id) {
+        const idNum = Number(id);
+        if (Number.isNaN(idNum))
+            throw new common_1.NotFoundException('Identifiant invalide');
+        const item = await this.entitesService.findOne(idNum);
+        if (!item)
+            throw new common_1.NotFoundException('Entité introuvable');
+        return { item };
+    }
+    async update(id, payload) {
+        const idNum = Number(id);
+        if (Number.isNaN(idNum))
+            throw new common_1.NotFoundException('Identifiant invalide');
+        const item = await this.entitesService.update(idNum, payload);
+        return { item };
     }
 };
 exports.EntitesController = EntitesController;
@@ -37,6 +54,23 @@ __decorate([
     __metadata("design:paramtypes", [entites_list_query_dto_1.EntitesListQueryDto]),
     __metadata("design:returntype", Promise)
 ], EntitesController.prototype, "list", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], EntitesController.prototype, "getOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_entite_dto_1.UpdateEntiteDto]),
+    __metadata("design:returntype", Promise)
+], EntitesController.prototype, "update", null);
 exports.EntitesController = EntitesController = __decorate([
     (0, common_1.Controller)('entites'),
     __metadata("design:paramtypes", [entites_service_1.EntitesService])

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { User, UserRole, AcademicYear, EntiteStructure, canGenerateOrgChart } from "../types";
-import { Download, GitBranch, Lock, Unlock, FileDown } from "lucide-react";
+import { User, UserRole, AcademicYear, EntiteStructure, canGenerateOrgChart, getRoleLabelSafe } from "../types";
+import { Download, GitBranch, Lock, Unlock, FileDown, Eye } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
 interface OrgChartProps {
@@ -38,7 +38,7 @@ type ApiOrgNode = {
 const levelLabel = (type: string) => {
   const normalized = type.toLowerCase();
   if (normalized === "composante") return "Composante";
-  if (normalized === "departement") return "Departement";
+  if (normalized === "departement") return "Département";
   if (normalized === "mention") return "Mention";
   if (normalized === "parcours") return "Parcours";
   if (normalized === "niveau") return "Niveau";
@@ -184,6 +184,32 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
     }
   };
 
+  /** Charge un organigramme existant sans générer : pour la racine sélectionnée si disponible, sinon le dernier généré. */
+  const handleViewOrganigramme = async () => {
+    if (!authLogin) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const rootId = selectedRoot ? Number(selectedRoot) : null;
+      const existingForRoot =
+        rootId != null
+          ? organigrammes.find((o) => o.id_entite_racine === rootId)
+          : null;
+      if (existingForRoot) {
+        await handleLoadOrganigramme(String(existingForRoot.id_organigramme));
+      } else {
+        await loadLatest();
+        if (organigrammes.length > 0 && rootId != null) {
+          setError(null);
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors du chargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFreeze = async () => {
     if (!authLogin || !orgaMeta) return;
     setLoading(true);
@@ -239,11 +265,19 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
   const isGenerated = Boolean(orgaMeta);
   const isFrozen = orgaMeta?.est_fige || false;
 
+  const rootNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    entites.forEach((e) => map.set(e.id_entite, e.nom));
+    return map;
+  }, [entites]);
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-slate-900 mb-2">Organigramme - {currentYear.year}</h2>
-        <p className="text-slate-600">Visualiser et generer les organigrammes hierarchiques</p>
+        <h2 className="text-slate-900 mb-2">Organigramme — {currentYear.year}</h2>
+        <p className="text-slate-600">
+          Visualisez et générez les organigrammes hiérarchiques de votre structure (composante, département, mention, parcours).
+        </p>
       </div>
 
       {error && (
@@ -253,18 +287,25 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
       )}
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <h3 className="text-slate-900 mb-4">Controles de l'organigramme</h3>
+        <h3 className="text-slate-900 mb-4">Contrôles de l'organigramme</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="p-4 border border-slate-200 rounded-lg">
-            <div className="text-sm text-slate-600 mb-2">Organigramme genere ?</div>
-            <div className="flex items-center gap-2">
+            <div className="text-sm text-slate-600 mb-2">Organigramme généré ?</div>
+            <div className="flex flex-col gap-1">
               {isGenerated ? (
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                  Oui
-                </span>
+                <>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium w-fit">
+                    Oui
+                  </span>
+                  {orgaMeta?.generated_at && (
+                    <span className="text-xs text-slate-500">
+                      Dernier généré le {new Date(orgaMeta.generated_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+                    </span>
+                  )}
+                </>
               ) : (
-                <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm font-medium w-fit">
                   Non
                 </span>
               )}
@@ -272,7 +313,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
           </div>
 
           <div className="p-4 border border-slate-200 rounded-lg">
-            <div className="text-sm text-slate-600 mb-2">Organigramme fige ?</div>
+            <div className="text-sm text-slate-600 mb-2">Organigramme figé ?</div>
             <div className="flex items-center gap-2">
               {isFrozen ? (
                 <>
@@ -293,9 +334,9 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
           </div>
 
           <div className="p-4 border border-slate-200 rounded-lg">
-            <div className="text-sm text-slate-600 mb-2">Portee de generation</div>
+            <div className="text-sm text-slate-600 mb-2">Portée de génération</div>
             <div className="text-sm text-slate-900 font-medium">
-              {canGenerate ? "Selon votre role" : "Consultation seule"}
+              {canGenerate ? "Selon votre rôle" : "Consultation seule"}
             </div>
           </div>
         </div>
@@ -313,7 +354,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
               >
                 <option value="ALL">Toutes</option>
                 <option value="COMPOSANTE">Composante</option>
-                <option value="DEPARTEMENT">Departement</option>
+                <option value="DEPARTEMENT">Département</option>
                 <option value="MENTION">Mention</option>
                 <option value="PARCOURS">Parcours</option>
                 <option value="NIVEAU">Niveau</option>
@@ -322,7 +363,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Selectionner la structure racine
+                Sélectionner la structure racine
               </label>
               <select
                 value={selectedRoot}
@@ -338,11 +379,24 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
               </select>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleViewOrganigramme}
+                disabled={loading || organigrammes.length === 0}
+                className="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60"
+                title={
+                  organigrammes.length === 0
+                    ? "Aucun organigramme enregistré pour cette année"
+                    : "Charger un organigramme déjà généré (sans en créer un nouveau)"
+                }
+              >
+                <Eye className="w-5 h-5" />
+                Voir l'organigramme
+              </button>
               <button
                 onClick={() => {
                   if (!selectedRoot) {
-                    setError("Selectionnez une structure racine");
+                    setError("Sélectionnez une structure racine");
                     return;
                   }
                   handleGenerate();
@@ -351,7 +405,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
                 className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60"
               >
                 <GitBranch className="w-5 h-5" />
-                Generer l'organigramme
+                Générer l'organigramme
               </button>
               {tree && canFreeze && !isFrozen && orgaMeta && (
                 <button
@@ -370,16 +424,27 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         {isFrozen && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm text-red-800">
-              <strong>Organigramme fige :</strong> Aucune modification possible.
+              <strong>Organigramme figé :</strong> Aucune modification possible.
             </p>
           </div>
         )}
 
         {!canGenerate && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
             <p className="text-sm text-orange-800">
-              <strong>Generation non autorisee :</strong> Vous pouvez uniquement consulter.
+              <strong>Génération non autorisée :</strong> Vous pouvez uniquement consulter.
             </p>
+            {organigrammes.length > 0 && (
+              <button
+                onClick={handleViewOrganigramme}
+                disabled={loading}
+                className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 text-sm"
+                title="Charger le dernier organigramme généré"
+              >
+                <Eye className="w-4 h-4" />
+                Voir l'organigramme
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -392,7 +457,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center gap-3 text-slate-600">
             <FileDown className="w-5 h-5" />
-            Aucun organigramme genere pour cette annee.
+            Aucun organigramme généré pour cette année.
           </div>
         </div>
       )}
@@ -405,16 +470,16 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
             onChange={(e) => handleLoadOrganigramme(e.target.value)}
             className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
           >
-            <option value="">Selectionner</option>
+            <option value="">Sélectionner</option>
             {organigrammes.map((orga) => (
               <option key={orga.id_organigramme} value={orga.id_organigramme}>
-                {new Date(orga.generated_at).toLocaleDateString("fr-FR")} - racine {orga.id_entite_racine}
+                {new Date(orga.generated_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })} — {rootNameById.get(orga.id_entite_racine) ?? `Racine ${orga.id_entite_racine}`}
               </option>
             ))}
           </select>
         </div>
         {organigrammes.length === 0 && (
-          <div className="text-sm text-slate-500">Aucun organigramme genere pour cette annee.</div>
+          <div className="text-sm text-slate-500">Aucun organigramme généré pour cette année.</div>
         )}
       </div>
 
@@ -434,7 +499,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
               Export {format}
               <div className="text-xs text-slate-400">
                 {!orgaMeta
-                  ? "Generez un organigramme d'abord"
+                  ? "Générez un organigramme d'abord"
                   : "Export disponible"}
               </div>
             </button>
@@ -461,10 +526,10 @@ function renderNode(node: ApiOrgNode, level: number = 0): JSX.Element {
         <div className="font-medium">{node.nom}</div>
         <div className="text-xs opacity-75">{levelLabel(node.type_entite)}</div>
         {node.responsables && node.responsables.length > 0 && (
-          <div className="mt-2 text-xs text-slate-700">
+          <div className="mt-2 text-xs text-slate-700 space-y-0.5">
             {node.responsables.map((resp) => (
               <div key={`${resp.nom}-${resp.id_role}`}>
-                {resp.prenom} {resp.nom} ({resp.id_role})
+                {resp.prenom} {resp.nom} <span className="opacity-80">({getRoleLabelSafe(resp.id_role)})</span>
               </div>
             ))}
           </div>

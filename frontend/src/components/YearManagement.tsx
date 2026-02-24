@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { AcademicYear, getAcademicYearStatusLabel } from "../types";
-import { Calendar, Plus, Copy } from "lucide-react";
+import { Calendar, Plus, Copy, Upload } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
 interface YearManagementProps {
   currentYear: AcademicYear;
   authLogin: string | null;
   onRefresh?: () => Promise<void> | void;
+  onNavigateToImport?: () => void;
 }
 
 type ApiYear = {
@@ -24,11 +25,12 @@ const mapYearStatus = (status: ApiYear["statut"]): AcademicYear["status"] => {
   return "archivee";
 };
 
-export function YearManagement({ currentYear, authLogin, onRefresh }: YearManagementProps) {
+export function YearManagement({ currentYear, authLogin, onRefresh, onNavigateToImport }: YearManagementProps) {
   const [years, setYears] = useState<AcademicYear[]>([]);
-  const [copyAffectations, setCopyAffectations] = useState(false);
+  const [copyAffectations, setCopyAffectations] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastCreatedWithoutAffectations, setLastCreatedWithoutAffectations] = useState(false);
 
   const loadYears = async () => {
     if (!authLogin) return;
@@ -70,6 +72,7 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
 
     setLoading(true);
     setError(null);
+    setLastCreatedWithoutAffectations(false);
     try {
       await apiFetch(`/years/${currentYear.id}/clone`, {
         method: "POST",
@@ -82,12 +85,13 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
         }),
         login: authLogin,
       });
+      setLastCreatedWithoutAffectations(!copyAffectations);
       await loadYears();
       if (onRefresh) {
         await onRefresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la creation");
+      setError(err instanceof Error ? err.message : "Erreur lors de la création");
     } finally {
       setLoading(false);
     }
@@ -118,8 +122,8 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-slate-900 mb-2">Gestion des annees universitaires</h2>
-          <p className="text-slate-600">Reserve aux services centraux</p>
+          <h2 className="text-slate-900 mb-2">Gestion des années universitaires</h2>
+          <p className="text-slate-600">Réservé aux Services centraux</p>
         </div>
         <button
           onClick={handleCloneYear}
@@ -127,7 +131,7 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-60"
         >
           <Plus className="w-5 h-5" />
-          Ouvrir annee suivante
+          Ouvrir l'année suivante
         </button>
       </div>
 
@@ -137,9 +141,27 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
         </div>
       )}
 
+      {lastCreatedWithoutAffectations && onNavigateToImport && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start gap-3">
+          <Upload className="w-5 h-5 text-indigo-600 mt-0.5" />
+          <div>
+            <p className="text-indigo-900 font-medium">Année créée (structure seule)</p>
+            <p className="text-indigo-700 text-sm">
+              Vous pouvez maintenant importer les responsables depuis un fichier CSV (onglet Import / Export).
+            </p>
+            <button
+              onClick={() => { setLastCreatedWithoutAffectations(false); onNavigateToImport(); }}
+              className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm"
+            >
+              Aller à l'import
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-slate-900">Annees existantes</h3>
+          <h3 className="text-slate-900">Années existantes</h3>
           <label className="flex items-center gap-2 text-sm text-slate-600">
             <input
               type="checkbox"
@@ -147,7 +169,7 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
               onChange={(e) => setCopyAffectations(e.target.checked)}
               className="h-4 w-4 text-indigo-600 rounded"
             />
-            Copier les affectations
+            Recopier les affectations depuis l'année courante
           </label>
         </div>
         {loading && years.length === 0 ? (
@@ -158,7 +180,7 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Annee
+                    Année
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Statut
@@ -194,7 +216,7 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {year.id === currentYear.id ? "Annee courante" : "-"}
+                      {year.id === currentYear.id ? "Année courante" : "-"}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
@@ -227,10 +249,14 @@ export function YearManagement({ currentYear, authLogin, onRefresh }: YearManage
       <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start gap-3">
         <Copy className="w-5 h-5 text-indigo-600 mt-0.5" />
         <div>
-          <p className="text-indigo-900 font-medium">Duplication de l'annee</p>
+          <p className="text-indigo-900 font-medium">Création d'une nouvelle année</p>
           <p className="text-indigo-700 text-sm">
-            La duplication copie la structure des entites. Vous pouvez aussi copier les affectations
-            pour preparer l'annee suivante.
+            <strong>Option 1 — Recopier les données de l'année précédente :</strong> cochez « Recopier les affectations ».
+            La structure (composantes, mentions, etc.) et les affectations seront copiées.
+          </p>
+          <p className="text-indigo-700 text-sm mt-2">
+            <strong>Option 2 — Structure seule puis import :</strong> décochez « Recopier les affectations ».
+            Seule la structure sera copiée. Vous pourrez ensuite importer les responsables depuis un fichier CSV ou Excel (onglet Import / Export).
           </p>
         </div>
       </div>

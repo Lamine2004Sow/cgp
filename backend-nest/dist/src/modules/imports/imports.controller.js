@@ -18,10 +18,18 @@ const roles_constants_1 = require("../../auth/roles.constants");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const imports_service_1 = require("./imports.service");
 const import_responsables_dto_1 = require("./dto/import-responsables.dto");
+const import_confirm_dto_1 = require("./dto/import-confirm.dto");
 let ImportsController = class ImportsController {
     importsService;
     constructor(importsService) {
         this.importsService = importsService;
+    }
+    async previewResponsables(payload) {
+        return this.importsService.previewResponsables(payload);
+    }
+    async confirmResponsables(payload) {
+        const result = await this.importsService.importResponsables({ rows: payload.rows }, payload.excludeIndices);
+        return { result };
     }
     async importResponsables(payload) {
         const result = await this.importsService.importResponsables(payload);
@@ -30,8 +38,24 @@ let ImportsController = class ImportsController {
 };
 exports.ImportsController = ImportsController;
 __decorate([
+    (0, common_1.Post)('responsables/preview'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [import_responsables_dto_1.ImportResponsablesDto]),
+    __metadata("design:returntype", Promise)
+], ImportsController.prototype, "previewResponsables", null);
+__decorate([
+    (0, common_1.Post)('responsables/confirm'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [import_confirm_dto_1.ImportConfirmDto]),
+    __metadata("design:returntype", Promise)
+], ImportsController.prototype, "confirmResponsables", null);
+__decorate([
     (0, common_1.Post)('responsables'),
-    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX, roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [import_responsables_dto_1.ImportResponsablesDto]),

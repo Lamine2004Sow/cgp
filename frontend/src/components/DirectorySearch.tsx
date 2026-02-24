@@ -121,7 +121,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
     <div className="space-y-6">
       <div>
         <h2 className="text-slate-900 mb-2">Recherche - {currentYear.year}</h2>
-        <p className="text-slate-600">Acces par onglets: responsables, formations, structures et secretariats</p>
+        <p className="text-slate-600">Recherche par onglets : responsables, formations, structures et secrétariats.</p>
       </div>
 
       {error && (

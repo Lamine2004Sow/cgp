@@ -47,6 +47,7 @@ export class UsersController {
 
   @Post()
   @Roles(
+    ROLE_IDS.SERVICES_CENTRAUX,
     ROLE_IDS.DIRECTEUR_COMPOSANTE,
     ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
     ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
@@ -90,6 +91,7 @@ export class UsersController {
       }
     } else {
       const managerRoles = new Set<string>([
+        ROLE_IDS.SERVICES_CENTRAUX,
         ROLE_IDS.DIRECTEUR_COMPOSANTE,
         ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
         ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
@@ -112,7 +114,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(ROLE_IDS.DIRECTEUR_COMPOSANTE)
+  @Roles(ROLE_IDS.SERVICES_CENTRAUX, ROLE_IDS.DIRECTEUR_COMPOSANTE)
   async remove(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id') id: string,
