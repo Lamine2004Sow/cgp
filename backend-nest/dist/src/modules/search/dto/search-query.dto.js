@@ -17,6 +17,8 @@ class SearchQueryDto {
     q;
     roleId;
     typeEntite;
+    page;
+    pageSize;
 }
 exports.SearchQueryDto = SearchQueryDto;
 __decorate([
@@ -41,4 +43,18 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], SearchQueryDto.prototype, "typeEntite", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], SearchQueryDto.prototype, "page", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], SearchQueryDto.prototype, "pageSize", void 0);
 //# sourceMappingURL=search-query.dto.js.map

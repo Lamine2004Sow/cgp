@@ -14,8 +14,9 @@ const app_controller_1 = require("./app.controller");
 const auth_module_1 = require("./auth/auth.module");
 const authorization_service_1 = require("./auth/authorization.service");
 const prisma_module_1 = require("./common/prisma/prisma.module");
-const http_exception_filter_1 = require("./common/filters/http-exception.filter");
+const all_exceptions_filter_1 = require("./common/filters/all-exceptions.filter");
 const mock_auth_guard_1 = require("./common/guards/mock-auth.guard");
+const throttle_guard_1 = require("./common/guards/throttle.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 const scope_guard_1 = require("./common/guards/scope.guard");
 const year_guard_1 = require("./common/guards/year.guard");
@@ -23,11 +24,13 @@ const audit_interceptor_1 = require("./common/interceptors/audit.interceptor");
 const affectations_module_1 = require("./modules/affectations/affectations.module");
 const annees_module_1 = require("./modules/annees/annees.module");
 const audit_module_1 = require("./modules/audit/audit.module");
+const dashboard_module_1 = require("./modules/dashboard/dashboard.module");
 const delegations_module_1 = require("./modules/delegations/delegations.module");
 const demandes_module_1 = require("./modules/demandes/demandes.module");
 const entites_module_1 = require("./modules/entites/entites.module");
 const exports_module_1 = require("./modules/exports/exports.module");
 const imports_module_1 = require("./modules/imports/imports.module");
+const notifications_module_1 = require("./modules/notifications/notifications.module");
 const organigrammes_module_1 = require("./modules/organigrammes/organigrammes.module");
 const roles_module_1 = require("./modules/roles/roles.module");
 const search_module_1 = require("./modules/search/search.module");
@@ -55,13 +58,16 @@ exports.AppModule = AppModule = __decorate([
             organigrammes_module_1.OrganigrammesModule,
             demandes_module_1.DemandesModule,
             audit_module_1.AuditModule,
+            dashboard_module_1.DashboardModule,
             exports_module_1.ExportsModule,
             imports_module_1.ImportsModule,
+            notifications_module_1.NotificationsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
             authorization_service_1.AuthorizationService,
-            { provide: core_1.APP_FILTER, useClass: http_exception_filter_1.HttpExceptionFilter },
+            { provide: core_1.APP_FILTER, useClass: all_exceptions_filter_1.AllExceptionsFilter },
+            { provide: core_1.APP_GUARD, useClass: throttle_guard_1.ThrottleGuard },
             { provide: core_1.APP_INTERCEPTOR, useClass: audit_interceptor_1.AuditInterceptor },
             { provide: core_1.APP_GUARD, useClass: mock_auth_guard_1.MockAuthGuard },
             { provide: core_1.APP_GUARD, useClass: roles_guard_1.RolesGuard },

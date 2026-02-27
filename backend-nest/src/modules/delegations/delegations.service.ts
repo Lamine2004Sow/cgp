@@ -42,9 +42,24 @@ export class DelegationsService {
     return items.map((item) => this.mapDelegation(item));
   }
 
-  async create(delegantId: string, payload: CreateDelegationDto) {
+  async create(delegantId: string, payload: CreateDelegationDto, user?: CurrentUser) {
     if (String(payload.delegataire_id) === delegantId) {
       throw new BadRequestException('delegataire_id must differ from delegant');
+    }
+
+    // Vérifier que le délégant a bien une affectation sur l'entité cible
+    if (user && !this.isServicesCentraux(user)) {
+      const hasEntiteAccess = await this.prisma.affectation.findFirst({
+        where: {
+          id_user: BigInt(delegantId),
+          id_entite: BigInt(payload.id_entite),
+        },
+      });
+      if (!hasEntiteAccess) {
+        throw new ForbiddenException(
+          "Vous n'avez pas d'affectation sur cette entité et ne pouvez pas y déléguer des droits",
+        );
+      }
     }
 
     const created = await this.prisma.delegation.create({

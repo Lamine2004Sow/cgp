@@ -43,9 +43,20 @@ let DelegationsService = class DelegationsService {
         });
         return items.map((item) => this.mapDelegation(item));
     }
-    async create(delegantId, payload) {
+    async create(delegantId, payload, user) {
         if (String(payload.delegataire_id) === delegantId) {
             throw new common_1.BadRequestException('delegataire_id must differ from delegant');
+        }
+        if (user && !this.isServicesCentraux(user)) {
+            const hasEntiteAccess = await this.prisma.affectation.findFirst({
+                where: {
+                    id_user: BigInt(delegantId),
+                    id_entite: BigInt(payload.id_entite),
+                },
+            });
+            if (!hasEntiteAccess) {
+                throw new common_1.ForbiddenException("Vous n'avez pas d'affectation sur cette entité et ne pouvez pas y déléguer des droits");
+            }
         }
         const created = await this.prisma.delegation.create({
             data: {

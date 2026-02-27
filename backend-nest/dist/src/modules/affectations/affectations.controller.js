@@ -18,6 +18,7 @@ const roles_constants_1 = require("../../auth/roles.constants");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const affectations_service_1 = require("./affectations.service");
 const create_affectation_dto_1 = require("./dto/create-affectation.dto");
+const update_affectation_dto_1 = require("./dto/update-affectation.dto");
 let AffectationsController = class AffectationsController {
     affectationsService;
     constructor(affectationsService) {
@@ -27,16 +28,53 @@ let AffectationsController = class AffectationsController {
         const affectation = await this.affectationsService.create(payload);
         return { affectation };
     }
+    async findOne(id) {
+        const affectation = await this.affectationsService.findOne(id);
+        return { affectation };
+    }
+    async update(id, payload) {
+        const affectation = await this.affectationsService.update(id, payload);
+        return { affectation };
+    }
+    async remove(id) {
+        await this.affectationsService.remove(id);
+    }
 };
 exports.AffectationsController = AffectationsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT, roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_affectation_dto_1.CreateAffectationDto]),
     __metadata("design:returntype", Promise)
 ], AffectationsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AffectationsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT, roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_affectation_dto_1.UpdateAffectationDto]),
+    __metadata("design:returntype", Promise)
+], AffectationsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.DIRECTEUR_COMPOSANTE, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF, roles_constants_1.ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT, roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AffectationsController.prototype, "remove", null);
 exports.AffectationsController = AffectationsController = __decorate([
     (0, common_1.Controller)('affectations'),
     __metadata("design:paramtypes", [affectations_service_1.AffectationsService])

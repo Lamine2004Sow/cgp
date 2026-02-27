@@ -17,6 +17,13 @@ export class AnneesController {
     return { items };
   }
 
+  @Get(':id')
+  @Roles(...Object.values(ROLE_IDS))
+  async findOne(@Param('id') id: string) {
+    const year = await this.anneesService.findOne(id);
+    return { year };
+  }
+
   @Post(':id/clone')
   @Roles(ROLE_IDS.SERVICES_CENTRAUX)
   async clone(@Param('id') id: string, @Body() payload: CloneYearDto) {

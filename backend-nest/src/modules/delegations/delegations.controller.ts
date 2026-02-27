@@ -44,7 +44,7 @@ export class DelegationsController {
     @CurrentUser() user: CurrentUserType,
     @Body() payload: CreateDelegationDto,
   ) {
-    const delegation = await this.delegationsService.create(user.userId, payload);
+    const delegation = await this.delegationsService.create(user.userId, payload, user);
     return { delegation };
   }
 

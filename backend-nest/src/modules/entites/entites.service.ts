@@ -36,12 +36,16 @@ export type AffectationPerson = {
   is_responsable: boolean;
 };
 
-export type EntiteDetail = EntiteListItem & {
+/** Base + champs optionnels par type d'entité (sans listes / comptages) */
+export type EntiteDetailBase = EntiteListItem & {
   site_web?: string | null;
   code_interne?: string | null;
   type_diplome?: string | null;
   code_parcours?: string | null;
   libelle_court?: string | null;
+};
+
+export type EntiteDetail = EntiteDetailBase & {
   /** Responsables (direction, responsable de formation, etc.) */
   responsables: AffectationPerson[];
   /** Secrétariat et autres affectations sur cette entité */
@@ -68,7 +72,7 @@ export class EntitesService {
     mention?: { type_diplome: string | null } | null;
     parcours?: { code_parcours: string | null } | null;
     niveau?: { libelle_court: string | null } | null;
-  }): EntiteDetail {
+  }): EntiteDetailBase {
     const base: EntiteListItem = {
       id_entite: Number(item.id_entite),
       id_annee: Number(item.id_annee),
@@ -78,7 +82,7 @@ export class EntitesService {
       tel_service: item.tel_service,
       bureau_service: item.bureau_service,
     };
-    const detail: EntiteDetail = { ...base };
+    const detail: EntiteDetailBase = { ...base };
     if (item.composante) detail.site_web = item.composante.site_web;
     if (item.departement) detail.code_interne = item.departement.code_interne;
     if (item.mention) detail.type_diplome = item.mention.type_diplome;

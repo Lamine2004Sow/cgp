@@ -285,11 +285,29 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
                       </span>
                     </div>
                     <div className="mt-3 text-xs text-slate-500 space-y-1">
-                      <div>Cree le {new Date(report.date_creation).toLocaleDateString("fr-FR")}</div>
-                      <div>Auteur: {auteur}</div>
-                      {report.statut !== "OUVERT" && <div>Pris en charge par: {traitant}</div>}
-                      {report.statut === "CLOTURE" && <div>Cloture par: {cloture}</div>}
+                      <div>Créé le {new Date(report.date_creation).toLocaleDateString("fr-FR")}</div>
+                      <div>Auteur : {auteur}</div>
+                      {report.statut !== "OUVERT" && (
+                        <div className="flex items-center gap-1">
+                          <span>Pris en charge par : <span className="font-medium text-slate-700">{traitant}</span></span>
+                          {report.date_prise_en_charge && (
+                            <span className="text-slate-400">
+                              — le {new Date(report.date_prise_en_charge).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                              {" à "}
+                              {new Date(report.date_prise_en_charge).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {report.statut === "CLOTURE" && <div>Clôturé par : {cloture}</div>}
                     </div>
+
+                    {report.statut !== "OUVERT" && report.commentaire_prise_en_charge && (
+                      <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                        <span className="font-medium">Note de prise en charge :</span>{" "}
+                        {report.commentaire_prise_en_charge}
+                      </div>
+                    )}
 
                     {report.statut === "OUVERT" && (
                       <div className="mt-4">
@@ -338,7 +356,15 @@ export function ErrorReports({ userRole, currentYear, authLogin, entites, curren
                     )}
 
                     {report.statut === "EN_COURS" && !isMine && (
-                      <div className="mt-4 text-xs text-slate-500">En cours de traitement.</div>
+                      <div className="mt-4 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          En cours de traitement par <span className="font-medium">{traitant}</span>
+                          {report.date_prise_en_charge && (
+                            <> depuis le {new Date(report.date_prise_en_charge).toLocaleDateString("fr-FR")}</>
+                          )}
+                        </span>
+                      </div>
                     )}
 
                     {report.statut === "CLOTURE" && report.commentaire_cloture && (

@@ -11,9 +11,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("./common/prisma/prisma.service");
 let AppController = class AppController {
-    health() {
-        return { status: 'ok' };
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async health() {
+        try {
+            await this.prisma.$queryRawUnsafe('SELECT 1');
+            return { status: 'ok' };
+        }
+        catch {
+            throw new common_1.ServiceUnavailableException('Database is not ready yet.');
+        }
     }
 };
 exports.AppController = AppController;
@@ -21,9 +32,10 @@ __decorate([
     (0, common_1.Get)('health'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AppController.prototype, "health", null);
 exports.AppController = AppController = __decorate([
-    (0, common_1.Controller)()
+    (0, common_1.Controller)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map

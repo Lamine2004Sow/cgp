@@ -12,6 +12,9 @@ const roles_constants_1 = require("../../auth/roles.constants");
 let YearGuard = class YearGuard {
     canActivate(context) {
         const request = context.switchToHttp().getRequest();
+        if (request.path?.endsWith('/health')) {
+            return true;
+        }
         const user = request.user;
         if (!user) {
             return false;

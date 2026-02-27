@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Filter, GraduationCap, Mail, Phone, Search, Users } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, Filter, GraduationCap, Mail, Phone, Search, Users } from "lucide-react";
 import { AcademicYear, EntiteStructure } from "../types";
 import { apiFetch } from "../lib/api";
 
@@ -51,16 +51,31 @@ type ApiStructure = {
   bureau_service: string | null;
 };
 
+type PagedResponse<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+const PAGE_SIZE = 20;
+
 export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps) {
   const [activeTab, setActiveTab] = useState<SearchTab>("responsables");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [responsables, setResponsables] = useState<ApiResponsable[]>([]);
   const [formations, setFormations] = useState<ApiFormation[]>([]);
   const [structures, setStructures] = useState<ApiStructure[]>([]);
   const [secretariats, setSecretariats] = useState<ApiStructure[]>([]);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, query, roleFilter, currentYear.id]);
 
   useEffect(() => {
     if (!authLogin) return;
@@ -72,6 +87,8 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
       try {
         const params = new URLSearchParams();
         params.set("yearId", currentYear.id);
+        params.set("page", String(page));
+        params.set("pageSize", String(PAGE_SIZE));
         if (query.trim()) {
           params.set("q", query.trim());
         }
@@ -80,8 +97,10 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
         }
 
         const path = `/search/${activeTab}?${params.toString()}`;
-        const data = await apiFetch<{ items: unknown[] }>(path, { login: authLogin });
+        const data = await apiFetch<PagedResponse<unknown>>(path, { login: authLogin });
         if (!mounted) return;
+
+        setTotal(data.total ?? 0);
 
         if (activeTab === "responsables") {
           setResponsables(data.items as ApiResponsable[]);
@@ -104,7 +123,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
     return () => {
       mounted = false;
     };
-  }, [activeTab, authLogin, currentYear.id, query, roleFilter]);
+  }, [activeTab, authLogin, currentYear.id, query, roleFilter, page]);
 
   const roleOptions = useMemo(
     () =>
@@ -116,6 +135,8 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
       }),
     [responsables],
   );
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -260,6 +281,32 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
+            <span className="text-sm text-slate-500">
+              {total} résultat{total > 1 ? "s" : ""} — page {page} / {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Précédent
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Suivant
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

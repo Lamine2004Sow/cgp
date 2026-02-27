@@ -20,12 +20,14 @@ export type AffectationPerson = {
     role_libelle: string;
     is_responsable: boolean;
 };
-export type EntiteDetail = EntiteListItem & {
+export type EntiteDetailBase = EntiteListItem & {
     site_web?: string | null;
     code_interne?: string | null;
     type_diplome?: string | null;
     code_parcours?: string | null;
     libelle_court?: string | null;
+};
+export type EntiteDetail = EntiteDetailBase & {
     responsables: AffectationPerson[];
     secretariat: AffectationPerson[];
     nombre_sous_responsables: number;

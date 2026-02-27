@@ -18,14 +18,26 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    throw new Error(
+      "Serveur inaccessible. Vérifiez que le backend est démarré (ex. port 3001)."
+    );
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    const message = errorBody?.message || errorBody?.error || "Erreur API";
+    const rawMessage = errorBody?.message ?? errorBody?.error;
+    const message = Array.isArray(rawMessage)
+      ? rawMessage[0]
+      : typeof rawMessage === "string"
+        ? rawMessage
+        : "Erreur API";
     throw new Error(message);
   }
 
