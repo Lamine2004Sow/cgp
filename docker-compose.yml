@@ -37,6 +37,12 @@ services:
       - ./backend-nest:/app
       - ./files:/app/files:ro
       - backend-nest-node-modules:/app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/api/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 40s
 
   frontend:
     build:
@@ -46,7 +52,8 @@ services:
       CHOKIDAR_USEPOLLING: "true"
       VITE_API_TARGET: "http://backend-nest:3001"
     depends_on:
-      - backend-nest
+      backend-nest:
+        condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:

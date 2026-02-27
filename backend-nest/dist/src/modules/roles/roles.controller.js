@@ -39,7 +39,8 @@ let RolesController = class RolesController {
         return { request };
     }
     async list() {
-        return this.rolesService.findAll();
+        const items = await this.rolesService.findAll();
+        return { items };
     }
 };
 exports.RolesController = RolesController;

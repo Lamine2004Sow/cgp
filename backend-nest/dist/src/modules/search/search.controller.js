@@ -24,20 +24,16 @@ let SearchController = class SearchController {
         this.searchService = searchService;
     }
     async responsables(query) {
-        const items = await this.searchService.responsables(query);
-        return { items };
+        return this.searchService.responsables(query);
     }
     async formations(query) {
-        const items = await this.searchService.formations(query);
-        return { items };
+        return this.searchService.formations(query);
     }
     async structures(query) {
-        const items = await this.searchService.structures(query);
-        return { items };
+        return this.searchService.structures(query);
     }
     async secretariats(query) {
-        const items = await this.searchService.secretariats(query);
-        return { items };
+        return this.searchService.secretariats(query);
     }
 };
 exports.SearchController = SearchController;

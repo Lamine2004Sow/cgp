@@ -49,5 +49,7 @@ export declare class RolesController {
             date_decision: string | null;
         };
     }>;
-    list(): Promise<import("./dto/role-response.dto").RoleResponseDto[]>;
+    list(): Promise<{
+        items: import("./dto/role-response.dto").RoleResponseDto[];
+    }>;
 }

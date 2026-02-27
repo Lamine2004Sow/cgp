@@ -29,6 +29,10 @@ let AnneesController = class AnneesController {
         const items = await this.anneesService.list(query.statut);
         return { items };
     }
+    async findOne(id) {
+        const year = await this.anneesService.findOne(id);
+        return { year };
+    }
     async clone(id, payload) {
         const year = await this.anneesService.cloneYear(id, payload);
         return { year };
@@ -47,6 +51,14 @@ __decorate([
     __metadata("design:paramtypes", [years_list_query_dto_1.YearsListQueryDto]),
     __metadata("design:returntype", Promise)
 ], AnneesController.prototype, "list", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AnneesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(':id/clone'),
     (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),

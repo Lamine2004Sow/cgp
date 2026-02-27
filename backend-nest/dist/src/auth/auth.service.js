@@ -18,29 +18,40 @@ let AuthService = class AuthService {
         this.prisma = prisma;
     }
     async buildCurrentUserByLogin(login) {
-        const user = await this.prisma.utilisateur.findUnique({
-            where: { login },
-            include: {
-                affectation: {
-                    include: {
-                        role: true,
-                        entite_structure: true,
-                        annee_universitaire: true,
+        try {
+            const user = await this.prisma.utilisateur.findUnique({
+                where: { login },
+                include: {
+                    affectation: {
+                        include: {
+                            role: true,
+                            entite_structure: true,
+                            annee_universitaire: true,
+                        },
                     },
                 },
-            },
-        });
-        if (!user) {
-            return null;
+            });
+            if (!user) {
+                return null;
+            }
+            return {
+                userId: String(user.id_user),
+                login: user.login,
+                nom: user.nom,
+                prenom: user.prenom,
+                emailInstitutionnel: user.email_institutionnel,
+                affectations: user.affectation.map((affectation) => this.mapAffectation(affectation)),
+            };
         }
-        return {
-            userId: String(user.id_user),
-            login: user.login,
-            nom: user.nom,
-            prenom: user.prenom,
-            emailInstitutionnel: user.email_institutionnel,
-            affectations: user.affectation.map((affectation) => this.mapAffectation(affectation)),
-        };
+        catch (err) {
+            const message = err && typeof err.message === 'string'
+                ? err.message
+                : 'Service indisponible';
+            if (message.includes('connect') || message.includes('Connection')) {
+                throw new common_1.HttpException({ message: 'Base de données indisponible. Vérifiez que le serveur et la base sont démarrés.' }, common_1.HttpStatus.SERVICE_UNAVAILABLE);
+            }
+            throw new common_1.HttpException({ message: 'Erreur lors de la vérification de l\'utilisateur.' }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
     mapAffectation(affectation) {
         return {

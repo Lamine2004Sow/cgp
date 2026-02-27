@@ -17,6 +17,9 @@ export declare class SearchController {
             type_entite: import("@prisma/client").$Enums.entite_type;
             id_annee: number;
         }[];
+        page: number;
+        pageSize: number;
+        total: number;
     }>;
     formations(query: SearchQueryDto): Promise<{
         items: {
@@ -34,6 +37,9 @@ export declare class SearchController {
                 role_label: string;
             }[];
         }[];
+        page: number;
+        pageSize: number;
+        total: number;
     }>;
     structures(query: SearchQueryDto): Promise<{
         items: {
@@ -45,6 +51,9 @@ export declare class SearchController {
             tel_service: string | null;
             bureau_service: string | null;
         }[];
+        page: number;
+        pageSize: number;
+        total: number;
     }>;
     secretariats(query: SearchQueryDto): Promise<{
         items: {
@@ -55,5 +64,8 @@ export declare class SearchController {
             tel_service: string | null;
             bureau_service: string | null;
         }[];
+        page: number;
+        pageSize: number;
+        total: number;
     }>;
 }

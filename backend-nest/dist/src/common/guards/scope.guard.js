@@ -20,6 +20,9 @@ let ScopeGuard = class ScopeGuard {
     }
     async canActivate(context) {
         const request = context.switchToHttp().getRequest();
+        if (request.path?.endsWith('/health')) {
+            return true;
+        }
         const user = request.user;
         if (!user) {
             return false;

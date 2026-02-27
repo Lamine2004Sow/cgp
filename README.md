@@ -13,13 +13,30 @@
 - Front : http://localhost:5173
 - Back : http://localhost:3001/api/health
 - Postgres : localhost:5432
+- Le backend est considéré "ready" uniquement quand `/api/health` répond et que la DB est joignable.
+- Le frontend attend automatiquement que le backend soit `healthy` avant de démarrer.
 
 ### Démarrage
 
 ```bash
 docker compose up -d --build
+docker compose ps
 docker compose logs -f backend-nest
 ```
+
+Attendu dans `docker compose ps` :
+
+- `db` : `healthy`
+- `backend-nest` : `healthy`
+- `frontend` : `up`
+
+### Vérification login après démarrage
+
+```bash
+curl -i -H "x-user-login: sc.admin" http://localhost:5173/api/auth/me
+```
+
+Réponse attendue : `HTTP/1.1 200 OK`.
 
 ### Lancer un service (optionnel)
 
@@ -34,13 +51,12 @@ docker compose up --build db
 docker compose down -v
 docker compose up --build
 ```
-#### Fix immédiat : recréer les conteneurs + réseau proprement
-Fais un reset “safe” (ne touche pas aux volumes) :
+
+### Recréer les conteneurs proprement (sans supprimer la base)
+
 ```bash
 docker compose down
-docker network prune -f
 docker compose up -d --build --force-recreate
-
 ```
 
 ## Sans Docker (local)

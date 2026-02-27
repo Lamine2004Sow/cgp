@@ -17,6 +17,29 @@ let AnneesService = class AnneesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    async findOne(id) {
+        let parsedId;
+        try {
+            parsedId = BigInt(id);
+        }
+        catch {
+            throw new common_1.NotFoundException('Year not found');
+        }
+        const item = await this.prisma.annee_universitaire.findUnique({
+            where: { id_annee: parsedId },
+        });
+        if (!item) {
+            throw new common_1.NotFoundException('Year not found');
+        }
+        return {
+            id_annee: Number(item.id_annee),
+            libelle: item.libelle,
+            date_debut: item.date_debut.toISOString().slice(0, 10),
+            date_fin: item.date_fin.toISOString().slice(0, 10),
+            statut: item.statut,
+            id_annee_source: item.id_annee_source ? Number(item.id_annee_source) : null,
+        };
+    }
     async list(statut) {
         const items = await this.prisma.annee_universitaire.findMany({
             where: statut ? { statut: statut } : undefined,

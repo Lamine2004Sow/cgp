@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { apiFetch, clearStoredLogin, getStoredLogin, setStoredLogin } from "./lib/api";
+import { NotificationBell } from "./components/NotificationBell";
 
 type ApiYear = {
   id_annee: number;
@@ -210,12 +211,17 @@ const ROLE_HIERARCHY: Record<string, number> = {
   "lecture-seule": 99,
 };
 
+const toSafeId = (value: string): number => {
+  const n = Number.parseInt(value, 10);
+  return Number.isNaN(n) ? 0 : n;
+};
+
 const normalizeAffectations = (affectations: ApiCurrentAffectation[]): ApiAffectation[] =>
   (affectations || []).map((aff) => ({
-    id_affectation: Number.parseInt(aff.affectationId, 10) || 0,
+    id_affectation: toSafeId(aff.affectationId),
     id_role: aff.roleId,
-    id_entite: Number.parseInt(aff.entiteId, 10) || 0,
-    id_annee: Number.parseInt(aff.anneeId, 10) || 0,
+    id_entite: toSafeId(aff.entiteId),
+    id_annee: toSafeId(aff.anneeId),
     niveau_hierarchique: ROLE_HIERARCHY[aff.roleId] ?? 999,
     entite_name: aff.entiteName ?? null,
     entite_type: aff.entiteType ?? null,
@@ -548,6 +554,7 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-4">
+              <NotificationBell authLogin={authLogin} />
               <div className="relative">
                 <button
                   onClick={() => setYearSelectorOpen(!yearSelectorOpen)}
@@ -689,7 +696,12 @@ export default function App() {
         <main className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6">
           <div className="mx-auto max-w-6xl">
             {currentView === "dashboard" && (
-              <Dashboard user={currentUser} currentYear={currentYear} onNavigate={setCurrentView} />
+              <Dashboard
+                user={currentUser}
+                currentYear={currentYear}
+                onNavigate={setCurrentView}
+                authLogin={authLogin}
+              />
             )}
             {currentView === "search" && (
               <DirectorySearch

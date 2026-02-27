@@ -63,6 +63,7 @@ export class RolesController {
   @Get()
   @Roles(...Object.values(ROLE_IDS))
   async list() {
-    return this.rolesService.findAll();
+    const items = await this.rolesService.findAll();
+    return { items };
   }
 }

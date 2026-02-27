@@ -19,7 +19,7 @@ export declare class DelegationsService {
         delegataire_nom: string | null;
         entite_nom: string | null;
     }[]>;
-    create(delegantId: string, payload: CreateDelegationDto): Promise<{
+    create(delegantId: string, payload: CreateDelegationDto, user?: CurrentUser): Promise<{
         id_delegation: number;
         delegant_id: number;
         delegataire_id: number;

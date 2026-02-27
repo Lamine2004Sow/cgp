@@ -7,6 +7,10 @@ import { ROLE_IDS } from '../../auth/roles.constants';
 export class YearGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
+    if (request.path?.endsWith('/health')) {
+      return true;
+    }
+
     const user = request.user as CurrentUser | undefined;
 
     if (!user) {

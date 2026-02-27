@@ -30,7 +30,7 @@ let DelegationsController = class DelegationsController {
         return { items };
     }
     async create(user, payload) {
-        const delegation = await this.delegationsService.create(user.userId, payload);
+        const delegation = await this.delegationsService.create(user.userId, payload, user);
         return { delegation };
     }
     async export(user, query) {

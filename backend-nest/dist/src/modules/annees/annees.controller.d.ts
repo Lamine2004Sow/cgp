@@ -15,6 +15,16 @@ export declare class AnneesController {
             id_annee_source: number | null;
         }[];
     }>;
+    findOne(id: string): Promise<{
+        year: {
+            id_annee: number;
+            libelle: string;
+            date_debut: string;
+            date_fin: string;
+            statut: import("@prisma/client").$Enums.annee_statut;
+            id_annee_source: number | null;
+        };
+    }>;
     clone(id: string, payload: CloneYearDto): Promise<{
         year: {
             id_annee: number;

@@ -49,7 +49,10 @@ let UsersService = class UsersService {
                 include: {
                     affectation: {
                         where: yearFilter ? { id_annee: yearFilter } : undefined,
-                        include: { role: true, entite_structure: true },
+                        include: {
+                            role: { select: { niveau_hierarchique: true } },
+                            entite_structure: { select: { nom: true } },
+                        },
                     },
                 },
             }),
@@ -70,11 +73,14 @@ let UsersService = class UsersService {
         catch {
             return null;
         }
-        const user = await this.prisma.utilisateur.findUnique({
-            where: { id_user: parsedId },
+        const user = await this.prisma.utilisateur.findFirst({
+            where: { id_user: parsedId, statut: 'ACTIF' },
             include: {
                 affectation: {
-                    include: { role: true, entite_structure: true },
+                    include: {
+                        role: { select: { niveau_hierarchique: true } },
+                        entite_structure: { select: { nom: true } },
+                    },
                 },
             },
         });
@@ -163,7 +169,16 @@ let UsersService = class UsersService {
         catch {
             throw new common_1.NotFoundException('User not found');
         }
-        await this.prisma.utilisateur.delete({ where: { id_user: parsedId } });
+        const user = await this.prisma.utilisateur.findUnique({
+            where: { id_user: parsedId, statut: 'ACTIF' },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        await this.prisma.utilisateur.update({
+            where: { id_user: parsedId },
+            data: { statut: 'INACTIF' },
+        });
     }
     toUserListItem(user) {
         return {
@@ -185,15 +200,18 @@ let UsersService = class UsersService {
     }
     buildQuery(query, yearFilter) {
         const filters = query.filters?.trim();
-        const baseWhere = filters
-            ? {
-                OR: [
-                    { login: { contains: filters, mode: 'insensitive' } },
-                    { nom: { contains: filters, mode: 'insensitive' } },
-                    { prenom: { contains: filters, mode: 'insensitive' } },
-                ],
-            }
-            : {};
+        const baseWhere = {
+            statut: 'ACTIF',
+            ...(filters
+                ? {
+                    OR: [
+                        { login: { contains: filters, mode: 'insensitive' } },
+                        { nom: { contains: filters, mode: 'insensitive' } },
+                        { prenom: { contains: filters, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
+        };
         const where = yearFilter
             ? {
                 AND: [

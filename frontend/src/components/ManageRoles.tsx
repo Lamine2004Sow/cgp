@@ -10,14 +10,12 @@ interface ManageRolesProps {
 }
 
 type ApiRole = {
-  id_role?: string;
-  id?: string;
+  id: string;
   libelle: string;
   description?: string | null;
-  niveau_hierarchique?: number;
-  niveauHierarchique?: number;
-  is_global?: boolean;
-  isGlobal?: boolean;
+  niveauHierarchique: number;
+  isGlobal: boolean;
+  idComposante?: string | null;
 };
 
 type ApiRoleRequest = {
@@ -28,6 +26,10 @@ type ApiRoleRequest = {
   statut: "EN_ATTENTE" | "VALIDEE" | "REFUSEE";
   date_creation: string;
   date_decision: string | null;
+  createur_nom?: string | null;
+  createur_prenom?: string | null;
+  validateur_nom?: string | null;
+  validateur_prenom?: string | null;
 };
 
 const slugify = (value: string) =>
@@ -45,10 +47,9 @@ const formatDate = (value: string) => {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("fr-FR");
 };
 
-const getRoleId = (role: ApiRole) => role.id_role || role.id || "";
-const getRoleLevel = (role: ApiRole) =>
-  role.niveau_hierarchique ?? role.niveauHierarchique ?? 999;
-const isRoleGlobal = (role: ApiRole) => role.is_global ?? role.isGlobal ?? true;
+const getRoleId = (role: ApiRole) => role.id;
+const getRoleLevel = (role: ApiRole) => role.niveauHierarchique;
+const isRoleGlobal = (role: ApiRole) => role.isGlobal;
 
 export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesProps) {
   const [roles, setRoles] = useState<ApiRole[]>([]);
@@ -69,10 +70,10 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
     setLoading(true);
     setError(null);
     try {
-      const rolesData = await apiFetch<ApiRole[] | { items: ApiRole[] }>("/roles", {
+      const rolesData = await apiFetch<{ items: ApiRole[] }>("/roles", {
         login: authLogin,
       });
-      const roleItems = Array.isArray(rolesData) ? rolesData : rolesData.items || [];
+      const roleItems = rolesData.items || [];
       const sortedRoles = [...roleItems].sort(
         (a, b) => getRoleLevel(a) - getRoleLevel(b),
       );
@@ -360,9 +361,21 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                     </div>
                     <StatusBadge status={request.statut} />
                   </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Demande du {formatDate(request.date_creation)}
+                  <div className="text-xs text-slate-500 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>
+                        Demandé le {formatDate(request.date_creation)}
+                        {(request.createur_nom || request.createur_prenom) && (
+                          <> par <span className="font-medium text-slate-700">
+                            {`${request.createur_prenom || ""} ${request.createur_nom || ""}`.trim()}
+                          </span></>
+                        )}
+                      </span>
+                    </div>
+                    {request.justificatif && (
+                      <div className="text-slate-400 italic pl-5">{request.justificatif}</div>
+                    )}
                   </div>
                   {request.statut === "EN_ATTENTE" && canReview && (
                     <div className="mt-4 flex gap-2">
@@ -382,8 +395,24 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                       </button>
                     </div>
                   )}
-                  {request.statut !== "EN_ATTENTE" && request.date_decision && (
-                    <div className="text-xs text-slate-500 mt-2">Decision le {formatDate(request.date_decision)}</div>
+                  {request.statut !== "EN_ATTENTE" && (
+                    <div className="mt-3 text-xs text-slate-500 flex items-center gap-1.5">
+                      {request.statut === "VALIDEE"
+                        ? <Check className="w-3.5 h-3.5 text-green-600" />
+                        : <X className="w-3.5 h-3.5 text-red-600" />
+                      }
+                      <span>
+                        {request.statut === "VALIDEE" ? "Validé" : "Refusé"}
+                        {(request.validateur_nom || request.validateur_prenom) && (
+                          <> par <span className="font-medium text-slate-700">
+                            {`${request.validateur_prenom || ""} ${request.validateur_nom || ""}`.trim()}
+                          </span></>
+                        )}
+                        {request.date_decision && (
+                          <> le <span className="font-medium">{formatDate(request.date_decision)}</span></>
+                        )}
+                      </span>
+                    </div>
                   )}
                 </div>
               ))}

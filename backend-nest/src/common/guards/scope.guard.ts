@@ -10,6 +10,10 @@ export class ScopeGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+    if (request.path?.endsWith('/health')) {
+      return true;
+    }
+
     const user = request.user as CurrentUser | undefined;
 
     if (!user) {
