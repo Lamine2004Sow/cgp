@@ -1,0 +1,1024 @@
+{
+  "name": ".",
+  "type": "directory",
+  "children": [
+    {
+      "name": "addons_fix.md",
+      "type": "file"
+    },
+    {
+      "name": "backend-nest",
+      "type": "directory",
+      "children": [
+        {
+          "name": "Dockerfile",
+          "type": "file"
+        },
+        {
+          "name": "eslint.config.mjs",
+          "type": "file"
+        },
+        {
+          "name": "nest-cli.json",
+          "type": "file"
+        },
+        {
+          "name": "package.json",
+          "type": "file"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file"
+        },
+        {
+          "name": "prisma.config.ts",
+          "type": "file"
+        },
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "tsconfig.build.json",
+          "type": "file"
+        },
+        {
+          "name": "tsconfig.json",
+          "type": "file"
+        },
+        {
+          "name": "dist",
+          "type": "directory"
+        },
+        {
+          "name": "files",
+          "type": "directory"
+        },
+        {
+          "name": "node_modules",
+          "type": "directory"
+        },
+        {
+          "name": "prisma",
+          "type": "directory",
+          "children": [
+            {
+              "name": "ancien seed.ts",
+              "type": "file"
+            },
+            {
+              "name": "docker-init.ts",
+              "type": "file"
+            },
+            {
+              "name": "reset-db.ts",
+              "type": "file"
+            },
+            {
+              "name": "schema.prisma",
+              "type": "file"
+            },
+            {
+              "name": "seed-from-csv.ts",
+              "type": "file"
+            },
+            {
+              "name": "seed.ts",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "src",
+          "type": "directory",
+          "children": [
+            {
+              "name": "app.controller.spec.ts",
+              "type": "file"
+            },
+            {
+              "name": "app.controller.ts",
+              "type": "file"
+            },
+            {
+              "name": "app.module.ts",
+              "type": "file"
+            },
+            {
+              "name": "main.ts",
+              "type": "file"
+            },
+            {
+              "name": "auth",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "auth.controller.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "auth.module.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "auth.service.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "authorization.service.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "roles.constants.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "common",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "decorators",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "audit.decorator.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "current-user.decorator.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "roles.decorator.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "filters",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "all-exceptions.filter.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "http-exception.filter.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "guards",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "mock-auth.guard.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "roles.guard.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "scope.guard.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "throttle.guard.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "year.guard.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "interceptors",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "audit.interceptor.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "prisma",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "prisma.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "prisma.service.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "types",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "current-user.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "express.d.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "utils",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "pagination.ts",
+                      "type": "file"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "modules",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "affectations",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "affectations.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "affectations.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "affectations.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "affectations.service.spec.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "create-affectation.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "update-affectation.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "annees",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "annees.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "annees.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "annees.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "clone-year.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "update-year-status.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "years-list-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "audit",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "audit.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "audit.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "audit.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "audit-list-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "dashboard",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "dashboard.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dashboard.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dashboard.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "dashboard-stats-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "delegations",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "delegations.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "delegations.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "delegations.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "delegations.service.spec.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "create-delegation.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "delegations-list-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "demandes",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "demandes.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "signalements.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "signalements.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "create-signalement.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "signalements-list-query.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "update-signalement.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "entites",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "entites.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "entites.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "entites.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "entites-list-query.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "update-entite.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "exports",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "exports.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "exports.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "exports.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "exports-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "imports",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "imports.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "imports.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "imports.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "import-confirm.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "import-responsables.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "notifications",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "notifications.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "notifications.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "notifications.service.ts",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "organigrammes",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "organigrammes.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "organigrammes.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "organigrammes.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "organigramme-export-query.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "organigramme-generate.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "organigrammes-list-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "roles",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "roles.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "roles.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "roles.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "roles.service.spec.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "create-role-request.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "role-requests-query.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "role-response.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "update-role-request.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "search",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "search.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "search.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "search.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "search-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "users",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "users.controller.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "users.module.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "users.service.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "users.service.spec.ts",
+                      "type": "file"
+                    },
+                    {
+                      "name": "dto",
+                      "type": "directory",
+                      "children": [
+                        {
+                          "name": "create-affectation.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "create-user.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "update-user.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "user-response.dto.ts",
+                          "type": "file"
+                        },
+                        {
+                          "name": "users-list-query.dto.ts",
+                          "type": "file"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "test",
+          "type": "directory",
+          "children": [
+            {
+              "name": "app.e2e-spec.ts",
+              "type": "file"
+            },
+            {
+              "name": "jest-e2e.json",
+              "type": "file"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "docker-compose.yml",
+      "type": "file"
+    },
+    {
+      "name": "files",
+      "type": "directory",
+      "children": [
+        {
+          "name": "assets",
+          "type": "directory",
+          "children": [
+            {
+              "name": "extrait_formations_responsables.csv",
+              "type": "file"
+            },
+            {
+              "name": "extrait Responsables Licence 2025-26.xlsx",
+              "type": "file"
+            },
+            {
+              "name": "Organigramme_institut_galile.pdf",
+              "type": "file"
+            },
+            {
+              "name": "Organigramme_institut_galile.pdf_ingenieur_sup_galilee.pdf",
+              "type": "file"
+            },
+            {
+              "name": "ORGANIGRAMME Licences 25-30.pdf",
+              "type": "file"
+            },
+            {
+              "name": "ORGANIGRAMME Mention Droit 25-30.pdf",
+              "type": "file"
+            },
+            {
+              "name": "ORGANIGRAMME Mention Science Politique 25-30.pdf",
+              "type": "file"
+            },
+            {
+              "name": "Organigramme_USPN.pdf",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "CGP_Groupe1_Sprint3-1.pdf",
+          "type": "file"
+        },
+        {
+          "name": "csv",
+          "type": "directory",
+          "children": [
+            {
+              "name": "composantes.csv",
+              "type": "file"
+            },
+            {
+              "name": "responsables.csv",
+              "type": "file"
+            },
+            {
+              "name": "secretariat.csv",
+              "type": "file"
+            },
+            {
+              "name": "structures.csv",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "reactJS",
+          "type": "directory"
+        },
+        {
+          "name": "Sprint1.pdf",
+          "type": "file"
+        },
+        {
+          "name": "Sprint2.pdf",
+          "type": "file"
+        }
+      ]
+    },
+    {
+      "name": "frontend",
+      "type": "directory",
+      "children": [
+        {
+          "name": "Dockerfile",
+          "type": "file"
+        },
+        {
+          "name": "index.html",
+          "type": "file"
+        },
+        {
+          "name": "package.json",
+          "type": "file"
+        },
+        {
+          "name": "postcss.config.js",
+          "type": "file"
+        },
+        {
+          "name": "tailwind.config.js",
+          "type": "file"
+        },
+        {
+          "name": "tsconfig.json",
+          "type": "file"
+        },
+        {
+          "name": "vite.config.js",
+          "type": "file"
+        },
+        {
+          "name": "dist",
+          "type": "directory",
+          "children": [
+            {
+              "name": "index.html",
+              "type": "file"
+            },
+            {
+              "name": "assets",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "index-BDxzCYx3.css",
+                  "type": "file"
+                },
+                {
+                  "name": "index-CfAEFQlc.js",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "node_modules",
+          "type": "directory"
+        },
+        {
+          "name": "src",
+          "type": "directory",
+          "children": [
+            {
+              "name": "App.tsx",
+              "type": "file"
+            },
+            {
+              "name": "main.tsx",
+              "type": "file"
+            },
+            {
+              "name": "index.css",
+              "type": "file"
+            },
+            {
+              "name": "types.ts",
+              "type": "file"
+            },
+            {
+              "name": "components",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "AuditLogs.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "Dashboard.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "Delegations.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "DirectorySearch.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "ErrorReports.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "ImportExport.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "Login.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "ManageResponsibles.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "ManageRoles.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "ManageStructures.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "NotificationBell.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "OrgChart.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "UserProfile.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "YearManagement.tsx",
+                  "type": "file"
+                },
+                {
+                  "name": "ui",
+                  "type": "directory"
+                }
+              ]
+            },
+            {
+              "name": "lib",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "api.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "styles",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "globals.css",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RAPPORT_FAILLES_SECURITE.md",
+      "type": "file"
+    },
+    {
+      "name": "README.md",
+      "type": "file"
+    },
+    {
+      "name": "tree.md",
+      "type": "file"
+    },
+    {
+      "name": "script",
+      "type": "directory",
+      "children": [
+        {
+          "name": "db",
+          "type": "directory",
+          "children": [
+            {
+              "name": "init",
+              "type": "directory"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
