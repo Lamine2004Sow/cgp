@@ -29,58 +29,48 @@ let SignalementsService = class SignalementsService {
                 : [];
         const where = {
             ...(statut ? { statut: statut } : {}),
-            ...(isCentral
-                ? {}
-                : isManager
-                    ? {
-                        OR: [
-                            { auteur_id: userId },
-                            {
-                                id_entite_cible: {
-                                    in: entiteScope.map((id) => BigInt(id)),
-                                },
-                            },
-                        ],
-                    }
-                    : { auteur_id: userId }),
         };
+        if (!isCentral) {
+            if (isManager) {
+                where.OR = [
+                    { auteur_id: userId },
+                    { id_entite_cible: { in: entiteScope.map((id) => BigInt(id)) } },
+                    { escalade_sc: true, id_entite_cible: { in: entiteScope.map((id) => BigInt(id)) } },
+                ];
+            }
+            else {
+                where.auteur_id = userId;
+            }
+        }
         const items = await this.prisma.signalement.findMany({
             where,
             orderBy: { date_creation: 'desc' },
             include: {
-                utilisateur_signalement_auteur_idToutilisateur: true,
-                utilisateur_signalement_traitant_idToutilisateur: true,
-                utilisateur_signalement_cloture_par_idToutilisateur: true,
+                utilisateur_signalement_auteur_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_traitant_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_cloture_par_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_user_cibleToutilisateur: { select: { nom: true, prenom: true, login: true } },
+                entite_structure: { select: { nom: true, type_entite: true } },
             },
         });
-        return items.map((item) => ({
-            id_signalement: Number(item.id_signalement),
-            auteur_id: Number(item.auteur_id),
-            traitant_id: item.traitant_id ? Number(item.traitant_id) : null,
-            cloture_par_id: item.cloture_par_id ? Number(item.cloture_par_id) : null,
-            id_entite_cible: item.id_entite_cible ? Number(item.id_entite_cible) : null,
-            description: item.description,
-            statut: item.statut,
-            date_creation: item.date_creation.toISOString(),
-            date_prise_en_charge: item.date_prise_en_charge?.toISOString() ?? null,
-            date_traitement: item.date_traitement?.toISOString() ?? null,
-            commentaire_prise_en_charge: item.commentaire_prise_en_charge ?? null,
-            commentaire_cloture: item.commentaire_cloture ?? null,
-            auteur_nom: item.utilisateur_signalement_auteur_idToutilisateur?.nom ?? null,
-            auteur_prenom: item.utilisateur_signalement_auteur_idToutilisateur?.prenom ?? null,
-            traitant_nom: item.utilisateur_signalement_traitant_idToutilisateur?.nom ?? null,
-            traitant_prenom: item.utilisateur_signalement_traitant_idToutilisateur?.prenom ?? null,
-            cloture_nom: item.utilisateur_signalement_cloture_par_idToutilisateur?.nom ?? null,
-            cloture_prenom: item.utilisateur_signalement_cloture_par_idToutilisateur?.prenom ?? null,
-        }));
+        return items.map((item) => this.mapSignalement(item));
     }
     async create(userId, payload) {
         const created = await this.prisma.signalement.create({
             data: {
                 auteur_id: BigInt(userId),
                 id_entite_cible: payload.id_entite_cible ? BigInt(payload.id_entite_cible) : null,
+                id_user_cible: payload.id_user_cible ? BigInt(payload.id_user_cible) : null,
                 description: payload.description,
+                type_signalement: payload.type_signalement ?? 'AUTRE',
                 statut: 'OUVERT',
+            },
+            include: {
+                utilisateur_signalement_auteur_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_traitant_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_cloture_par_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_user_cibleToutilisateur: { select: { nom: true, prenom: true, login: true } },
+                entite_structure: { select: { nom: true, type_entite: true } },
             },
         });
         return this.mapSignalement(created);
@@ -112,9 +102,18 @@ let SignalementsService = class SignalementsService {
             throw new common_1.ForbiddenException('You can only update your own signalements');
         }
         const data = {};
+        if (payload.escalade_sc === true) {
+            if (!isManager && !isCentral) {
+                throw new common_1.ForbiddenException('Only managers can escalate signalements');
+            }
+            data.escalade_sc = true;
+        }
         if (payload.statut) {
             if (!isCentral && !isManager) {
                 throw new common_1.ForbiddenException('Only managers can change statut');
+            }
+            if (!isCentral && existing.escalade_sc && payload.statut === 'CLOTURE') {
+                throw new common_1.ForbiddenException('Ce signalement est escaladé aux services centraux');
             }
             data.statut = payload.statut;
         }
@@ -134,23 +133,44 @@ let SignalementsService = class SignalementsService {
         const updated = await this.prisma.signalement.update({
             where: { id_signalement: parsedId },
             data,
+            include: {
+                utilisateur_signalement_auteur_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_traitant_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_cloture_par_idToutilisateur: { select: { nom: true, prenom: true } },
+                utilisateur_signalement_user_cibleToutilisateur: { select: { nom: true, prenom: true, login: true } },
+                entite_structure: { select: { nom: true, type_entite: true } },
+            },
         });
         return this.mapSignalement(updated);
     }
     mapSignalement(item) {
+        const auteur = item.utilisateur_signalement_auteur_idToutilisateur;
+        const traitant = item.utilisateur_signalement_traitant_idToutilisateur;
+        const cloture = item.utilisateur_signalement_cloture_par_idToutilisateur;
+        const userCible = item.utilisateur_signalement_user_cibleToutilisateur;
         return {
             id_signalement: Number(item.id_signalement),
             auteur_id: Number(item.auteur_id),
             traitant_id: item.traitant_id ? Number(item.traitant_id) : null,
             cloture_par_id: item.cloture_par_id ? Number(item.cloture_par_id) : null,
             id_entite_cible: item.id_entite_cible ? Number(item.id_entite_cible) : null,
+            id_user_cible: item.id_user_cible ? Number(item.id_user_cible) : null,
             description: item.description,
+            type_signalement: item.type_signalement ?? 'AUTRE',
+            escalade_sc: item.escalade_sc ?? false,
             statut: item.statut,
             date_creation: item.date_creation.toISOString(),
             date_prise_en_charge: item.date_prise_en_charge?.toISOString() ?? null,
             date_traitement: item.date_traitement?.toISOString() ?? null,
             commentaire_prise_en_charge: item.commentaire_prise_en_charge ?? null,
             commentaire_cloture: item.commentaire_cloture ?? null,
+            auteur_nom: auteur ? `${auteur.prenom} ${auteur.nom}` : null,
+            traitant_nom: traitant ? `${traitant.prenom} ${traitant.nom}` : null,
+            cloture_nom: cloture ? `${cloture.prenom} ${cloture.nom}` : null,
+            user_cible_nom: userCible ? `${userCible.prenom} ${userCible.nom}` : null,
+            user_cible_login: userCible?.login ?? null,
+            entite_nom: item.entite_structure?.nom ?? null,
+            entite_type: item.entite_structure?.type_entite ?? null,
         };
     }
     isServicesCentraux(user) {
@@ -172,14 +192,9 @@ let SignalementsService = class SignalementsService {
         }
         const entites = await this.prisma.entite_structure.findMany({
             where: {
-                id_annee: {
-                    in: yearIds.map((yearId) => BigInt(yearId)),
-                },
+                id_annee: { in: yearIds.map((yearId) => BigInt(yearId)) },
             },
-            select: {
-                id_entite: true,
-                id_entite_parent: true,
-            },
+            select: { id_entite: true, id_entite_parent: true },
         });
         const parentById = new Map();
         for (const entite of entites) {
@@ -195,14 +210,12 @@ let SignalementsService = class SignalementsService {
         return Array.from(scope);
     }
     isInSeedTree(entiteId, seeds, parentById) {
-        if (seeds.has(entiteId)) {
+        if (seeds.has(entiteId))
             return true;
-        }
         let current = parentById.get(entiteId) ?? null;
         for (let depth = 0; depth < 32 && current; depth += 1) {
-            if (seeds.has(current)) {
+            if (seeds.has(current))
                 return true;
-            }
             current = parentById.get(current) ?? null;
         }
         return false;

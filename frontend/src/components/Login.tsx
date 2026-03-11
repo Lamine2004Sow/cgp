@@ -9,15 +9,16 @@ interface LoginProps {
 
 const demoLogins = [
   { label: "Services centraux", login: "sc.admin" },
-  { label: "Administrateur DSI", login: "dsi.tech" },
-  { label: "Directeur de composante", login: "dc.infocom" },
-  { label: "Directeur administratif", login: "da.infocom" },
-  { label: "Chef de departement", login: "dir.dept.info" },
-  { label: "Directeur de mention", login: "dir.mention.l3" },
-  { label: "Directeur de specialite", login: "dir.spec.ia" },
-  { label: "Responsable formation", login: "resp.form.info" },
-  { label: "Responsable annee", login: "resp.annee.l2" },
-  { label: "Enseignant", login: "ens.dupont" },
+  { label: "Administrateur", login: "dsi.tech" },
+  { label: "Directrice de composante (UFR Droit)", login: "fauchon" },
+  { label: "Directeur de composante (Institut Galilée)", login: "bruno.manil" },
+  { label: "Directrice administrative", login: "joelle.giroud" },
+  { label: "Directeur de département", login: "luc.museur" },
+  { label: "Directeur de mention", login: "belmeguenai.mohamed" },
+  { label: "Directrice de spécialité", login: "caroline.japhet" },
+  { label: "Directrice des études", login: "elodie.david" },
+  { label: "Responsable d'année", login: "aladine.chetouani" },
+  { label: "Secrétariat pédagogique", login: "aline.dacheux" },
 ];
 
 export function Login({ onLogin, error, loading }: LoginProps) {
@@ -50,7 +51,7 @@ export function Login({ onLogin, error, loading }: LoginProps) {
               type="text"
               value={login}
               onChange={(event) => setLogin(event.target.value)}
-              placeholder="ex: dc.infocom"
+              placeholder="ex: fauchon"
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900"
             />
           </div>

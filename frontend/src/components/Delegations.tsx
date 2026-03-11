@@ -80,11 +80,40 @@ export function Delegations({
     startDate: todayIso(),
     endDate: "",
   });
+  const isSC = userRole === "services-centraux" || userRole === "administrateur";
   const canCreate =
     userRole === "directeur-composante" ||
     userRole === "directeur-administratif" ||
     userRole === "directeur-administratif-adjoint";
-  const canExport = userRole === "services-centraux";
+  const canExport = isSC;
+
+  const [filterComposante, setFilterComposante] = useState<string>("");
+
+  // Composantes racines (pour filtre SC)
+  const composantes = useMemo(
+    () => entites.filter((e) => e.type_entite === "COMPOSANTE"),
+    [entites],
+  );
+
+  // Entités filtrées par composante sélectionnée (ou toutes si SC sans filtre)
+  const scopedEntites = useMemo(() => {
+    if (!filterComposante) return entites;
+    const result = new Set<number>();
+    const byParent = new Map<number, number[]>();
+    entites.forEach((e) => {
+      if (e.id_entite_parent) {
+        if (!byParent.has(e.id_entite_parent)) byParent.set(e.id_entite_parent, []);
+        byParent.get(e.id_entite_parent)!.push(e.id_entite);
+      }
+    });
+    const queue = [Number(filterComposante)];
+    while (queue.length) {
+      const id = queue.shift()!;
+      result.add(id);
+      (byParent.get(id) ?? []).forEach((c) => queue.push(c));
+    }
+    return entites.filter((e) => result.has(e.id_entite));
+  }, [entites, filterComposante]);
 
   const loadData = async () => {
     if (!authLogin) return;
@@ -93,7 +122,7 @@ export function Delegations({
     try {
       const [delegationsData, usersData] = await Promise.all([
         apiFetch<{ items: ApiDelegation[] }>("/delegations", { login: authLogin }),
-        apiFetch<{ items: ApiUser[] }>(`/users?yearId=${currentYear.id}`, { login: authLogin }),
+        apiFetch<{ items: ApiUser[] }>(`/users?yearId=${currentYear.id}&pageSize=500`, { login: authLogin }),
       ]);
       setDelegations(delegationsData.items || []);
       setUsers(
@@ -116,13 +145,17 @@ export function Delegations({
   }, [authLogin, currentYear.id]);
 
   const filteredDelegations = useMemo(() => {
+    const scopedIds = filterComposante
+      ? new Set(scopedEntites.map((e) => e.id_entite))
+      : null;
     return delegations.filter((delegation) => {
       const active = delegation.statut === "ACTIVE";
-      if (filterActive === "active") return active;
-      if (filterActive === "inactive") return !active;
+      if (filterActive === "active" && !active) return false;
+      if (filterActive === "inactive" && active) return false;
+      if (scopedIds && delegation.id_entite && !scopedIds.has(delegation.id_entite)) return false;
       return true;
     });
-  }, [delegations, filterActive]);
+  }, [delegations, filterActive, filterComposante, scopedEntites]);
 
   const handleCreateDelegation = async () => {
     if (!authLogin) return;
@@ -207,7 +240,19 @@ export function Delegations({
               : "Consulter les délégations et exporter en CSV (Services centraux)."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {isSC && composantes.length > 0 && (
+            <select
+              value={filterComposante}
+              onChange={(e) => setFilterComposante(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            >
+              <option value="">Toutes les composantes</option>
+              {composantes.map((c) => (
+                <option key={c.id_entite} value={c.id_entite}>{c.nom}</option>
+              ))}
+            </select>
+          )}
           {canExport && (
             <button
               onClick={handleExport}
@@ -270,7 +315,7 @@ export function Delegations({
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                 >
                   <option value="">Sélectionner une structure</option>
-                  {entites.map((entite) => (
+                  {scopedEntites.map((entite) => (
                     <option key={entite.id_entite} value={entite.id_entite}>
                       {entite.nom} ({entite.type_entite})
                     </option>

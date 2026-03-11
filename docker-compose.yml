@@ -44,6 +44,37 @@ services:
       retries: 20
       start_period: 40s
 
+  # ── Service dédié aux migrations Prisma ───────────────────────────────────
+  # Usage :
+  #   Créer une nouvelle migration  : docker compose run --rm migrate --name <nom>
+  #   Appliquer les migrations      : docker compose run --rm migrate deploy
+  #   Réinitialiser (dev only)      : docker compose run --rm migrate reset
+  migrate:
+    profiles: [tools]
+    build:
+      context: ./backend-nest
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-1234}@db:5432/${POSTGRES_DB:-CGP}?schema=public"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend-nest:/app
+      - backend-nest-node-modules:/app/node_modules
+    entrypoint: >
+      sh -c '
+        npx prisma generate &&
+        if [ "$$1" = "deploy" ]; then
+          npx prisma migrate deploy
+        elif [ "$$1" = "reset" ]; then
+          npx prisma migrate reset --force
+        else
+          npx prisma migrate dev --name "$${1:-migration}"
+        fi
+      ' --
+    stdin_open: true
+    tty: true
+
   frontend:
     build:
       context: ./frontend

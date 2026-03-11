@@ -19,13 +19,8 @@ import { DelegationsListQueryDto } from './dto/delegations-list-query.dto';
 export class DelegationsController {
   constructor(private readonly delegationsService: DelegationsService) {}
 
+  // Accessible à tout utilisateur authentifié : le service filtre selon l'identité
   @Get()
-  @Roles(
-    ROLE_IDS.SERVICES_CENTRAUX,
-    ROLE_IDS.DIRECTEUR_COMPOSANTE,
-    ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
-    ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
-  )
   async list(
     @CurrentUser() user: CurrentUserType,
     @Query() query: DelegationsListQueryDto,
@@ -58,13 +53,8 @@ export class DelegationsController {
     return { csv };
   }
 
+  // Le délégant et les services centraux peuvent révoquer
   @Patch(':id/revoke')
-  @Roles(
-    ROLE_IDS.SERVICES_CENTRAUX,
-    ROLE_IDS.DIRECTEUR_COMPOSANTE,
-    ROLE_IDS.DIRECTEUR_ADMINISTRATIF,
-    ROLE_IDS.DIRECTEUR_ADMINISTRATIF_ADJOINT,
-  )
   async revoke(@CurrentUser() user: CurrentUserType, @Param('id') id: string) {
     const delegation = await this.delegationsService.revoke(user, id);
     return { delegation };

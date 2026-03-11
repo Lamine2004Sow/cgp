@@ -8,24 +8,28 @@ datasource db {
 }
 
 model affectation {
-  id_affectation      BigInt              @id @default(autoincrement())
-  id_user             BigInt
-  id_role             String
-  id_entite           BigInt
-  id_annee            BigInt
-  date_debut          DateTime            @db.Date
-  date_fin            DateTime?           @db.Date
-  annee_universitaire annee_universitaire @relation(fields: [id_annee], references: [id_annee], onDelete: NoAction, onUpdate: NoAction)
-  entite_structure    entite_structure    @relation(fields: [id_entite], references: [id_entite], onDelete: NoAction, onUpdate: NoAction)
-  role                role                @relation(fields: [id_role], references: [id_role], onDelete: NoAction, onUpdate: NoAction)
-  utilisateur         utilisateur         @relation(fields: [id_user], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
-  contact_role        contact_role[]
+  id_affectation           BigInt              @id @default(autoincrement())
+  id_user                  BigInt
+  id_role                  String
+  id_entite                BigInt
+  id_annee                 BigInt
+  date_debut               DateTime            @db.Date
+  date_fin                 DateTime?           @db.Date
+  id_affectation_n_plus_1  BigInt?
+  annee_universitaire      annee_universitaire @relation(fields: [id_annee], references: [id_annee], onDelete: NoAction, onUpdate: NoAction)
+  entite_structure         entite_structure    @relation(fields: [id_entite], references: [id_entite], onDelete: NoAction, onUpdate: NoAction)
+  role                     role                @relation(fields: [id_role], references: [id_role], onDelete: NoAction, onUpdate: NoAction)
+  utilisateur              utilisateur         @relation(fields: [id_user], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+  affectation_n_plus_1     affectation?        @relation("affectation_hierarchie", fields: [id_affectation_n_plus_1], references: [id_affectation], onDelete: SetNull, onUpdate: NoAction)
+  sous_affectations        affectation[]       @relation("affectation_hierarchie")
+  contact_role             contact_role[]
 
   @@unique([id_user, id_role, id_entite, id_annee], map: "affectation_unique")
   @@index([id_annee], map: "idx_affectation_annee")
   @@index([id_entite], map: "idx_affectation_entite")
   @@index([id_role], map: "idx_affectation_role")
   @@index([id_user], map: "idx_affectation_user")
+  @@index([id_affectation_n_plus_1], map: "idx_affectation_n_plus_1")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -44,9 +48,14 @@ model annee_universitaire {
 }
 
 model composante {
-  id_entite        BigInt           @id
-  site_web         String?
-  entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+  id_entite          BigInt           @id
+  code_composante    String?
+  type_composante    composante_type?
+  site_web           String?
+  mail_fonctionnel   String?
+  mail_institutionnel String?
+  campus             String?
+  entite_structure   entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model contact_role {
@@ -54,6 +63,8 @@ model contact_role {
   id_affectation      BigInt
   email_fonctionnelle String?
   type_email          String?
+  telephone           String?
+  bureau              String?
   affectation         affectation @relation(fields: [id_affectation], references: [id_affectation], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id_affectation], map: "idx_contact_role_affectation")
@@ -166,7 +177,12 @@ model journal_audit {
 model mention {
   id_entite        BigInt           @id
   type_diplome     String?
+  cycle            Int?
+  id_type_diplome  BigInt?
   entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
+  diplome          type_diplome?    @relation(fields: [id_type_diplome], references: [id_type_diplome], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id_type_diplome], map: "idx_mention_type_diplome")
 }
 
 model niveau {
@@ -220,12 +236,32 @@ model parcours {
   entite_structure entite_structure @relation(fields: [id_entite], references: [id_entite], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// Table de référence des 39 types de diplômes identifiés (Sprint 4)
+model type_diplome {
+  id_type_diplome BigInt    @id @default(autoincrement())
+  libelle         String    @unique
+  is_active       Boolean   @default(true)
+  mentions        mention[]
+}
+
+/// Personnalités extérieures sans accès CAS (Sprint 4 §27)
+model personne_externe {
+  id_externe     BigInt                   @id @default(autoincrement())
+  nom            String
+  prenom         String
+  entreprise     String?
+  statut_externe personne_externe_statut?
+  email          String?
+}
+
 model role {
   id_role             String            @id
   libelle             String
   description         String?
   niveau_hierarchique Int               @default(0)
   is_global           Boolean           @default(true)
+  est_administratif   Boolean           @default(false)
+  est_transverse      Boolean           @default(false)
   id_composante       BigInt?
   affectation         affectation[]
   delegation          delegation[]
@@ -240,7 +276,10 @@ model signalement {
   traitant_id                                         BigInt?
   cloture_par_id                                      BigInt?
   id_entite_cible                                     BigInt?
+  id_user_cible                                       BigInt?
   description                                         String
+  type_signalement                                    String             @default("AUTRE")
+  escalade_sc                                         Boolean            @default(false)
   statut                                              signalement_statut @default(OUVERT)
   date_creation                                       DateTime           @default(now()) @db.Timestamptz(6)
   date_prise_en_charge                                DateTime?          @db.Timestamptz(6)
@@ -252,9 +291,11 @@ model signalement {
   utilisateur_signalement_cloture_par_idToutilisateur utilisateur?       @relation("signalement_cloture_par_idToutilisateur", fields: [cloture_par_id], references: [id_user], onUpdate: NoAction)
   entite_structure                                    entite_structure?  @relation(fields: [id_entite_cible], references: [id_entite], onUpdate: NoAction)
   utilisateur_signalement_traitant_idToutilisateur    utilisateur?       @relation("signalement_traitant_idToutilisateur", fields: [traitant_id], references: [id_user], onUpdate: NoAction)
+  utilisateur_signalement_user_cibleToutilisateur     utilisateur?       @relation("signalement_user_cibleToutilisateur", fields: [id_user_cible], references: [id_user], onUpdate: NoAction)
 
   @@index([auteur_id], map: "idx_signalement_auteur")
   @@index([id_entite_cible], map: "idx_signalement_entite")
+  @@index([id_user_cible], map: "idx_signalement_user_cible")
   @@index([traitant_id], map: "idx_signalement_traitant")
 }
 
@@ -264,7 +305,10 @@ model utilisateur {
   uid_cas                                                              String?
   nom                                                                  String
   prenom                                                               String
+  genre                                                                utilisateur_genre?
+  categorie                                                            utilisateur_categorie?
   email_institutionnel                                                 String?
+  email_institutionnel_secondaire                                      String?
   telephone                                                            String?
   bureau                                                               String?
   statut                                                               utilisateur_statut     @default(ACTIF)
@@ -281,12 +325,21 @@ model utilisateur {
   signalement_signalement_auteur_idToutilisateur                       signalement[]          @relation("signalement_auteur_idToutilisateur")
   signalement_signalement_cloture_par_idToutilisateur                  signalement[]          @relation("signalement_cloture_par_idToutilisateur")
   signalement_signalement_traitant_idToutilisateur                     signalement[]          @relation("signalement_traitant_idToutilisateur")
+  signalement_signalement_user_cibleToutilisateur                      signalement[]          @relation("signalement_user_cibleToutilisateur")
 }
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
 
 enum annee_statut {
   EN_COURS
   PREPARATION
   ARCHIVEE
+}
+
+enum composante_type {
+  UFR
+  INSTITUT
+  IUT
 }
 
 enum delegation_statut {
@@ -309,10 +362,28 @@ enum entite_type {
   NIVEAU
 }
 
+enum personne_externe_statut {
+  ANCIEN_ETUDIANT
+  PROFESSIONNEL
+}
+
 enum signalement_statut {
   OUVERT
   EN_COURS
   CLOTURE
+}
+
+enum utilisateur_categorie {
+  EC
+  BIATSS
+  ESAS
+  CONTRACTUEL
+  VACATAIRE
+}
+
+enum utilisateur_genre {
+  M
+  F
 }
 
 enum utilisateur_statut {

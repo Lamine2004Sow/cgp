@@ -16,6 +16,7 @@ interface ManageResponsiblesProps {
   currentYear: AcademicYear;
   entites: EntiteStructure[];
   authLogin: string | null;
+  focusUserId?: number | null;
 }
 
 type ApiUserRole = {
@@ -89,6 +90,7 @@ export function ManageResponsibles({
   currentYear,
   entites,
   authLogin,
+  focusUserId,
 }: ManageResponsiblesProps) {
   const [responsibles, setResponsibles] = useState<PersonRow[]>([]);
   const [roles, setRoles] = useState<ApiRole[]>([]);
@@ -116,6 +118,8 @@ export function ManageResponsibles({
     date_debut: todayIso(),
     date_fin: "",
   });
+
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const canEdit = canManageUsers(userRole);
   const canDelete = canDeleteUser(userRole);
@@ -185,6 +189,18 @@ export function ManageResponsibles({
   useEffect(() => {
     loadData();
   }, [authLogin, currentYear.id, entiteMap]);
+
+  useEffect(() => {
+    if (!focusUserId || responsibles.length === 0) return;
+    const targetId = String(focusUserId);
+    const el = document.getElementById(`user-row-${targetId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedId(targetId);
+      const timer = setTimeout(() => setHighlightedId(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [focusUserId, responsibles]);
 
   const startEdit = (person: PersonRow) => {
     setEditingId(person.id);
@@ -435,7 +451,15 @@ export function ManageResponsibles({
       ) : (
         <div className="space-y-4">
           {responsibles.map((person) => (
-            <div key={person.id} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <div
+              key={person.id}
+              id={`user-row-${person.id}`}
+              className={`bg-white rounded-xl p-6 shadow-sm border transition-colors duration-500 ${
+                highlightedId === person.id
+                  ? "border-indigo-400 ring-2 ring-indigo-200"
+                  : "border-slate-200"
+              }`}
+            >
               {editingId === person.id && formData ? (
                 <>
                   <EditForm formData={formData} setFormData={setFormData} />

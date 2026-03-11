@@ -60,6 +60,7 @@ interface ManageStructuresProps {
   currentYear: AcademicYear;
   entites: EntiteStructure[];
   authLogin: string | null;
+  focusEntiteId?: number | null;
 }
 
 type ApiEntiteDetail = EntiteStructureDetail;
@@ -69,6 +70,7 @@ export function ManageStructures({
   currentYear,
   entites,
   authLogin,
+  focusEntiteId,
 }: ManageStructuresProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<ApiEntiteDetail | null>(null);
@@ -143,6 +145,10 @@ export function ManageStructures({
       setIsEditing(false);
     }
   }, [selectedId, loadDetail]);
+
+  useEffect(() => {
+    if (focusEntiteId) setSelectedId(focusEntiteId);
+  }, [focusEntiteId]);
 
   const handleSave = async () => {
     if (!authLogin || !selectedId || !detail) return;

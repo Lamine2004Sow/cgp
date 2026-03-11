@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+
+**/node_modules
+backend-nest/dist
+**/*.log
+.DS_Store
+.dual-graph/

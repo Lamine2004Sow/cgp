@@ -1,4 +1,6 @@
 import { execSync } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
@@ -20,12 +22,25 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Retourne true si le dossier prisma/migrations contient au moins une migration. */
+function hasMigrations(): boolean {
+  const migrationsDir = join(__dirname, 'migrations');
+  if (!existsSync(migrationsDir)) return false;
+  return readdirSync(migrationsDir).some((f) => !f.startsWith('.'));
+}
+
 async function applySchemaWithRetry() {
   let lastError: unknown;
 
+  // Si des fichiers de migration existent → prisma migrate deploy
+  // Sinon (dev sans migrations) → prisma db push
+  const command = hasMigrations()
+    ? 'npx prisma migrate deploy'
+    : 'npx prisma db push';
+
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      run('npx prisma db push');
+      run(command);
       return;
     } catch (error) {
       lastError = error;
@@ -36,7 +51,7 @@ async function applySchemaWithRetry() {
 
       // eslint-disable-next-line no-console
       console.warn(
-        `[docker-init] prisma db push failed (attempt ${attempt}/${MAX_ATTEMPTS}), retry in ${RETRY_DELAY_MS}ms...`,
+        `[docker-init] ${command} failed (attempt ${attempt}/${MAX_ATTEMPTS}), retry in ${RETRY_DELAY_MS}ms...`,
       );
       await sleep(RETRY_DELAY_MS);
     }

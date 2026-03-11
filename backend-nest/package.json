@@ -17,6 +17,8 @@
     "seed": "prisma db seed",
     "seed:csv": "ts-node --transpile-only prisma/seed-from-csv.ts",
     "docker:init": "ts-node --transpile-only prisma/docker-init.ts",
+    "migrate:new": "docker compose --profile tools run --rm migrate",
+    "migrate:deploy": "docker compose --profile tools run --rm migrate deploy",
     "db:reset": "ts-node --transpile-only prisma/reset-db.ts",
     "db:fresh": "npm run db:reset && npm run seed",
     "test": "jest",

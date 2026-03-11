@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class UpdateSignalementDto {
     statut;
     commentaire;
+    escalade_sc;
 }
 exports.UpdateSignalementDto = UpdateSignalementDto;
 __decorate([
@@ -26,4 +27,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateSignalementDto.prototype, "commentaire", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateSignalementDto.prototype, "escalade_sc", void 0);
 //# sourceMappingURL=update-signalement.dto.js.map

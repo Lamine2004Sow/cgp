@@ -9,12 +9,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateSignalementDto = void 0;
+exports.CreateSignalementDto = exports.SIGNALEMENT_TYPES = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
+exports.SIGNALEMENT_TYPES = [
+    'ERREUR_INFO_PERSONNE',
+    'MAUVAISE_AFFECTATION',
+    'ERREUR_STRUCTURE',
+    'ERREUR_MENTION',
+    'AUTRE',
+];
 class CreateSignalementDto {
     description;
+    type_signalement;
     id_entite_cible;
+    id_user_cible;
 }
 exports.CreateSignalementDto = CreateSignalementDto;
 __decorate([
@@ -23,8 +32,19 @@ __decorate([
 ], CreateSignalementDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSignalementDto.prototype, "type_signalement", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsInt)(),
     __metadata("design:type", Object)
 ], CreateSignalementDto.prototype, "id_entite_cible", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    __metadata("design:type", Object)
+], CreateSignalementDto.prototype, "id_user_cible", void 0);
 //# sourceMappingURL=create-signalement.dto.js.map

@@ -39,6 +39,20 @@ export class DelegationsService {
       },
     });
 
+    // Auto-expiration: marquer les délégations dont date_fin est passée
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const toExpire = items.filter(
+      (item) => item.statut === 'ACTIVE' && item.date_fin && item.date_fin < today,
+    );
+    if (toExpire.length > 0) {
+      await this.prisma.delegation.updateMany({
+        where: { id_delegation: { in: toExpire.map((i) => i.id_delegation) } },
+        data: { statut: 'EXPIREE' },
+      });
+      toExpire.forEach((item) => { (item as any).statut = 'EXPIREE'; });
+    }
+
     return items.map((item) => this.mapDelegation(item));
   }
 
@@ -167,10 +181,12 @@ export class DelegationsService {
     date_debut: Date;
     date_fin: Date | null;
     statut: string;
-    utilisateur_delegation_delegant_idToutilisateur?: { nom: string } | null;
-    utilisateur_delegation_delegataire_idToutilisateur?: { nom: string } | null;
+    utilisateur_delegation_delegant_idToutilisateur?: { nom: string; prenom: string } | null;
+    utilisateur_delegation_delegataire_idToutilisateur?: { nom: string; prenom: string } | null;
     entite_structure?: { nom: string } | null;
   }) {
+    const delegant = item.utilisateur_delegation_delegant_idToutilisateur;
+    const delegataire = item.utilisateur_delegation_delegataire_idToutilisateur;
     return {
       id_delegation: Number(item.id_delegation),
       delegant_id: Number(item.delegant_id),
@@ -181,8 +197,8 @@ export class DelegationsService {
       date_debut: item.date_debut.toISOString().slice(0, 10),
       date_fin: item.date_fin ? item.date_fin.toISOString().slice(0, 10) : null,
       statut: item.statut,
-      delegant_nom: item.utilisateur_delegation_delegant_idToutilisateur?.nom ?? null,
-      delegataire_nom: item.utilisateur_delegation_delegataire_idToutilisateur?.nom ?? null,
+      delegant_nom: delegant ? `${delegant.prenom} ${delegant.nom}` : null,
+      delegataire_nom: delegataire ? `${delegataire.prenom} ${delegataire.nom}` : null,
       entite_nom: item.entite_structure?.nom ?? null,
     };
   }

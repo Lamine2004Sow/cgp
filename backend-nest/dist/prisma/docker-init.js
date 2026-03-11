@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_child_process_1 = require("node:child_process");
+const node_fs_1 = require("node:fs");
+const node_path_1 = require("node:path");
 const adapter_pg_1 = require("@prisma/adapter-pg");
 const client_1 = require("@prisma/client");
 const databaseUrl = process.env.DATABASE_URL;
@@ -16,11 +18,20 @@ function run(command) {
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+function hasMigrations() {
+    const migrationsDir = (0, node_path_1.join)(__dirname, 'migrations');
+    if (!(0, node_fs_1.existsSync)(migrationsDir))
+        return false;
+    return (0, node_fs_1.readdirSync)(migrationsDir).some((f) => !f.startsWith('.'));
+}
 async function applySchemaWithRetry() {
     let lastError;
+    const command = hasMigrations()
+        ? 'npx prisma migrate deploy'
+        : 'npx prisma db push';
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
-            run('npx prisma db push');
+            run(command);
             return;
         }
         catch (error) {
@@ -28,7 +39,7 @@ async function applySchemaWithRetry() {
             if (attempt === MAX_ATTEMPTS) {
                 break;
             }
-            console.warn(`[docker-init] prisma db push failed (attempt ${attempt}/${MAX_ATTEMPTS}), retry in ${RETRY_DELAY_MS}ms...`);
+            console.warn(`[docker-init] ${command} failed (attempt ${attempt}/${MAX_ATTEMPTS}), retry in ${RETRY_DELAY_MS}ms...`);
             await sleep(RETRY_DELAY_MS);
         }
     }

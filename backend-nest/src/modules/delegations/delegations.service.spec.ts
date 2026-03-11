@@ -50,12 +50,12 @@ describe('DelegationsService.create', () => {
     date_debut: new Date('2024-09-01'),
     date_fin: null,
     statut: 'ACTIVE',
-    utilisateur_delegation_delegant_idToutilisateur: { nom: 'Dupont' },
-    utilisateur_delegation_delegataire_idToutilisateur: { nom: 'Martin' },
+    utilisateur_delegation_delegant_idToutilisateur: { nom: 'Dupont', prenom: 'Jean' },
+    utilisateur_delegation_delegataire_idToutilisateur: { nom: 'Martin', prenom: 'Pierre' },
     entite_structure: { nom: 'UFR Sciences' },
   };
 
-  it('crée une délégation si le délégant a une affectation sur l'entité', async () => {
+  it("crée une délégation si le délégant a une affectation sur l'entité", async () => {
     mockPrisma.affectation.findFirst.mockResolvedValue({ id_affectation: 1n });
     mockPrisma.delegation.create.mockResolvedValue({ id_delegation: 1n });
     mockPrisma.delegation.findUnique.mockResolvedValue(createdRow);
@@ -67,7 +67,7 @@ describe('DelegationsService.create', () => {
     });
   });
 
-  it('lève ForbiddenException si le délégant n'a pas d'affectation sur l'entité', async () => {
+  it("lève ForbiddenException si le délégant n'a pas d'affectation sur l'entité", async () => {
     mockPrisma.affectation.findFirst.mockResolvedValue(null);
 
     await expect(service.create('2', payload, userDirecteur as any)).rejects.toThrow(

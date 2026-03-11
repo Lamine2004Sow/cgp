@@ -18,8 +18,6 @@ const signalements_service_1 = require("./signalements.service");
 const signalements_list_query_dto_1 = require("./dto/signalements-list-query.dto");
 const create_signalement_dto_1 = require("./dto/create-signalement.dto");
 const update_signalement_dto_1 = require("./dto/update-signalement.dto");
-const roles_decorator_1 = require("../../common/decorators/roles.decorator");
-const roles_constants_1 = require("../../auth/roles.constants");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let SignalementsController = class SignalementsController {
     signalementsService;
@@ -38,11 +36,14 @@ let SignalementsController = class SignalementsController {
         const signalement = await this.signalementsService.update(id, user, payload);
         return { signalement };
     }
+    async escalade(user, id) {
+        const signalement = await this.signalementsService.update(id, user, { escalade_sc: true });
+        return { signalement };
+    }
 };
 exports.SignalementsController = SignalementsController;
 __decorate([
     (0, common_1.Get)(),
-    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -51,7 +52,6 @@ __decorate([
 ], SignalementsController.prototype, "list", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -60,7 +60,6 @@ __decorate([
 ], SignalementsController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),
@@ -68,6 +67,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, update_signalement_dto_1.UpdateSignalementDto]),
     __metadata("design:returntype", Promise)
 ], SignalementsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/escalade'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SignalementsController.prototype, "escalade", null);
 exports.SignalementsController = SignalementsController = __decorate([
     (0, common_1.Controller)('signalements'),
     __metadata("design:paramtypes", [signalements_service_1.SignalementsService])
