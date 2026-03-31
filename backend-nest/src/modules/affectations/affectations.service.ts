@@ -26,6 +26,12 @@ const toAffectationResponse = (a: {
   id_annee: bigint;
   date_debut: Date;
   date_fin: Date | null;
+  id_affectation_n_plus_1?: bigint | null;
+  affectation_n_plus_1?: {
+    id_affectation: bigint;
+    id_role: string;
+    utilisateur?: { nom: string; prenom: string } | null;
+  } | null;
 }) => ({
   id_affectation: Number(a.id_affectation),
   id_user: Number(a.id_user),
@@ -34,6 +40,15 @@ const toAffectationResponse = (a: {
   id_annee: Number(a.id_annee),
   date_debut: a.date_debut.toISOString().slice(0, 10),
   date_fin: a.date_fin ? a.date_fin.toISOString().slice(0, 10) : null,
+  id_affectation_n_plus_1: a.id_affectation_n_plus_1 ? Number(a.id_affectation_n_plus_1) : null,
+  superviseur: a.affectation_n_plus_1
+    ? {
+        id_affectation: Number(a.affectation_n_plus_1.id_affectation),
+        id_role: a.affectation_n_plus_1.id_role,
+        nom: a.affectation_n_plus_1.utilisateur?.nom ?? null,
+        prenom: a.affectation_n_plus_1.utilisateur?.prenom ?? null,
+      }
+    : null,
 });
 
 @Injectable()
@@ -73,6 +88,9 @@ export class AffectationsService {
 
     const affectation = await this.prisma.affectation.findUnique({
       where: { id_affectation: parsedId },
+      include: {
+        affectation_n_plus_1: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
+      },
     });
 
     if (!affectation) {
@@ -113,6 +131,17 @@ export class AffectationsService {
         ...(payload.date_fin !== undefined
           ? { date_fin: payload.date_fin ? new Date(payload.date_fin) : null }
           : {}),
+        ...(payload.id_affectation_n_plus_1 !== undefined
+          ? {
+              id_affectation_n_plus_1:
+                payload.id_affectation_n_plus_1 != null
+                  ? BigInt(payload.id_affectation_n_plus_1)
+                  : null,
+            }
+          : {}),
+      },
+      include: {
+        affectation_n_plus_1: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
       },
     });
 
