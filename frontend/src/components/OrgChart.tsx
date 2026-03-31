@@ -157,7 +157,13 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
       );
       setTree(data.arbre);
       setOrgaMeta(data.organigramme);
-      await loadLatest();
+      setSelectedOrgaId(String(data.organigramme.id_organigramme));
+      // Rafraîchir la liste sans écraser l'orgaMeta courant
+      const orgaList = await apiFetch<{ items: ApiOrganigramme[] }>(
+        `/organigrammes?yearId=${currentYear.id}`,
+        { login: authLogin },
+      );
+      setOrganigrammes(orgaList.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la generation");
     } finally {
