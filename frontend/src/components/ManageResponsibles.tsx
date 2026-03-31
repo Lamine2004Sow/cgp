@@ -8,7 +8,7 @@ import {
   canDeleteUser,
   getRoleLabel,
 } from "../types";
-import { Plus, Edit, Trash2, Save, X, UserPlus, ShieldCheck } from "lucide-react";
+import { Plus, Edit, Trash2, Save, X, UserPlus, ShieldCheck, Search, Users } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
 interface ManageResponsiblesProps {
@@ -120,6 +120,8 @@ export function ManageResponsibles({
   });
 
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("");
 
   const canEdit = canManageUsers(userRole);
   const canDelete = canDeleteUser(userRole);
@@ -129,6 +131,21 @@ export function ManageResponsibles({
     () => new Map(roles.map((role) => [getRoleId(role), role.libelle])),
     [roles],
   );
+
+  const filteredResponsibles = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return responsibles.filter((p) => {
+      const matchSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.login.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q);
+      const matchRole =
+        !filterRole ||
+        p.assignments.some((a) => a.role === filterRole);
+      return matchSearch && matchRole;
+    });
+  }, [responsibles, search, filterRole]);
 
   const loadData = async () => {
     if (!authLogin) return;
@@ -259,6 +276,10 @@ export function ManageResponsibles({
 
   const handleCreateUser = async () => {
     if (!authLogin) return;
+    if (!newUser.login.trim()) { setError("Le login est obligatoire"); return; }
+    if (!newUser.nom.trim()) { setError("Le nom est obligatoire"); return; }
+    if (!newUser.prenom.trim()) { setError("Le prénom est obligatoire"); return; }
+    setError(null);
     setLoading(true);
     try {
       const affectations =
@@ -446,11 +467,56 @@ export function ManageResponsibles({
         </div>
       )}
 
+      {/* Barre de recherche + filtre rôle */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Rechercher par nom, login ou email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+          />
+        </div>
+        <select
+          value={filterRole}
+          onChange={(e) => setFilterRole(e.target.value)}
+          className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white min-w-[180px]"
+        >
+          <option value="">Tous les rôles</option>
+          {roles.map((role) => (
+            <option key={getRoleId(role)} value={getRoleId(role)}>{role.libelle}</option>
+          ))}
+        </select>
+        {(search || filterRole) && (
+          <button
+            onClick={() => { setSearch(""); setFilterRole(""); }}
+            className="px-3 py-2 text-sm text-slate-500 hover:text-slate-800 border border-slate-300 rounded-lg"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {loading && responsibles.length === 0 ? (
         <div className="text-slate-500">Chargement...</div>
+      ) : filteredResponsibles.length === 0 ? (
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 flex flex-col items-center gap-3 text-slate-400">
+          <Users className="w-12 h-12" />
+          <p className="font-medium">
+            {search || filterRole ? "Aucun résultat pour cette recherche" : "Aucun responsable pour cette année"}
+          </p>
+          {(search || filterRole) && (
+            <button onClick={() => { setSearch(""); setFilterRole(""); }} className="text-sm text-indigo-600 hover:underline">
+              Effacer les filtres
+            </button>
+          )}
+        </div>
       ) : (
         <div className="space-y-4">
-          {responsibles.map((person) => (
+          <div className="text-xs text-slate-500">{filteredResponsibles.length} résultat{filteredResponsibles.length > 1 ? "s" : ""}</div>
+          {filteredResponsibles.map((person) => (
             <div
               key={person.id}
               id={`user-row-${person.id}`}
