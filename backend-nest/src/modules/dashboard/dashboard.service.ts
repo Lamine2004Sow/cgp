@@ -1,15 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
-const RESPONSABLE_ROLE_IDS = [
-  'directeur-composante',
-  'directeur-administratif',
-  'directeur-administratif-adjoint',
-  'directeur-departement',
-  'directeur-mention',
-  'directeur-specialite',
-  'responsable-formation',
-  'responsable-annee',
+const NON_RESPONSABLE_ROLES = [
+  'services-centraux',
+  'administrateur',
+  'utilisateur-simple',
+  'lecture-seule',
 ];
 
 @Injectable()
@@ -22,24 +18,19 @@ export class DashboardService {
       throw new NotFoundException('Aucune année disponible.');
     }
 
-    const [niveauCount, fallbackFormationCount, responsablesRows, departements, composantes] =
+    const [niveauCount, mentionCount, responsablesRows, departements, composantes] =
       await this.prisma.$transaction([
         this.prisma.entite_structure.count({
-          where: {
-            id_annee: year.id_annee,
-            type_entite: 'NIVEAU',
-          },
+          where: { id_annee: year.id_annee, type_entite: 'NIVEAU' },
         }),
         this.prisma.entite_structure.count({
-          where: {
-            id_annee: year.id_annee,
-            type_entite: { in: ['MENTION', 'PARCOURS'] },
-          },
+          where: { id_annee: year.id_annee, type_entite: 'MENTION' },
         }),
         this.prisma.affectation.findMany({
           where: {
             id_annee: year.id_annee,
-            id_role: { in: RESPONSABLE_ROLE_IDS },
+            id_role: { notIn: NON_RESPONSABLE_ROLES },
+            role: { est_administratif: false },
           },
           distinct: ['id_user'],
           select: { id_user: true },
@@ -61,7 +52,9 @@ export class DashboardService {
     return {
       yearId: Number(year.id_annee),
       yearLabel: year.libelle,
-      formations: niveauCount > 0 ? niveauCount : fallbackFormationCount,
+      niveaux: niveauCount,
+      mentions: mentionCount,
+      formations: mentionCount,
       responsables: responsablesRows.length,
       departements,
       composantes,

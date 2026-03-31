@@ -1,16 +1,26 @@
-export type UserRole = 
-  | 'directeur-composante' 
-  | 'directeur-administratif' 
+export type UserRole =
+  | 'services-centraux'
+  | 'administrateur'
+  | 'directeur-composante'
+  | 'directeur-administratif'
   | 'directeur-administratif-adjoint'
-  | 'directeur-departement' 
+  | 'directeur-departement'
+  | 'vice-president-departement'
+  | 'directeur-adjoint-licence'
+  | 'responsable-service-pedagogique'
+  | 'responsable-adjoint-service-pedagogique'
   | 'directeur-mention'
   | 'directeur-specialite'
-  | 'responsable-formation' 
+  | 'responsable-formation'
   | 'responsable-annee'
-  | 'utilisateur-simple' 
-  | 'lecture-seule'
-  | 'administrateur'
-  | 'services-centraux';
+  | 'directeur-etudes'
+  | 'responsable-qualite'
+  | 'responsable-international'
+  | 'referent-commun'
+  | 'directeur-adjoint-ecole'
+  | 'secretariat-pedagogique'
+  | 'utilisateur-simple'
+  | 'lecture-seule';
 
 export type AcademicYearStatus = 'en-cours' | 'en-preparation' | 'archivee';
 
@@ -205,18 +215,28 @@ export type View =
   | 'user-profile';
 
 const ROLE_LABELS: Record<UserRole, string> = {
+  'services-centraux': 'Services Centraux',
+  'administrateur': 'Administrateur / DSI',
   'directeur-composante': 'Directeur de Composante/UFR',
   'directeur-administratif': 'Directeur Administratif (DA)',
   'directeur-administratif-adjoint': 'DA Adjoint(e)',
   'directeur-departement': 'Chef de Département',
+  'vice-president-departement': 'Vice-Président de Département',
+  'directeur-adjoint-licence': 'Directeur Adjoint Licence',
+  'responsable-service-pedagogique': 'Responsable Service Pédagogique',
+  'responsable-adjoint-service-pedagogique': 'Responsable Adjoint Service Pédagogique',
   'directeur-mention': 'Directeur de Mention',
   'directeur-specialite': 'Directeur de Spécialité',
   'responsable-formation': 'Responsable de Formation',
-  'responsable-annee': "Responsable d'année",
+  'responsable-annee': "Responsable d'Année",
+  'directeur-etudes': 'Directeur des Études',
+  'responsable-qualite': 'Responsable Qualité',
+  'responsable-international': 'Responsable International',
+  'referent-commun': 'Référent Commun',
+  'directeur-adjoint-ecole': "Directeur Adjoint d'École",
+  'secretariat-pedagogique': 'Secrétariat Pédagogique',
   'utilisateur-simple': 'Enseignant',
   'lecture-seule': 'Lecture seule',
-  'administrateur': 'Administrateur / DSI',
-  'services-centraux': 'Services Centraux',
 };
 
 export function getRoleLabel(role: UserRole): string {
@@ -237,53 +257,53 @@ export function getAcademicYearStatusLabel(status: AcademicYearStatus): string {
   return labels[status];
 }
 
+/** Rôles considérés comme "direction" (peuvent générer, gérer, déléguer) */
+const DIRECTION_ROLES: UserRole[] = [
+  'services-centraux',
+  'administrateur',
+  'directeur-composante',
+  'directeur-administratif',
+  'directeur-administratif-adjoint',
+  'directeur-departement',
+  'vice-president-departement',
+  'directeur-adjoint-licence',
+  'responsable-service-pedagogique',
+  'responsable-adjoint-service-pedagogique',
+  'directeur-mention',
+  'directeur-specialite',
+  'responsable-formation',
+  'responsable-annee',
+  'directeur-etudes',
+];
+
 export function canGenerateOrgChart(role: UserRole): boolean {
-  const allowedRoles: UserRole[] = [
+  return DIRECTION_ROLES.includes(role);
+}
+
+export function canManageUsers(role: UserRole): boolean {
+  return [
     'services-centraux',
     'directeur-composante',
     'directeur-administratif',
     'directeur-administratif-adjoint',
-    'directeur-departement',
-    'directeur-mention',
-    'directeur-specialite',
-    'responsable-formation'
-  ];
-  return allowedRoles.includes(role);
-}
-
-export function canManageUsers(role: UserRole): boolean {
-  const allowedRoles: UserRole[] = [
-    'services-centraux',
-    'directeur-composante',
-    'directeur-administratif',
-    'directeur-administratif-adjoint'
-  ];
-  return allowedRoles.includes(role);
+  ].includes(role);
 }
 
 export function canDeleteUser(role: UserRole): boolean {
-  // Services centraux (hiérarchie max) et directeur de composante peuvent supprimer
   return role === 'services-centraux' || role === 'directeur-composante';
 }
 
 export function canImportData(role: UserRole): boolean {
-  const allowedRoles: UserRole[] = [
+  return [
     'services-centraux',
     'directeur-composante',
     'directeur-administratif',
-    'directeur-administratif-adjoint'
-  ];
-  return allowedRoles.includes(role);
+    'directeur-administratif-adjoint',
+  ].includes(role);
 }
 
 export function canManageDelegations(role: UserRole): boolean {
-  const allowedRoles: UserRole[] = [
-    'services-centraux',
-    'directeur-composante',
-    'directeur-administratif',
-    'directeur-administratif-adjoint'
-  ];
-  return allowedRoles.includes(role);
+  return DIRECTION_ROLES.includes(role);
 }
 
 export function canManageYears(role: UserRole): boolean {
@@ -304,13 +324,7 @@ export function canReviewRoleRequests(role: UserRole): boolean {
 }
 
 export function canRequestCustomRole(role: UserRole): boolean {
-  return (
-    role === 'directeur-composante' ||
-    role === 'directeur-administratif' ||
-    role === 'directeur-administratif-adjoint' ||
-    role === 'directeur-departement' ||
-    role === 'directeur-mention' ||
-    role === 'directeur-specialite' ||
-    role === 'responsable-formation'
-  );
+  return DIRECTION_ROLES.filter(
+    (r) => r !== 'services-centraux' && r !== 'administrateur',
+  ).includes(role);
 }

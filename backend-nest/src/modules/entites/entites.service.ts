@@ -12,16 +12,12 @@ export type EntiteListItem = {
   bureau_service: string | null;
 };
 
-/** Rôle considéré comme "responsable" (direction, responsable de formation, etc.) */
-const RESPONSABLE_ROLE_IDS = new Set([
-  'directeur-composante',
-  'directeur-administratif',
-  'directeur-administratif-adjoint',
-  'directeur-departement',
-  'directeur-mention',
-  'directeur-specialite',
-  'responsable-formation',
-  'responsable-annee',
+/** Rôles qui ne sont jamais des "responsables" d'entité (accès global ou purement lecture) */
+const NON_RESPONSABLE_ROLES = new Set([
+  'services-centraux',
+  'administrateur',
+  'utilisateur-simple',
+  'lecture-seule',
 ]);
 
 export type AffectationPerson = {
@@ -171,7 +167,7 @@ export class EntitesService {
             where: {
               id_entite: { in: descendantIdBigInts },
               id_annee: BigInt(idAnnee),
-              id_role: { in: [...RESPONSABLE_ROLE_IDS] },
+              id_role: { notIn: [...NON_RESPONSABLE_ROLES] },
             },
           });
 
@@ -184,7 +180,7 @@ export class EntitesService {
       bureau: a.utilisateur.bureau,
       id_role: a.id_role,
       role_libelle: a.role?.libelle ?? a.id_role,
-      is_responsable: RESPONSABLE_ROLE_IDS.has(a.id_role),
+      is_responsable: !NON_RESPONSABLE_ROLES.has(a.id_role) && a.role?.est_administratif === false,
     });
 
     const allPeople = affectations.map(mapPerson);
