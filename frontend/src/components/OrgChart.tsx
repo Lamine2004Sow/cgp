@@ -451,7 +451,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
 
       {tree ? (
         <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 overflow-x-auto">
-          <div className="min-w-max">{renderNode(tree)}</div>
+          <div className="min-w-max pb-6"><OrgNode node={tree} level={0} /></div>
         </div>
       ) : (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
@@ -510,43 +510,92 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
   );
 }
 
-function renderNode(node: ApiOrgNode, level: number = 0): JSX.Element {
-  const colors: Record<number, string> = {
-    0: "bg-purple-100 border-purple-300 text-purple-900",
-    1: "bg-blue-100 border-blue-300 text-blue-900",
-    2: "bg-green-100 border-green-300 text-green-900",
-    3: "bg-orange-100 border-orange-300 text-orange-900",
+function OrgNode({ node, level = 0 }: { node: ApiOrgNode; level?: number }) {
+  const [expanded, setExpanded] = useState(true);
+  const [hovered, setHovered] = useState(false);
+
+  const colorVariants: Record<number, { box: string; badge: string; connector: string }> = {
+    0: { box: "bg-indigo-600 border-indigo-700 text-white",   badge: "bg-indigo-800/40 text-indigo-100", connector: "#6366f1" },
+    1: { box: "bg-blue-500 border-blue-600 text-white",       badge: "bg-blue-700/40 text-blue-100",    connector: "#3b82f6" },
+    2: { box: "bg-emerald-500 border-emerald-600 text-white", badge: "bg-emerald-700/40 text-emerald-100", connector: "#10b981" },
+    3: { box: "bg-amber-500 border-amber-600 text-white",     badge: "bg-amber-700/40 text-amber-100",  connector: "#f59e0b" },
   };
 
-  const colorClass = colors[Math.min(level, 3) as keyof typeof colors];
+  const { box, badge, connector } = colorVariants[Math.min(level, 3)];
+  const hasChildren = (node.children?.length ?? 0) > 0;
+  const hasResps = (node.responsables?.length ?? 0) > 0;
 
   return (
-    <div className="flex flex-col items-center mb-6">
-      <div className={`px-6 py-3 rounded-lg border-2 ${colorClass} shadow-sm min-w-[220px] text-center`}>
-        <div className="font-medium">{node.nom}</div>
-        <div className="text-xs opacity-75">{levelLabel(node.type_entite)}</div>
-        {node.responsables && node.responsables.length > 0 && (
-          <div className="mt-2 text-xs text-slate-700 space-y-0.5">
-            {node.responsables.map((resp) => (
-              <div key={`${resp.nom}-${resp.id_role}`}>
-                {resp.prenom} {resp.nom} <span className="opacity-80">({getRoleLabelSafe(resp.id_role)})</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {node.children && node.children.length > 0 && (
-        <div className="flex justify-center mt-6">
-          <div className="relative">
-            <div className="flex gap-8">
-              {node.children.map((child) => (
-                <div key={child.id_entite} className="relative">
-                  <div className="absolute top-0 left-1/2 w-px h-6 bg-slate-300 -translate-x-1/2 -translate-y-6" />
-                  {renderNode(child, level + 1)}
+    <div className="flex flex-col items-center">
+      {/* Node box */}
+      <div className="relative">
+        <div
+          className={`relative px-4 py-2.5 rounded-xl border-2 shadow-md cursor-pointer select-none transition-all duration-150
+            ${box}
+            ${hovered ? "scale-105 shadow-lg z-10" : ""}
+            min-w-[160px] max-w-[220px] text-center`}
+          onClick={() => hasChildren && setExpanded((v) => !v)}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          title={hasChildren ? (expanded ? "Réduire" : "Développer") : undefined}
+        >
+          {/* Name */}
+          <div className="font-semibold text-sm leading-tight truncate">{node.nom}</div>
+          {/* Type badge */}
+          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${badge}`}>
+            {levelLabel(node.type_entite)}
+          </span>
+          {/* Expand/collapse indicator */}
+          {hasChildren && (
+            <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-500 text-xs shadow-sm z-10">
+              {expanded ? "−" : "+"}
+            </div>
+          )}
+        </div>
+
+        {/* Tooltip on hover */}
+        {hovered && hasResps && (
+          <div
+            className="absolute z-50 top-full mt-4 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-xl shadow-xl p-3 min-w-[220px] pointer-events-none"
+            onMouseEnter={() => setHovered(true)}
+          >
+            <div className="text-xs font-semibold text-slate-700 mb-2">Responsables</div>
+            <div className="space-y-1.5">
+              {node.responsables!.map((resp) => (
+                <div key={`${resp.nom}-${resp.id_role}`} className="flex flex-col">
+                  <span className="text-sm font-medium text-slate-800">{resp.prenom} {resp.nom}</span>
+                  <span className="text-xs text-slate-500">{getRoleLabelSafe(resp.id_role)}</span>
+                  {resp.email_institutionnel && (
+                    <span className="text-xs text-indigo-500 truncate">{resp.email_institutionnel}</span>
+                  )}
                 </div>
               ))}
             </div>
-            <div className="absolute top-0 left-0 right-0 h-px bg-slate-300 -translate-y-6" />
+          </div>
+        )}
+      </div>
+
+      {/* Children */}
+      {hasChildren && expanded && (
+        <div className="flex justify-center mt-8">
+          <div className="relative">
+            {/* Horizontal bar */}
+            <div
+              className="absolute top-0 left-0 right-0 h-px -translate-y-4"
+              style={{ background: connector }}
+            />
+            <div className="flex gap-6">
+              {node.children!.map((child) => (
+                <div key={child.id_entite} className="relative flex flex-col items-center">
+                  {/* Vertical connector down to child */}
+                  <div
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-4 -translate-y-4"
+                    style={{ background: connector }}
+                  />
+                  <OrgNode node={child} level={level + 1} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

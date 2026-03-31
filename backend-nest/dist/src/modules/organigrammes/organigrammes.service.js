@@ -8,9 +8,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrganigrammesService = void 0;
 const common_1 = require("@nestjs/common");
+const pdfkit_1 = __importDefault(require("pdfkit"));
 const prisma_service_1 = require("../../common/prisma/prisma.service");
 const roles_constants_1 = require("../../auth/roles.constants");
 let OrganigrammesService = class OrganigrammesService {
@@ -241,44 +245,109 @@ let OrganigrammesService = class OrganigrammesService {
         return `${header}\n${rows.join('\n')}`;
     }
     toPdf(root, year) {
-        const lines = [`Organigramme ${year}`];
-        const walk = (node, depth) => {
-            const prefix = `${'  '.repeat(depth)}- `;
-            lines.push(`${prefix}${node.nom} [${node.type_entite}]`);
-            for (const responsable of node.responsables || []) {
-                lines.push(`${'  '.repeat(depth + 1)}* ${responsable.prenom} ${responsable.nom} (${responsable.id_role})`);
-            }
-            for (const child of node.children || []) {
-                walk(child, depth + 1);
+        const BOX_W = 200;
+        const BOX_H = 54;
+        const H_GAP = 28;
+        const V_GAP = 60;
+        const PAGE_MARGIN = 50;
+        const HEADER_H = 60;
+        const FILLS = [
+            [99, 102, 241],
+            [59, 130, 246],
+            [16, 185, 129],
+            [245, 158, 11],
+        ];
+        const computeWidth = (node) => {
+            const children = node.children ?? [];
+            if (children.length === 0)
+                return BOX_W;
+            const childrenW = children.reduce((sum, c) => sum + computeWidth(c), (children.length - 1) * H_GAP);
+            return Math.max(BOX_W, childrenW);
+        };
+        const layoutNodes = [];
+        const placeNode = (node, level, leftEdge, subtreeW) => {
+            const cx = leftEdge + subtreeW / 2;
+            const y = HEADER_H + level * (BOX_H + V_GAP);
+            layoutNodes.push({ node, level, x: cx, y, subtreeW });
+            const children = node.children ?? [];
+            if (children.length === 0)
+                return;
+            let cursor = leftEdge;
+            for (const child of children) {
+                const cw = computeWidth(child);
+                placeNode(child, level + 1, cursor, cw);
+                cursor += cw + H_GAP;
             }
         };
-        walk(root, 0);
-        const escapedText = lines
-            .map((line) => line.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'))
-            .join(') Tj T* (');
-        const stream = `BT /F1 10 Tf 40 780 Td 14 TL (${escapedText}) Tj ET`;
-        const objects = [
-            '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
-            '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj',
-            '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj',
-            `4 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`,
-            '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
-        ];
-        let pdf = '%PDF-1.4\n';
-        const offsets = [0];
-        for (const object of objects) {
-            offsets.push(Buffer.byteLength(pdf, 'utf8'));
-            pdf += `${object}\n`;
+        const totalW = computeWidth(root);
+        placeNode(root, 0, PAGE_MARGIN, totalW);
+        const maxLevel = Math.max(...layoutNodes.map((n) => n.level));
+        const canvasW = totalW + PAGE_MARGIN * 2;
+        const canvasH = HEADER_H + (maxLevel + 1) * (BOX_H + V_GAP) + PAGE_MARGIN;
+        const doc = new pdfkit_1.default({
+            size: [canvasW, canvasH],
+            margin: 0,
+            info: { Title: `Organigramme ${year}` },
+        });
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.rect(0, 0, canvasW, HEADER_H).fill('#4f46e5');
+        doc
+            .fillColor('#ffffff')
+            .font('Helvetica-Bold')
+            .fontSize(18)
+            .text(`Organigramme ${year}`, PAGE_MARGIN, 18, { lineBreak: false });
+        doc.lineWidth(1.5).strokeColor('#94a3b8');
+        for (const ln of layoutNodes) {
+            const parentX = ln.x;
+            const parentBottomY = ln.y + BOX_H;
+            for (const child of ln.node.children ?? []) {
+                const childLn = layoutNodes.find((n) => n.node === child);
+                if (!childLn)
+                    continue;
+                const childTopY = childLn.y;
+                const midY = parentBottomY + V_GAP / 2;
+                doc
+                    .moveTo(parentX, parentBottomY)
+                    .lineTo(parentX, midY)
+                    .lineTo(childLn.x, midY)
+                    .lineTo(childLn.x, childTopY)
+                    .stroke();
+            }
         }
-        const xrefOffset = Buffer.byteLength(pdf, 'utf8');
-        pdf += `xref\n0 ${objects.length + 1}\n`;
-        pdf += '0000000000 65535 f \n';
-        for (let i = 1; i < offsets.length; i += 1) {
-            pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+        for (const ln of layoutNodes) {
+            const [r, g, b] = FILLS[Math.min(ln.level, FILLS.length - 1)];
+            const fill = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            const boxX = ln.x - BOX_W / 2;
+            doc.roundedRect(boxX + 2, ln.y + 2, BOX_W, BOX_H, 6).fill('#00000015');
+            doc.roundedRect(boxX, ln.y, BOX_W, BOX_H, 6).fill(fill);
+            const label = ln.node.nom.length > 28 ? `${ln.node.nom.slice(0, 26)}…` : ln.node.nom;
+            doc
+                .fillColor('#ffffff')
+                .font('Helvetica-Bold')
+                .fontSize(9)
+                .text(label, boxX + 8, ln.y + 8, { width: BOX_W - 16, lineBreak: false });
+            doc
+                .fillColor('#ffffffcc')
+                .font('Helvetica')
+                .fontSize(7)
+                .text(ln.node.type_entite, boxX + 8, ln.y + 23, { width: BOX_W - 16, lineBreak: false });
+            const resps = ln.node.responsables ?? [];
+            if (resps.length > 0) {
+                const respLine = resps
+                    .slice(0, 2)
+                    .map((r) => `${r.prenom} ${r.nom}`)
+                    .join(', ');
+                const truncated = respLine.length > 34 ? `${respLine.slice(0, 32)}…` : respLine;
+                doc
+                    .fillColor('#e0e7ff')
+                    .font('Helvetica')
+                    .fontSize(6.5)
+                    .text(truncated, boxX + 8, ln.y + 37, { width: BOX_W - 16, lineBreak: false });
+            }
         }
-        pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\n`;
-        pdf += `startxref\n${xrefOffset}\n%%EOF`;
-        return Buffer.from(pdf, 'utf8');
+        doc.end();
+        return Buffer.concat(chunks);
     }
     isServicesCentraux(user) {
         return user.affectations.some((affectation) => affectation.roleId === roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX);

@@ -40,6 +40,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "pg": "^8.18.0",
+    "pdfkit": "^0.15.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -53,6 +54,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "@types/pdfkit": "^0.13.9",
     "dotenv": "^17.2.3",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
