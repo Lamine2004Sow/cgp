@@ -21,6 +21,7 @@ const NON_RESPONSABLE_ROLES = new Set([
 ]);
 
 export type AffectationPerson = {
+  id_affectation: number;
   id_user: number;
   nom: string;
   prenom: string;
@@ -30,6 +31,13 @@ export type AffectationPerson = {
   id_role: string;
   role_libelle: string;
   is_responsable: boolean;
+  /** Coordonnées fonctionnelles liées à ce rôle (email fonctionnel, tél bureau dédié) */
+  contact?: {
+    id_contact_role: number;
+    email_fonctionnelle: string | null;
+    telephone: string | null;
+    bureau: string | null;
+  } | null;
 };
 
 /** Base + champs optionnels par type d'entité (sans listes / comptages) */
@@ -152,6 +160,7 @@ export class EntitesService {
         include: {
           utilisateur: true,
           role: true,
+          contact_role: true,
         },
       }),
       this.prisma.delegation.count({ where: { id_entite: BigInt(id) } }),
@@ -171,17 +180,29 @@ export class EntitesService {
             },
           });
 
-    const mapPerson = (a: (typeof affectations)[0]): AffectationPerson => ({
-      id_user: Number(a.id_user),
-      nom: a.utilisateur.nom,
-      prenom: a.utilisateur.prenom,
-      email_institutionnel: a.utilisateur.email_institutionnel,
-      telephone: a.utilisateur.telephone,
-      bureau: a.utilisateur.bureau,
-      id_role: a.id_role,
-      role_libelle: a.role?.libelle ?? a.id_role,
-      is_responsable: !NON_RESPONSABLE_ROLES.has(a.id_role) && a.role?.est_administratif === false,
-    });
+    const mapPerson = (a: (typeof affectations)[0]): AffectationPerson => {
+      const cr = (a as any).contact_role?.[0] ?? null;
+      return {
+        id_affectation: Number(a.id_affectation),
+        id_user: Number(a.id_user),
+        nom: a.utilisateur.nom,
+        prenom: a.utilisateur.prenom,
+        email_institutionnel: a.utilisateur.email_institutionnel,
+        telephone: a.utilisateur.telephone,
+        bureau: a.utilisateur.bureau,
+        id_role: a.id_role,
+        role_libelle: a.role?.libelle ?? a.id_role,
+        is_responsable: !NON_RESPONSABLE_ROLES.has(a.id_role) && a.role?.est_administratif === false,
+        contact: cr
+          ? {
+              id_contact_role: Number(cr.id_contact_role),
+              email_fonctionnelle: cr.email_fonctionnelle,
+              telephone: cr.telephone,
+              bureau: cr.bureau,
+            }
+          : null,
+      };
+    };
 
     const allPeople = affectations.map(mapPerson);
     const responsables = allPeople.filter((p) => p.is_responsable);

@@ -1,7 +1,22 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { IsOptional, IsString } from 'class-validator';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateAffectationDto } from './dto/create-affectation.dto';
 import { UpdateAffectationDto } from './dto/update-affectation.dto';
+
+export class UpsertContactDto {
+  @IsOptional()
+  @IsString()
+  email_fonctionnelle?: string | null;
+
+  @IsOptional()
+  @IsString()
+  telephone?: string | null;
+
+  @IsOptional()
+  @IsString()
+  bureau?: string | null;
+}
 
 const toAffectationResponse = (a: {
   id_affectation: bigint;
@@ -121,5 +136,48 @@ export class AffectationsService {
     }
 
     await this.prisma.affectation.delete({ where: { id_affectation: parsedId } });
+  }
+
+  async upsertContact(id: string, data: UpsertContactDto) {
+    let parsedId: bigint;
+    try {
+      parsedId = BigInt(id);
+    } catch {
+      throw new NotFoundException('Affectation introuvable');
+    }
+
+    const affectation = await this.prisma.affectation.findUnique({
+      where: { id_affectation: parsedId },
+    });
+    if (!affectation) {
+      throw new NotFoundException('Affectation introuvable');
+    }
+
+    const existingContact = await this.prisma.contact_role.findFirst({
+      where: { id_affectation: parsedId },
+    });
+
+    const payload = {
+      email_fonctionnelle: data.email_fonctionnelle ?? null,
+      telephone: data.telephone ?? null,
+      bureau: data.bureau ?? null,
+    };
+
+    const contact = existingContact
+      ? await this.prisma.contact_role.update({
+          where: { id_contact_role: existingContact.id_contact_role },
+          data: payload,
+        })
+      : await this.prisma.contact_role.create({
+          data: { id_affectation: parsedId, ...payload },
+        });
+
+    return {
+      id_contact_role: Number(contact.id_contact_role),
+      id_affectation: Number(contact.id_affectation),
+      email_fonctionnelle: contact.email_fonctionnelle,
+      telephone: contact.telephone,
+      bureau: contact.bureau,
+    };
   }
 }

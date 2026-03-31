@@ -43,6 +43,7 @@ export interface EntiteStructure {
 
 /** Personne affectée sur une structure (responsable ou secrétariat) */
 export interface AffectationPerson {
+  id_affectation: number;
   id_user: number;
   nom: string;
   prenom: string;
@@ -52,6 +53,12 @@ export interface AffectationPerson {
   id_role: string;
   role_libelle: string;
   is_responsable: boolean;
+  contact?: {
+    id_contact_role: number;
+    email_fonctionnelle: string | null;
+    telephone: string | null;
+    bureau: string | null;
+  } | null;
 }
 
 /** Fiche structure complète (détail + champs selon type + effectifs) */
