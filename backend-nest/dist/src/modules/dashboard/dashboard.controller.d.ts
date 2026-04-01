@@ -7,8 +7,6 @@ export declare class DashboardController {
         stats: {
             yearId: number;
             yearLabel: string;
-            niveaux: number;
-            mentions: number;
             formations: number;
             responsables: number;
             departements: number;

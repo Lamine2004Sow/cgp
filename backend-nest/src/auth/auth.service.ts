@@ -31,6 +31,11 @@ export class AuthService {
       nom: user.nom,
       prenom: user.prenom,
       emailInstitutionnel: user.email_institutionnel,
+      emailInstitutionnelSecondaire: user.email_institutionnel_secondaire,
+      genre: user.genre,
+      categorie: user.categorie,
+      telephone: user.telephone,
+      bureau: user.bureau,
       affectations: user.affectation.map((affectation) =>
         this.mapAffectation(affectation),
       ),

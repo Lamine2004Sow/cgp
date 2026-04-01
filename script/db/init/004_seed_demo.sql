@@ -367,7 +367,21 @@ insert into utilisateur (id_user, login, nom, prenom, email_institutionnel, tele
   (1132, 'test.role-secretariat-pedagogique-as', 'ROLE SECRETARIAT PEDAGOGIQUE AS', 'Test', null, null, null, 'ACTIF'),
   (1133, 'test.role-secretariat-pedagogique-assc-gu', 'ROLE SECRETARIAT PEDAGOGIQUE ASSC GU', 'Test', null, null, null, 'ACTIF'),
   (1134, 'test.services-centraux', 'SERVICES CENTRAUX', 'Test', null, null, null, 'ACTIF'),
-  (1135, 'test.utilisateur-simple', 'UTILISATEUR SIMPLE', 'Test', null, null, null, 'ACTIF');
+  (1135, 'test.utilisateur-simple', 'UTILISATEUR SIMPLE', 'Test', null, null, null, 'ACTIF'),
+  (1136, 'sc.admin', 'Admin', 'Services', null, null, null, 'ACTIF'),
+  (1137, 'test.directeur-administratif', 'DIRECTEUR ADMINISTRATIF', 'Test', null, null, null, 'ACTIF'),
+  (1138, 'test.directeur-administratif-adjoint', 'DIRECTEUR ADMINISTRATIF ADJOINT', 'Test', null, null, null, 'ACTIF'),
+  (1139, 'test.vice-president-departement', 'VICE PRESIDENT DEPARTEMENT', 'Test', null, null, null, 'ACTIF'),
+  (1140, 'test.directeur-adjoint-licence', 'DIRECTEUR ADJOINT LICENCE', 'Test', null, null, null, 'ACTIF'),
+  (1141, 'test.responsable-service-pedagogique', 'RESPONSABLE SERVICE PEDAGOGIQUE', 'Test', null, null, null, 'ACTIF'),
+  (1142, 'test.responsable-adjoint-service-pedagogique', 'RESP ADJOINT SERVICE PEDAGOGIQUE', 'Test', null, null, null, 'ACTIF'),
+  (1143, 'test.directeur-etudes', 'DIRECTEUR ETUDES', 'Test', null, null, null, 'ACTIF'),
+  (1144, 'test.responsable-qualite', 'RESPONSABLE QUALITE', 'Test', null, null, null, 'ACTIF'),
+  (1145, 'test.responsable-international', 'RESPONSABLE INTERNATIONAL', 'Test', null, null, null, 'ACTIF'),
+  (1146, 'test.referent-commun', 'REFERENT COMMUN', 'Test', null, null, null, 'ACTIF'),
+  (1147, 'test.directeur-adjoint-ecole', 'DIRECTEUR ADJOINT ECOLE', 'Test', null, null, null, 'ACTIF'),
+  (1148, 'test.secretariat-pedagogique', 'SECRETARIAT PEDAGOGIQUE', 'Test', null, null, null, 'ACTIF'),
+  (1149, 'test.lecture-seule', 'LECTURE SEULE', 'Test', null, null, null, 'ACTIF');
 
 insert into affectation (id_affectation, id_user, id_role, id_entite, id_annee, date_debut, date_fin) values
   (2000, 1000, 'responsable-formation', 1004, 3, '2025-09-01', null),
@@ -512,7 +526,21 @@ insert into affectation (id_affectation, id_user, id_role, id_entite, id_annee, 
   (2139, 1132, 'role-secretariat-pedagogique-as', 1000, 3, '2025-09-01', null),
   (2140, 1133, 'role-secretariat-pedagogique-assc-gu', 1000, 3, '2025-09-01', null),
   (2141, 1134, 'services-centraux', 1000, 3, '2025-09-01', null),
-  (2142, 1135, 'utilisateur-simple', 1000, 3, '2025-09-01', null);
+  (2142, 1135, 'utilisateur-simple', 1000, 3, '2025-09-01', null),
+  (2143, 1136, 'services-centraux', 1000, 3, '2025-09-01', null),
+  (2144, 1137, 'directeur-administratif', 1000, 3, '2025-09-01', null),
+  (2145, 1138, 'directeur-administratif-adjoint', 1000, 3, '2025-09-01', null),
+  (2146, 1139, 'vice-president-departement', 1001, 3, '2025-09-01', null),
+  (2147, 1140, 'directeur-adjoint-licence', 1000, 3, '2025-09-01', null),
+  (2148, 1141, 'responsable-service-pedagogique', 1000, 3, '2025-09-01', null),
+  (2149, 1142, 'responsable-adjoint-service-pedagogique', 1000, 3, '2025-09-01', null),
+  (2150, 1143, 'directeur-etudes', 1004, 3, '2025-09-01', null),
+  (2151, 1144, 'responsable-qualite', 1000, 3, '2025-09-01', null),
+  (2152, 1145, 'responsable-international', 1000, 3, '2025-09-01', null),
+  (2153, 1146, 'referent-commun', 1000, 3, '2025-09-01', null),
+  (2154, 1147, 'directeur-adjoint-ecole', 1000, 3, '2025-09-01', null),
+  (2155, 1148, 'secretariat-pedagogique', 1002, 3, '2025-09-01', null),
+  (2156, 1149, 'lecture-seule', 1000, 3, '2025-09-01', null);
 
 insert into contact_role (id_contact_role, id_affectation, email_fonctionnelle, type_email) values
   (3000, 2035, 'secdir.ufrcom@univ-paris13.fr', 'fonction'),

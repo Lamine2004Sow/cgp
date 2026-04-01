@@ -18,6 +18,9 @@ export interface UserListItem {
     nom: string;
     prenom: string;
     email_institutionnel: string | null;
+    email_institutionnel_secondaire: string | null;
+    genre: string | null;
+    categorie: string | null;
     telephone: string | null;
     bureau: string | null;
     roles: UserRoleRow[];

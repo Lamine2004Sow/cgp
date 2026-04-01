@@ -70,6 +70,11 @@ type ApiCurrentUser = {
   nom: string;
   prenom: string;
   emailInstitutionnel?: string | null;
+  emailInstitutionnelSecondaire?: string | null;
+  genre?: string | null;
+  categorie?: string | null;
+  telephone?: string | null;
+  bureau?: string | null;
   affectations: ApiCurrentAffectation[];
 };
 
@@ -352,8 +357,11 @@ const buildUser = (
     lastName: apiUser.nom,
     role: getTopRole(affectations),
     email: apiUser.emailInstitutionnel || "",
-    phone: undefined,
-    office: undefined,
+    secondaryEmail: apiUser.emailInstitutionnelSecondaire || undefined,
+    genre: apiUser.genre || undefined,
+    category: apiUser.categorie || undefined,
+    phone: apiUser.telephone || undefined,
+    office: apiUser.bureau || undefined,
     component: component || undefined,
     roles,
   };

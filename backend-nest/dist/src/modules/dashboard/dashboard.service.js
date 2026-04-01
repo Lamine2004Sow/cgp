@@ -28,18 +28,17 @@ let DashboardService = class DashboardService {
         if (!year) {
             throw new common_1.NotFoundException('Aucune année disponible.');
         }
-        const [niveauCount, mentionCount, responsablesRows, departements, composantes] = await this.prisma.$transaction([
+        const [formationCount, responsablesRows, departements, composantes] = await this.prisma.$transaction([
             this.prisma.entite_structure.count({
-                where: { id_annee: year.id_annee, type_entite: 'NIVEAU' },
-            }),
-            this.prisma.entite_structure.count({
-                where: { id_annee: year.id_annee, type_entite: 'MENTION' },
+                where: {
+                    id_annee: year.id_annee,
+                    type_entite: { in: ['MENTION', 'PARCOURS', 'NIVEAU'] },
+                },
             }),
             this.prisma.affectation.findMany({
                 where: {
                     id_annee: year.id_annee,
                     id_role: { notIn: NON_RESPONSABLE_ROLES },
-                    role: { est_administratif: false },
                 },
                 distinct: ['id_user'],
                 select: { id_user: true },
@@ -60,9 +59,7 @@ let DashboardService = class DashboardService {
         return {
             yearId: Number(year.id_annee),
             yearLabel: year.libelle,
-            niveaux: niveauCount,
-            mentions: mentionCount,
-            formations: mentionCount,
+            formations: formationCount,
             responsables: responsablesRows.length,
             departements,
             composantes,

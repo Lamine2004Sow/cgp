@@ -29,6 +29,11 @@ export type AffectationPerson = {
 };
 export type EntiteDetailBase = EntiteListItem & {
     site_web?: string | null;
+    code_composante?: string | null;
+    type_composante?: string | null;
+    mail_fonctionnel?: string | null;
+    mail_institutionnel?: string | null;
+    campus?: string | null;
     code_interne?: string | null;
     type_diplome?: string | null;
     code_parcours?: string | null;

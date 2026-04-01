@@ -15,5 +15,10 @@ export interface CurrentUser {
   nom: string;
   prenom: string;
   emailInstitutionnel?: string | null;
+  emailInstitutionnelSecondaire?: string | null;
+  genre?: string | null;
+  categorie?: string | null;
+  telephone?: string | null;
+  bureau?: string | null;
   affectations: CurrentUserAffectation[];
 }

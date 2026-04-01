@@ -7,6 +7,7 @@ import PDFDocument from 'pdfkit';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { CurrentUser } from '../../common/types/current-user';
 import { ROLE_IDS } from '../../auth/roles.constants';
+import { isSupportRole } from '../../common/utils/role-support.utils';
 
 export interface ApiResponsable {
   nom: string;
@@ -21,6 +22,20 @@ export interface ApiOrgNode {
   type_entite: string;
   children?: ApiOrgNode[];
   responsables?: ApiResponsable[];
+}
+
+const HIDDEN_ORG_ROLE_IDS = new Set<string>([
+  ROLE_IDS.SERVICES_CENTRAUX,
+  ROLE_IDS.ADMINISTRATEUR,
+  ROLE_IDS.UTILISATEUR_SIMPLE,
+  ROLE_IDS.LECTURE_SEULE,
+]);
+
+function shouldDisplayInOrgChart(roleId: string, roleLabel?: string | null): boolean {
+  if (HIDDEN_ORG_ROLE_IDS.has(roleId)) {
+    return false;
+  }
+  return !isSupportRole(roleId, roleLabel);
 }
 
 @Injectable()
@@ -241,11 +256,18 @@ export class OrganigrammesService {
         id_annee: BigInt(yearId),
         id_entite: { in: entiteIds.map((id) => BigInt(id)) },
       },
-      include: { utilisateur: true },
+      include: {
+        utilisateur: true,
+        role: { select: { libelle: true } },
+      },
     });
 
     const responsablesMap = new Map<number, ApiResponsable[]>();
     affectations.forEach((affectation) => {
+      if (!shouldDisplayInOrgChart(affectation.id_role, affectation.role?.libelle)) {
+        return;
+      }
+
       const key = Number(affectation.id_entite);
       const list = responsablesMap.get(key) ?? [];
       list.push({

@@ -19,6 +19,11 @@ type ApiYear = {
   id_annee_source?: number | null;
 };
 
+type ManagedYear = AcademicYear & {
+  sourceId: number | null;
+  sourceLabel: string | null;
+};
+
 const mapYearStatus = (status: ApiYear["statut"]): AcademicYear["status"] => {
   if (status === "EN_COURS") return "en-cours";
   if (status === "PREPARATION") return "en-preparation";
@@ -26,7 +31,7 @@ const mapYearStatus = (status: ApiYear["statut"]): AcademicYear["status"] => {
 };
 
 export function YearManagement({ currentYear, authLogin, onRefresh, onNavigateToImport }: YearManagementProps) {
-  const [years, setYears] = useState<AcademicYear[]>([]);
+  const [years, setYears] = useState<ManagedYear[]>([]);
   const [copyAffectations, setCopyAffectations] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +43,14 @@ export function YearManagement({ currentYear, authLogin, onRefresh, onNavigateTo
     setError(null);
     try {
       const data = await apiFetch<{ items: ApiYear[] }>("/years", { login: authLogin });
+      const labelById = new Map(data.items.map((year) => [year.id_annee, year.libelle]));
       const mapped = data.items.map((year) => ({
         id: String(year.id_annee),
         year: year.libelle,
         status: mapYearStatus(year.statut),
         isFrozen: false,
+        sourceId: year.id_annee_source ?? null,
+        sourceLabel: year.id_annee_source ? labelById.get(year.id_annee_source) ?? null : null,
       }));
       setYears(mapped);
     } catch (err) {
@@ -216,7 +224,11 @@ export function YearManagement({ currentYear, authLogin, onRefresh, onNavigateTo
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {year.id === currentYear.id ? "Année courante" : "-"}
+                      {year.sourceLabel
+                        ? `${year.sourceLabel}`
+                        : year.id === currentYear.id
+                          ? "Année courante"
+                          : "-"}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
@@ -256,7 +268,8 @@ export function YearManagement({ currentYear, authLogin, onRefresh, onNavigateTo
           </p>
           <p className="text-indigo-700 text-sm mt-2">
             <strong>Option 2 — Structure seule puis import :</strong> décochez « Recopier les affectations ».
-            Seule la structure sera copiée. Vous pourrez ensuite importer les responsables depuis un fichier CSV ou Excel (onglet Import / Export).
+            Seule la structure sera copiée. Vous pourrez ensuite importer les responsables depuis un fichier CSV
+            (exporté depuis Excel si besoin) dans l'onglet Import / Export.
           </p>
         </div>
       </div>

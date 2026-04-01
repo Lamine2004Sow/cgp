@@ -16,8 +16,24 @@ type ApiUser = {
   nom: string;
   prenom: string;
   email_institutionnel: string | null;
+  email_institutionnel_secondaire: string | null;
+  genre: string | null;
+  categorie: string | null;
   telephone: string | null;
   bureau: string | null;
+};
+
+const GENDER_LABELS: Record<string, string> = {
+  M: "Monsieur",
+  F: "Madame",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  EC: "Enseignant-chercheur",
+  BIATSS: "BIATSS",
+  ESAS: "ESAS",
+  CONTRACTUEL: "Contractuel",
+  VACATAIRE: "Vacataire",
 };
 
 export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: UserProfileProps) {
@@ -53,6 +69,9 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
         phone: data.user.telephone || undefined,
         office: data.user.bureau || undefined,
         email: data.user.email_institutionnel || "",
+        secondaryEmail: data.user.email_institutionnel_secondaire || undefined,
+        genre: data.user.genre || undefined,
+        category: data.user.categorie || undefined,
         firstName: data.user.prenom,
         lastName: data.user.nom,
         name: `${data.user.prenom} ${data.user.nom}`,
@@ -130,6 +149,35 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
               <span className="text-slate-900">{user.email || "Non renseigne"}</span>
             </div>
             <p className="text-xs text-slate-500 mt-1">Non modifiable (email CAS)</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Email institutionnel secondaire
+            </label>
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <Mail className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-900">{user.secondaryEmail || "Non renseigne"}</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Lecture seule</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Civilité</label>
+            <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900">
+              {user.genre ? GENDER_LABELS[user.genre] || user.genre : "Non renseignee"}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Lecture seule</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Catégorie de personnel
+            </label>
+            <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900">
+              {user.category ? CATEGORY_LABELS[user.category] || user.category : "Non renseignee"}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Lecture seule</p>
           </div>
 
           <div>

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { UserRole, AcademicYear, EntiteStructure } from "../types";
 import { apiFetch } from "../lib/api";
+import { FilterBar } from "./ui/filter-bar";
+import { readQueryParam, writeQueryParams } from "../lib/url-state";
 
 interface ErrorReportsProps {
   userRole: UserRole;
@@ -156,6 +158,7 @@ export function ErrorReports({
   const [filterStatus, setFilterStatus] = useState<"all" | "OUVERT" | "EN_COURS" | "CLOTURE">("all");
   const [filterComposante, setFilterComposante] = useState<string>("");
   const [filterType, setFilterType] = useState<string>("");
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [closingId, setClosingId] = useState<number | null>(null);
@@ -213,6 +216,27 @@ export function ErrorReports({
   useEffect(() => {
     loadData();
   }, [authLogin, currentYear.id]);
+
+  useEffect(() => {
+    const status = readQueryParam("er_status");
+    const comp = readQueryParam("er_comp");
+    const type = readQueryParam("er_type");
+    if (status === "all" || status === "OUVERT" || status === "EN_COURS" || status === "CLOTURE") {
+      setFilterStatus(status);
+    }
+    setFilterComposante(comp || "");
+    setFilterType(type || "");
+    setFiltersHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    writeQueryParams({
+      er_status: filterStatus,
+      er_comp: filterComposante,
+      er_type: filterType,
+    });
+  }, [filterStatus, filterComposante, filterType, filtersHydrated]);
 
   const handleSubmit = async () => {
     if (!authLogin) return;
@@ -310,6 +334,16 @@ export function ErrorReports({
     });
   }, [reports, filterStatus, filterType, filterComposante, filteredEntites]);
 
+  const hasActiveFilters = Boolean(
+    filterStatus !== "all" || filterType || filterComposante,
+  );
+
+  const resetFilters = () => {
+    setFilterStatus("all");
+    setFilterType("");
+    setFilterComposante("");
+  };
+
   return (
     <div className="space-y-8">
       {/* En-tête */}
@@ -339,8 +373,9 @@ export function ErrorReports({
 
       {/* Formulaire de création */}
       {showForm && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-5">
-          <h3 className="text-slate-900">Nouveau signalement</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl space-y-5 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-slate-900">Nouveau signalement</h3>
 
           {/* Sélection du type */}
           <div>
@@ -446,6 +481,7 @@ export function ErrorReports({
               Annuler
             </button>
           </div>
+          </div>
         </div>
       )}
 
@@ -461,46 +497,54 @@ export function ErrorReports({
               </span>
             )}
           </h3>
-
-          {/* Filtre composante (SC uniquement) */}
-          {isSC && composantes.length > 0 && (
-            <select
-              value={filterComposante}
-              onChange={(e) => setFilterComposante(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-            >
-              <option value="">Toutes les composantes</option>
-              {composantes.map((c) => (
-                <option key={c.id_entite} value={c.id_entite}>
-                  {c.nom}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* Filtre type */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-          >
-            <option value="">Tous les types</option>
-            {SIGNALEMENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="OUVERT">Ouverts</option>
-            <option value="EN_COURS">En cours</option>
-            <option value="CLOTURE">Clôturés</option>
-          </select>
         </div>
+
+        <FilterBar
+          className="mb-5"
+          fields={[
+            {
+              key: "status",
+              label: "Statut",
+              type: "select",
+              value: filterStatus,
+              onChange: (value) => setFilterStatus(value as "all" | "OUVERT" | "EN_COURS" | "CLOTURE"),
+              options: [
+                { value: "all", label: "Tous les statuts" },
+                { value: "OUVERT", label: "Ouverts" },
+                { value: "EN_COURS", label: "En cours" },
+                { value: "CLOTURE", label: "Clôturés" },
+              ],
+            },
+            {
+              key: "type",
+              label: "Type",
+              type: "select",
+              value: filterType,
+              onChange: (value) => setFilterType(value),
+              options: [
+                { value: "", label: "Tous les types" },
+                ...SIGNALEMENT_TYPES.map((t) => ({ value: t.value, label: t.label })),
+              ],
+            },
+            ...(isSC && composantes.length > 0
+              ? [
+                  {
+                    key: "composante",
+                    label: "Composante",
+                    type: "select" as const,
+                    value: filterComposante,
+                    onChange: (value: string) => setFilterComposante(value),
+                    options: [
+                      { value: "", label: "Toutes les composantes" },
+                      ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
+                    ],
+                  },
+                ]
+              : []),
+          ]}
+          hasActiveFilters={hasActiveFilters}
+          onReset={resetFilters}
+        />
 
         {loading && reports.length === 0 ? (
           <div className="text-slate-500">Chargement…</div>

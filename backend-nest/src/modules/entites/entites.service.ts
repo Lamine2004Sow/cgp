@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { UpdateEntiteDto } from './dto/update-entite.dto';
+import { isSupportRole } from '../../common/utils/role-support.utils';
 
 export type EntiteListItem = {
   id_entite: number;
@@ -43,6 +44,11 @@ export type AffectationPerson = {
 /** Base + champs optionnels par type d'entité (sans listes / comptages) */
 export type EntiteDetailBase = EntiteListItem & {
   site_web?: string | null;
+  code_composante?: string | null;
+  type_composante?: string | null;
+  mail_fonctionnel?: string | null;
+  mail_institutionnel?: string | null;
+  campus?: string | null;
   code_interne?: string | null;
   type_diplome?: string | null;
   code_parcours?: string | null;
@@ -71,7 +77,14 @@ export class EntitesService {
     nom: string;
     tel_service: string | null;
     bureau_service: string | null;
-    composante?: { site_web: string | null } | null;
+    composante?: {
+      site_web: string | null;
+      code_composante: string | null;
+      type_composante: string | null;
+      mail_fonctionnel: string | null;
+      mail_institutionnel: string | null;
+      campus: string | null;
+    } | null;
     departement?: { code_interne: string | null } | null;
     mention?: { type_diplome: string | null } | null;
     parcours?: { code_parcours: string | null } | null;
@@ -87,7 +100,14 @@ export class EntitesService {
       bureau_service: item.bureau_service,
     };
     const detail: EntiteDetailBase = { ...base };
-    if (item.composante) detail.site_web = item.composante.site_web;
+    if (item.composante) {
+      detail.site_web = item.composante.site_web;
+      detail.code_composante = item.composante.code_composante;
+      detail.type_composante = item.composante.type_composante;
+      detail.mail_fonctionnel = item.composante.mail_fonctionnel;
+      detail.mail_institutionnel = item.composante.mail_institutionnel;
+      detail.campus = item.composante.campus;
+    }
     if (item.departement) detail.code_interne = item.departement.code_interne;
     if (item.mention) detail.type_diplome = item.mention.type_diplome;
     if (item.parcours) detail.code_parcours = item.parcours.code_parcours;
@@ -192,7 +212,9 @@ export class EntitesService {
         bureau: a.utilisateur.bureau,
         id_role: a.id_role,
         role_libelle: a.role?.libelle ?? a.id_role,
-        is_responsable: !NON_RESPONSABLE_ROLES.has(a.id_role) && a.role?.est_administratif === false,
+        is_responsable:
+          !NON_RESPONSABLE_ROLES.has(a.id_role) &&
+          !isSupportRole(a.id_role, a.role?.libelle),
         contact: cr
           ? {
               id_contact_role: Number(cr.id_contact_role),

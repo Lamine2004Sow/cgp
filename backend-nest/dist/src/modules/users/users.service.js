@@ -187,6 +187,9 @@ let UsersService = class UsersService {
             nom: user.nom,
             prenom: user.prenom,
             email_institutionnel: user.email_institutionnel,
+            email_institutionnel_secondaire: user.email_institutionnel_secondaire,
+            genre: user.genre,
+            categorie: user.categorie,
             telephone: user.telephone,
             bureau: user.bureau,
             roles: (user.affectation || []).map((affectation) => ({

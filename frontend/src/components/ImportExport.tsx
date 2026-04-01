@@ -513,46 +513,48 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
         </div>
       )}
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <div className="flex items-start gap-3 mb-6">
-          <Download className="w-6 h-6 text-green-600 mt-1" />
-          <div className="flex-1">
-            <h3 className="text-slate-900 mb-2">Exporter les données</h3>
-            <p className="text-slate-600 mb-4">Exportez les responsables de l'année courante</p>
+      {canQuery && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-start gap-3 mb-6">
+            <Download className="w-6 h-6 text-green-600 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-slate-900 mb-2">Exporter les données</h3>
+              <p className="text-slate-600 mb-4">Exportez les responsables de l'année courante</p>
 
-            {exportError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
-                {exportError}
+              {exportError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
+                  {exportError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => handleExport("CSV")}
+                  disabled={exportLoading}
+                  className="p-4 border-2 border-slate-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all text-left group disabled:opacity-60"
+                >
+                  <FileSpreadsheet className="w-8 h-8 text-green-600 mb-2" />
+                  <h4 className="text-slate-900 mb-1">Export CSV</h4>
+                  <p className="text-slate-600 text-sm">Format CSV</p>
+                </button>
+                <button
+                  onClick={() => handleExport("JSON")}
+                  disabled={exportLoading}
+                  className="p-4 border-2 border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left group disabled:opacity-60"
+                >
+                  <FileText className="w-8 h-8 text-blue-600 mb-2" />
+                  <h4 className="text-slate-900 mb-1">Export JSON</h4>
+                  <p className="text-slate-600 text-sm">Format JSON</p>
+                </button>
               </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                onClick={() => handleExport("CSV")}
-                disabled={exportLoading}
-                className="p-4 border-2 border-slate-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all text-left group disabled:opacity-60"
-              >
-                <FileSpreadsheet className="w-8 h-8 text-green-600 mb-2" />
-                <h4 className="text-slate-900 mb-1">Export CSV</h4>
-                <p className="text-slate-600 text-sm">Format CSV</p>
-              </button>
-              <button
-                onClick={() => handleExport("JSON")}
-                disabled={exportLoading}
-                className="p-4 border-2 border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left group disabled:opacity-60"
-              >
-                <FileText className="w-8 h-8 text-blue-600 mb-2" />
-                <h4 className="text-slate-900 mb-1">Export JSON</h4>
-                <p className="text-slate-600 text-sm">Format JSON</p>
-              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {!canQuery && canImport && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
-          Les exports filtrés sont réservés aux Services centraux.
+          Les exports sont réservés aux Services centraux ; ils sont donc masqués pour ce rôle.
         </div>
       )}
     </div>

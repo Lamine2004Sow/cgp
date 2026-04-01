@@ -9,16 +9,27 @@ interface LoginProps {
 
 const demoLogins = [
   { label: "Services centraux", login: "sc.admin" },
-  { label: "Administrateur", login: "dsi.tech" },
-  { label: "Directrice de composante (UFR Droit)", login: "fauchon" },
-  { label: "Directeur de composante (Institut Galilée)", login: "bruno.manil" },
-  { label: "Directrice administrative", login: "joelle.giroud" },
-  { label: "Directeur de département", login: "luc.museur" },
-  { label: "Directeur de mention", login: "belmeguenai.mohamed" },
-  { label: "Directrice de spécialité", login: "caroline.japhet" },
-  { label: "Directrice des études", login: "elodie.david" },
-  { label: "Responsable d'année", login: "aladine.chetouani" },
-  { label: "Secrétariat pédagogique", login: "aline.dacheux" },
+  { label: "Administrateur", login: "test.administrateur.2" },
+  { label: "Directeur de composante", login: "test.directeur-composante" },
+  { label: "Directeur administratif", login: "test.directeur-administratif" },
+  { label: "Directeur administratif adjoint", login: "test.directeur-administratif-adjoint" },
+  { label: "Directeur de département", login: "test.directeur-departement" },
+  { label: "Vice-président de département", login: "test.vice-president-departement" },
+  { label: "Directeur adjoint licence", login: "test.directeur-adjoint-licence" },
+  { label: "Responsable service pédagogique", login: "test.responsable-service-pedagogique" },
+  { label: "Responsable adjoint service pédagogique", login: "test.responsable-adjoint-service-pedagogique" },
+  { label: "Directeur de mention", login: "test.directeur-mention" },
+  { label: "Directeur de spécialité", login: "test.directeur-specialite" },
+  { label: "Responsable de formation", login: "test.responsable-formation" },
+  { label: "Responsable d'année", login: "test.responsable-annee" },
+  { label: "Directeur des études", login: "test.directeur-etudes" },
+  { label: "Responsable qualité", login: "test.responsable-qualite" },
+  { label: "Responsable international", login: "test.responsable-international" },
+  { label: "Référent commun", login: "test.referent-commun" },
+  { label: "Directeur adjoint d'école", login: "test.directeur-adjoint-ecole" },
+  { label: "Secrétariat pédagogique", login: "test.secretariat-pedagogique" },
+  { label: "Utilisateur simple", login: "test.utilisateur-simple" },
+  { label: "Lecture seule", login: "test.lecture-seule" },
 ];
 
 export function Login({ onLogin, error, loading }: LoginProps) {
@@ -38,20 +49,25 @@ export function Login({ onLogin, error, loading }: LoginProps) {
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
             <Shield className="w-8 h-8 text-indigo-600" />
           </div>
-          <h1 className="text-slate-900 mb-2">Authentification CAS</h1>
+          <h1 className="text-slate-900 mb-2">Connexion de développement</h1>
           <p className="text-slate-600 text-center">
-            Annuaire des Formations - Universite Sorbonne Paris Nord
+            Annuaire des Formations - Université Sorbonne Paris Nord
           </p>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Le CAS réel n'est pas encore branché ici. Cet écran utilise le mode mock du backend
+            avec des logins de test présents en base.
+          </div>
+
           <div>
             <label className="block text-slate-700 mb-2">Login utilisateur</label>
             <input
               type="text"
               value={login}
               onChange={(event) => setLogin(event.target.value)}
-              placeholder="ex: fauchon"
+              placeholder="ex: sc.admin"
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900"
             />
           </div>
@@ -72,7 +88,10 @@ export function Login({ onLogin, error, loading }: LoginProps) {
           </button>
 
           <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <p className="text-sm text-indigo-900 font-medium mb-2">Logins de test</p>
+            <p className="text-sm text-indigo-900 font-medium mb-1">Logins de test</p>
+            <p className="text-xs text-indigo-800 mb-2">
+              Ces logins sont alignés sur le seed Docker actuel. Si le login n'existe pas en base, la connexion renvoie 401.
+            </p>
             <div className="grid grid-cols-1 gap-2">
               {demoLogins.map((demo) => (
                 <button

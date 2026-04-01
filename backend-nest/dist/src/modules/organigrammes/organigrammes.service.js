@@ -17,6 +17,19 @@ const common_1 = require("@nestjs/common");
 const pdfkit_1 = __importDefault(require("pdfkit"));
 const prisma_service_1 = require("../../common/prisma/prisma.service");
 const roles_constants_1 = require("../../auth/roles.constants");
+const role_support_utils_1 = require("../../common/utils/role-support.utils");
+const HIDDEN_ORG_ROLE_IDS = new Set([
+    roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX,
+    roles_constants_1.ROLE_IDS.ADMINISTRATEUR,
+    roles_constants_1.ROLE_IDS.UTILISATEUR_SIMPLE,
+    roles_constants_1.ROLE_IDS.LECTURE_SEULE,
+]);
+function shouldDisplayInOrgChart(roleId, roleLabel) {
+    if (HIDDEN_ORG_ROLE_IDS.has(roleId)) {
+        return false;
+    }
+    return !(0, role_support_utils_1.isSupportRole)(roleId, roleLabel);
+}
 let OrganigrammesService = class OrganigrammesService {
     prisma;
     constructor(prisma) {
@@ -186,10 +199,16 @@ let OrganigrammesService = class OrganigrammesService {
                 id_annee: BigInt(yearId),
                 id_entite: { in: entiteIds.map((id) => BigInt(id)) },
             },
-            include: { utilisateur: true },
+            include: {
+                utilisateur: true,
+                role: { select: { libelle: true } },
+            },
         });
         const responsablesMap = new Map();
         affectations.forEach((affectation) => {
+            if (!shouldDisplayInOrgChart(affectation.id_role, affectation.role?.libelle)) {
+                return;
+            }
             const key = Number(affectation.id_entite);
             const list = responsablesMap.get(key) ?? [];
             list.push({

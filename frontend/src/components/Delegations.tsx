@@ -2,14 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { UserRole, AcademicYear, EntiteStructure } from "../types";
 import {
   UserPlus,
-  Calendar,
   CheckCircle,
   XCircle,
   Clock,
   Eye,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { apiFetch } from "../lib/api";
+import { FilterBar } from "./ui/filter-bar";
+import { readQueryParam, writeQueryParams } from "../lib/url-state";
 
 interface DelegationsProps {
   userRole: UserRole;
@@ -88,6 +90,8 @@ export function Delegations({
   const canExport = isSC;
 
   const [filterComposante, setFilterComposante] = useState<string>("");
+  const hasActiveFilters = Boolean(filterComposante || filterActive !== "all");
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   // Composantes racines (pour filtre SC)
   const composantes = useMemo(
@@ -144,6 +148,24 @@ export function Delegations({
     loadData();
   }, [authLogin, currentYear.id]);
 
+  useEffect(() => {
+    const active = readQueryParam("dg_active");
+    const comp = readQueryParam("dg_comp");
+    if (active === "all" || active === "active" || active === "inactive") {
+      setFilterActive(active);
+    }
+    setFilterComposante(comp || "");
+    setFiltersHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    writeQueryParams({
+      dg_active: filterActive,
+      dg_comp: filterComposante,
+    });
+  }, [filterActive, filterComposante, filtersHydrated]);
+
   const filteredDelegations = useMemo(() => {
     const scopedIds = filterComposante
       ? new Set(scopedEntites.map((e) => e.id_entite))
@@ -156,6 +178,11 @@ export function Delegations({
       return true;
     });
   }, [delegations, filterActive, filterComposante, scopedEntites]);
+
+  const resetFilters = () => {
+    setFilterComposante("");
+    setFilterActive("all");
+  };
 
   const handleCreateDelegation = async () => {
     if (!authLogin) return;
@@ -241,18 +268,6 @@ export function Delegations({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {isSC && composantes.length > 0 && (
-            <select
-              value={filterComposante}
-              onChange={(e) => setFilterComposante(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-            >
-              <option value="">Toutes les composantes</option>
-              {composantes.map((c) => (
-                <option key={c.id_entite} value={c.id_entite}>{c.nom}</option>
-              ))}
-            </select>
-          )}
           {canExport && (
             <button
               onClick={handleExport}
@@ -282,9 +297,10 @@ export function Delegations({
       )}
 
       {showCreateForm && canCreate && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-slate-900 mb-4">Nouvelle délégation</h3>
-          <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-slate-900 mb-4">Nouvelle délégation</h3>
+            <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -382,26 +398,48 @@ export function Delegations({
                 Annuler
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <h3 className="text-slate-900">Delegations existantes</h3>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-600">Filtrer:</label>
-            <select
-              value={filterActive}
-              onChange={(e) => setFilterActive(e.target.value as "all" | "active" | "inactive")}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-            >
-              <option value="all">Toutes</option>
-              <option value="active">Actives</option>
-              <option value="inactive">Inactives</option>
-            </select>
-          </div>
-        </div>
+        <h3 className="text-slate-900 mb-4">Délégations existantes</h3>
+
+        <FilterBar
+          className="mb-4"
+          fields={[
+            {
+              key: "status",
+              label: "Statut",
+              type: "select",
+              value: filterActive,
+              onChange: (value) => setFilterActive(value as "all" | "active" | "inactive"),
+              options: [
+                { value: "all", label: "Toutes" },
+                { value: "active", label: "Actives" },
+                { value: "inactive", label: "Inactives" },
+              ],
+            },
+            ...(isSC && composantes.length > 0
+              ? [
+                  {
+                    key: "composante",
+                    label: "Composante",
+                    type: "select" as const,
+                    value: filterComposante,
+                    onChange: (value: string) => setFilterComposante(value),
+                    options: [
+                      { value: "", label: "Toutes les composantes" },
+                      ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
+                    ],
+                  },
+                ]
+              : []),
+          ]}
+          hasActiveFilters={hasActiveFilters}
+          onReset={resetFilters}
+        />
 
         {loading && delegations.length === 0 ? (
           <div className="text-slate-500">Chargement...</div>

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, ChevronLeft, ChevronRight, Filter, GraduationCap, Mail, Phone, Search, Users } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, GraduationCap, Mail, Phone, Users } from "lucide-react";
 import { AcademicYear, EntiteStructure } from "../types";
 import { apiFetch } from "../lib/api";
+import { FilterBar } from "./ui/filter-bar";
+import { readQueryParam, writeQueryParams } from "../lib/url-state";
 
 interface DirectorySearchProps {
   currentYear: AcademicYear;
@@ -60,6 +62,8 @@ type PagedResponse<T> = {
 
 const PAGE_SIZE = 20;
 
+type ApiRole = { id: string; libelle: string };
+
 export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps) {
   const [activeTab, setActiveTab] = useState<SearchTab>("responsables");
   const [query, setQuery] = useState("");
@@ -72,10 +76,41 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
   const [structures, setStructures] = useState<ApiStructure[]>([]);
   const [secretariats, setSecretariats] = useState<ApiStructure[]>([]);
   const [total, setTotal] = useState(0);
+  const [allRoles, setAllRoles] = useState<ApiRole[]>([]);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
+
+  useEffect(() => {
+    const tab = readQueryParam("ds_tab");
+    const q = readQueryParam("ds_q");
+    const role = readQueryParam("ds_role");
+    const p = readQueryParam("ds_page");
+
+    if (tab === "responsables" || tab === "formations" || tab === "structures" || tab === "secretariats") {
+      setActiveTab(tab);
+    }
+    setQuery(q || "");
+    setRoleFilter(role || "");
+    setPage(p ? Number(p) : 1);
+    setFiltersHydrated(true);
+  }, []);
 
   useEffect(() => {
     setPage(1);
   }, [activeTab, query, roleFilter, currentYear.id]);
+
+  useEffect(() => {
+    if (activeTab !== "responsables") {
+      setRoleFilter("");
+    }
+  }, [activeTab]);
+
+  // Charger tous les rôles une fois pour le filtre (décorrélé des résultats courants)
+  useEffect(() => {
+    if (!authLogin) return;
+    apiFetch<ApiRole[]>("/roles", { login: authLogin })
+      .then((items) => setAllRoles(items))
+      .catch(() => setAllRoles([]));
+  }, [authLogin]);
 
   useEffect(() => {
     if (!authLogin) return;
@@ -126,17 +161,27 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
   }, [activeTab, authLogin, currentYear.id, query, roleFilter, page]);
 
   const roleOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(responsables.map((item) => `${item.role_id}|${item.role_label}`)),
-      ).map((value) => {
-        const [id, label] = value.split("|");
-        return { id, label };
-      }),
-    [responsables],
+    () => allRoles.map((r) => ({ id: r.id, label: r.libelle })),
+    [allRoles],
   );
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  const hasActiveFilters = Boolean(query.trim() || roleFilter);
+
+  const resetFilters = () => {
+    setQuery("");
+    setRoleFilter("");
+  };
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    writeQueryParams({
+      ds_tab: activeTab,
+      ds_q: query,
+      ds_role: roleFilter,
+      ds_page: page === 1 ? "" : page,
+    });
+  }, [activeTab, query, roleFilter, page, filtersHydrated]);
 
   return (
     <div className="space-y-6">
@@ -174,31 +219,35 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Rechercher..."
-              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          {activeTab === "responsables" && (
-            <select
-              value={roleFilter}
-              onChange={(event) => setRoleFilter(event.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg bg-white"
-            >
-              <option value="">Tous les roles</option>
-              {roleOptions.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
+        <FilterBar
+          fields={[
+            {
+              key: "query",
+              label: "Recherche",
+              type: "search",
+              value: query,
+              onChange: (value) => setQuery(value),
+              placeholder: "Rechercher...",
+            },
+            ...(activeTab === "responsables"
+              ? [
+                  {
+                    key: "role",
+                    label: "Rôle",
+                    type: "select" as const,
+                    value: roleFilter,
+                    onChange: (value: string) => setRoleFilter(value),
+                    options: [
+                      { value: "", label: "Tous les rôles" },
+                      ...roleOptions.map((role) => ({ value: role.id, label: role.label })),
+                    ],
+                  },
+                ]
+              : []),
+          ]}
+          hasActiveFilters={hasActiveFilters}
+          onReset={resetFilters}
+        />
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
@@ -275,7 +324,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
                     {item.tel_service || "-"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Filter className="w-4 h-4" />
+                    <Building2 className="w-4 h-4" />
                     {item.bureau_service || "-"}
                   </span>
                 </div>

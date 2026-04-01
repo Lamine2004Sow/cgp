@@ -29,6 +29,9 @@ export interface UserListItem {
   nom: string;
   prenom: string;
   email_institutionnel: string | null;
+  email_institutionnel_secondaire: string | null;
+  genre: string | null;
+  categorie: string | null;
   telephone: string | null;
   bureau: string | null;
   roles: UserRoleRow[];
@@ -228,6 +231,9 @@ export class UsersService {
     nom: string;
     prenom: string;
     email_institutionnel: string | null;
+    email_institutionnel_secondaire: string | null;
+    genre: string | null;
+    categorie: string | null;
     telephone: string | null;
     bureau: string | null;
     affectation: Array<{
@@ -245,6 +251,9 @@ export class UsersService {
       nom: user.nom,
       prenom: user.prenom,
       email_institutionnel: user.email_institutionnel,
+      email_institutionnel_secondaire: user.email_institutionnel_secondaire,
+      genre: user.genre,
+      categorie: user.categorie,
       telephone: user.telephone,
       bureau: user.bureau,
       roles: (user.affectation || []).map((affectation) => ({

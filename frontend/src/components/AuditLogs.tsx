@@ -3,6 +3,8 @@ import { Download, Shield, Filter } from "lucide-react";
 import type { AcademicYear } from "../types";
 import type { EntiteStructure } from "../types";
 import { apiFetch } from "../lib/api";
+import { FilterBar } from "./ui/filter-bar";
+import { readQueryParam, writeQueryParams } from "../lib/url-state";
 
 interface AuditLogsProps {
   authLogin: string | null;
@@ -32,6 +34,7 @@ export function AuditLogs({ authLogin, currentYear, entites }: AuditLogsProps) {
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   const [filters, setFilters] = useState({
     /** "user" = fiche responsable, "entite" = structure (licence, etc.) */
@@ -42,6 +45,27 @@ export function AuditLogs({ authLogin, currentYear, entites }: AuditLogsProps) {
     startDate: "",
     endDate: "",
   });
+
+  useEffect(() => {
+    const kind = readQueryParam("au_kind");
+    const target = readQueryParam("au_target");
+    const user = readQueryParam("au_user");
+    const action = readQueryParam("au_action");
+    const start = readQueryParam("au_start");
+    const end = readQueryParam("au_end");
+    const opened = readQueryParam("au_open");
+
+    setFilters({
+      targetKind: kind === "user" || kind === "entite" ? kind : "",
+      targetId: target || "",
+      userId: user || "",
+      action: action || "",
+      startDate: start || "",
+      endDate: end || "",
+    });
+    setShowFilters(opened === "1");
+    setFiltersHydrated(true);
+  }, []);
 
   const buildQuery = useCallback(() => {
     const params = new URLSearchParams();
@@ -133,11 +157,25 @@ export function AuditLogs({ authLogin, currentYear, entites }: AuditLogsProps) {
   };
 
   const hasActiveFilters =
+    filters.targetKind ||
     filters.targetId ||
     filters.userId ||
     filters.action ||
     filters.startDate ||
     filters.endDate;
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    writeQueryParams({
+      au_kind: filters.targetKind,
+      au_target: filters.targetId,
+      au_user: filters.userId,
+      au_action: filters.action,
+      au_start: filters.startDate,
+      au_end: filters.endDate,
+      au_open: showFilters ? "1" : "",
+    });
+  }, [filters, showFilters, filtersHydrated]);
 
   const allStructuresForFilter = entites;
 
@@ -180,97 +218,83 @@ export function AuditLogs({ authLogin, currentYear, entites }: AuditLogsProps) {
       {showFilters && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-slate-900 mb-4">Filtres spécifiques</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Cible : fiche responsable ou structure
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                <select
-                  value={filters.targetKind}
-                  onChange={(e) => {
-                    const kind = e.target.value as "" | "user" | "entite";
-                    setFilters((prev) => ({
-                      ...prev,
-                      targetKind: kind,
-                      targetId: "",
-                    }));
-                  }}
-                  className="px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
-                >
-                  <option value="">Aucune cible</option>
-                  <option value="user">Fiche d'un responsable</option>
-                  <option value="entite">Structure (composante, mention, licence…)</option>
-                </select>
-                {filters.targetKind === "user" && (
-                  <select
-                    value={filters.targetId}
-                    onChange={(e) =>
-                      setFilters((prev) => ({ ...prev, targetId: e.target.value }))
-                    }
-                    className="flex-1 min-w-[200px] px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
-                  >
-                    <option value="">Sélectionner un responsable</option>
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {filters.targetKind === "entite" && (
-                  <select
-                    value={filters.targetId}
-                    onChange={(e) =>
-                      setFilters((prev) => ({ ...prev, targetId: e.target.value }))
-                    }
-                    className="flex-1 min-w-[200px] px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
-                  >
-                    <option value="">Sélectionner une structure</option>
-                    {allStructuresForFilter.map((e) => (
-                      <option key={e.id_entite} value={e.id_entite}>
-                        {e.nom} ({e.type_entite})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Fiche responsable : modifications sur la fiche de cette personne. Structure : audit lié à cette entité (ex. licence).
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Auteur de l'action
-              </label>
-              <select
-                value={filters.userId}
-                onChange={(e) => setFilters((prev) => ({ ...prev, userId: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
-              >
-                <option value="">Tous</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Type d'action
-              </label>
-              <select
-                value={filters.action}
-                onChange={(e) => setFilters((prev) => ({ ...prev, action: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
-              >
-                <option value="">Toutes</option>
-                <option value="CREATE">Création</option>
-                <option value="UPDATE">Modification</option>
-                <option value="DELETE">Suppression</option>
-              </select>
-            </div>
+          <FilterBar
+            fields={[
+              {
+                key: "target-kind",
+                label: "Type de cible",
+                type: "select",
+                value: filters.targetKind,
+                onChange: (value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    targetKind: value as "" | "user" | "entite",
+                    targetId: "",
+                  })),
+                options: [
+                  { value: "", label: "Aucune cible" },
+                  { value: "user", label: "Fiche d'un responsable" },
+                  { value: "entite", label: "Structure" },
+                ],
+              },
+              {
+                key: "target-id",
+                label:
+                  filters.targetKind === "entite"
+                    ? "Structure"
+                    : filters.targetKind === "user"
+                      ? "Responsable"
+                      : "Cible",
+                type: "select",
+                value: filters.targetId,
+                onChange: (value) => setFilters((prev) => ({ ...prev, targetId: value })),
+                disabled: filters.targetKind === "",
+                options:
+                  filters.targetKind === "user"
+                    ? [
+                        { value: "", label: "Sélectionner un responsable" },
+                        ...users.map((u) => ({ value: u.id, label: u.label })),
+                      ]
+                    : filters.targetKind === "entite"
+                      ? [
+                          { value: "", label: "Sélectionner une structure" },
+                          ...allStructuresForFilter.map((e) => ({
+                            value: String(e.id_entite),
+                            label: `${e.nom} (${e.type_entite})`,
+                          })),
+                        ]
+                      : [{ value: "", label: "Choisir d'abord un type de cible" }],
+              },
+              {
+                key: "author",
+                label: "Auteur de l'action",
+                type: "select",
+                value: filters.userId,
+                onChange: (value) => setFilters((prev) => ({ ...prev, userId: value })),
+                options: [
+                  { value: "", label: "Tous" },
+                  ...users.map((u) => ({ value: u.id, label: u.label })),
+                ],
+              },
+              {
+                key: "action",
+                label: "Type d'action",
+                type: "select",
+                value: filters.action,
+                onChange: (value) => setFilters((prev) => ({ ...prev, action: value })),
+                options: [
+                  { value: "", label: "Toutes" },
+                  { value: "CREATE", label: "Création" },
+                  { value: "UPDATE", label: "Modification" },
+                  { value: "DELETE", label: "Suppression" },
+                ],
+              },
+            ]}
+            hasActiveFilters={Boolean(hasActiveFilters)}
+            onReset={clearFilters}
+          />
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Date début</label>
               <input
@@ -290,20 +314,9 @@ export function AuditLogs({ authLogin, currentYear, entites }: AuditLogsProps) {
               />
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={load}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm"
-            >
-              Appliquer
-            </button>
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm"
-            >
-              Réinitialiser
-            </button>
-          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            Changer le type de cible réinitialise automatiquement le sous-filtre associé.
+          </p>
         </div>
       )}
 

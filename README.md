@@ -23,7 +23,22 @@ docker compose up -d --build
 docker compose ps
 docker compose logs -f backend-nest
 ```
-
+Commandes utiles
+Lancer (Postgres sur 5433) :
+POSTGRES_PORT=5433 docker compose -f docker-compose.yml up -d --build
+Voir l’état :
+docker compose -f docker-compose.yml ps
+Voir les logs :
+docker compose -f docker-compose.yml logs -f
+Arrêter :
+docker compose -f docker-compose.yml down
+Arrêter + supprimer volumes (reset DB / node_modules) :
+docker compose -f docker-compose.yml down -v
+Statut actuel (OK)
+DB: localhost:5433 (healthy)
+Backend: http://localhost:3001 (healthy)
+Frontend: http://localhost:5173 (up)
+(J’ai aussi corrigé l’ordre de démarrage Prisma dans backend-nest/package.json pour éviter le crash.)
 Attendu dans `docker compose ps` :
 
 - `db` : `healthy`
@@ -33,7 +48,7 @@ Attendu dans `docker compose ps` :
 ### Vérification login après démarrage
 
 ```bash
-curl -i -H "x-user-login: sc.admin" http://localhost:5173/api/auth/me
+curl -i -H "x-user-login: alain.rousseau" http://localhost:5173/api/auth/me
 ```
 
 Réponse attendue : `HTTP/1.1 200 OK`.
@@ -76,7 +91,7 @@ Seed des comptes mock (optionnel) :
 npm run seed
 ```
 
-Auth mock (dev uniquement) : ajoute le header `x-user-login` (ex: `dc.infocom`, `da.infocom`, `sc.admin`).
+Auth mock (dev uniquement) : ajoute le header `x-user-login` (ex: `alain.rousseau`, `alice.herniaux`, `bruno.manil`).
 
 ### Frontend
 

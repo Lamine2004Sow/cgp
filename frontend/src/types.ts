@@ -64,6 +64,11 @@ export interface AffectationPerson {
 /** Fiche structure complète (détail + champs selon type + effectifs) */
 export interface EntiteStructureDetail extends EntiteStructure {
   site_web?: string | null;
+  code_composante?: string | null;
+  type_composante?: string | null;
+  mail_fonctionnel?: string | null;
+  mail_institutionnel?: string | null;
+  campus?: string | null;
   code_interne?: string | null;
   type_diplome?: string | null;
   code_parcours?: string | null;
@@ -83,6 +88,9 @@ export interface User {
   lastName: string;
   role: UserRole;
   email: string;
+  secondaryEmail?: string;
+  genre?: string;
+  category?: string;
   phone?: string;
   office?: string;
   component?: string; // Composante
@@ -156,6 +164,9 @@ export interface ResponsiblePerson {
   firstName: string;
   lastName: string;
   email: string;
+  secondaryEmail?: string;
+  genre?: string;
+  category?: string;
   role: string;
   department: string;
   component: string;
@@ -331,7 +342,5 @@ export function canReviewRoleRequests(role: UserRole): boolean {
 }
 
 export function canRequestCustomRole(role: UserRole): boolean {
-  return DIRECTION_ROLES.filter(
-    (r) => r !== 'services-centraux' && r !== 'administrateur',
-  ).includes(role);
+  return DIRECTION_ROLES.includes(role) && role !== 'services-centraux' && role !== 'administrateur';
 }
