@@ -44,7 +44,10 @@ export function NotificationBell({ authLogin }: NotificationBellProps) {
   };
 
   useEffect(() => {
+    if (!authLogin) return;
     load();
+    const interval = setInterval(load, 60_000);
+    return () => clearInterval(interval);
   }, [authLogin]);
 
   // Fermer en cliquant ailleurs

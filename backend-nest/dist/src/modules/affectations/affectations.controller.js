@@ -36,6 +36,10 @@ let AffectationsController = class AffectationsController {
         const affectation = await this.affectationsService.update(id, payload);
         return { affectation };
     }
+    async upsertContact(id, payload) {
+        const contact = await this.affectationsService.upsertContact(id, payload);
+        return { contact };
+    }
     async remove(id) {
         await this.affectationsService.remove(id);
     }
@@ -66,6 +70,15 @@ __decorate([
     __metadata("design:paramtypes", [String, update_affectation_dto_1.UpdateAffectationDto]),
     __metadata("design:returntype", Promise)
 ], AffectationsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/contact'),
+    (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, affectations_service_1.UpsertContactDto]),
+    __metadata("design:returntype", Promise)
+], AffectationsController.prototype, "upsertContact", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),

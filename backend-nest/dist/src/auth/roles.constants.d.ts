@@ -1,15 +1,25 @@
 export declare const ROLE_IDS: {
+    readonly SERVICES_CENTRAUX: "services-centraux";
+    readonly ADMINISTRATEUR: "administrateur";
     readonly DIRECTEUR_COMPOSANTE: "directeur-composante";
     readonly DIRECTEUR_ADMINISTRATIF: "directeur-administratif";
     readonly DIRECTEUR_ADMINISTRATIF_ADJOINT: "directeur-administratif-adjoint";
     readonly DIRECTEUR_DEPARTEMENT: "directeur-departement";
+    readonly VICE_PRESIDENT_DEPARTEMENT: "vice-president-departement";
+    readonly DIRECTEUR_ADJOINT_LICENCE: "directeur-adjoint-licence";
+    readonly RESPONSABLE_SERVICE_PEDAGOGIQUE: "responsable-service-pedagogique";
+    readonly RESPONSABLE_ADJOINT_SERVICE_PEDAGOGIQUE: "responsable-adjoint-service-pedagogique";
     readonly DIRECTEUR_MENTION: "directeur-mention";
     readonly DIRECTEUR_SPECIALITE: "directeur-specialite";
     readonly RESPONSABLE_FORMATION: "responsable-formation";
     readonly RESPONSABLE_ANNEE: "responsable-annee";
+    readonly DIRECTEUR_ETUDES: "directeur-etudes";
+    readonly RESPONSABLE_QUALITE: "responsable-qualite";
+    readonly RESPONSABLE_INTERNATIONAL: "responsable-international";
+    readonly REFERENT_COMMUN: "referent-commun";
+    readonly DIRECTEUR_ADJOINT_ECOLE: "directeur-adjoint-ecole";
+    readonly SECRETARIAT_PEDAGOGIQUE: "secretariat-pedagogique";
     readonly UTILISATEUR_SIMPLE: "utilisateur-simple";
     readonly LECTURE_SEULE: "lecture-seule";
-    readonly ADMINISTRATEUR: "administrateur";
-    readonly SERVICES_CENTRAUX: "services-centraux";
 };
 export type RoleId = (typeof ROLE_IDS)[keyof typeof ROLE_IDS];

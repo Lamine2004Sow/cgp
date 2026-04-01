@@ -20,6 +20,7 @@ interface ManageResponsiblesProps {
 }
 
 type ApiUserRole = {
+  id_affectation: number;
   role: string;
   entite: string;
   id_entite: number;
@@ -122,11 +123,18 @@ export function ManageResponsibles({
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [filterComposante, setFilterComposante] = useState<string>("");
+  const [confirmDeleteAffId, setConfirmDeleteAffId] = useState<number | null>(null);
+  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState<string | null>(null);
 
   const canEdit = canManageUsers(userRole);
   const canDelete = canDeleteUser(userRole);
 
   const entiteMap = useMemo(() => buildEntiteMap(entites), [entites]);
+  const composantes = useMemo(
+    () => entites.filter((e) => e.type_entite === "COMPOSANTE"),
+    [entites],
+  );
   const roleLabelMap = useMemo(
     () => new Map(roles.map((role) => [getRoleId(role), role.libelle])),
     [roles],
@@ -143,9 +151,23 @@ export function ManageResponsibles({
       const matchRole =
         !filterRole ||
         p.assignments.some((a) => a.role === filterRole);
-      return matchSearch && matchRole;
+      const matchComposante =
+        !filterComposante ||
+        p.assignments.some((a) => {
+          const entite = entiteMap.get(a.id_entite);
+          if (!entite) return false;
+          // Cherche la composante dans la hiérarchie
+          let current: typeof entite | undefined = entite;
+          while (current) {
+            if (String(current.id_entite) === filterComposante) return true;
+            if (!current.id_entite_parent) break;
+            current = entiteMap.get(current.id_entite_parent);
+          }
+          return false;
+        });
+      return matchSearch && matchRole && matchComposante;
     });
-  }, [responsibles, search, filterRole]);
+  }, [responsibles, search, filterRole, filterComposante, entiteMap]);
 
   const loadData = async () => {
     if (!authLogin) return;
@@ -332,6 +354,20 @@ export function ManageResponsibles({
     }
   };
 
+  const handleRemoveAffectation = async (affectationId: number) => {
+    if (!authLogin) return;
+    setLoading(true);
+    try {
+      await apiFetch(`/affectations/${affectationId}`, { method: "DELETE", login: authLogin });
+      setConfirmDeleteAffId(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors de la suppression de l'affectation");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddAffectation = async (userId: string) => {
     if (!authLogin) return;
     if (!affectationForm.id_role || !affectationForm.id_entite) {
@@ -489,9 +525,21 @@ export function ManageResponsibles({
             <option key={getRoleId(role)} value={getRoleId(role)}>{role.libelle}</option>
           ))}
         </select>
-        {(search || filterRole) && (
+        {composantes.length > 0 && (
+          <select
+            value={filterComposante}
+            onChange={(e) => setFilterComposante(e.target.value)}
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white min-w-[160px]"
+          >
+            <option value="">Toutes les composantes</option>
+            {composantes.map((c) => (
+              <option key={c.id_entite} value={String(c.id_entite)}>{c.nom}</option>
+            ))}
+          </select>
+        )}
+        {(search || filterRole || filterComposante) && (
           <button
-            onClick={() => { setSearch(""); setFilterRole(""); }}
+            onClick={() => { setSearch(""); setFilterRole(""); setFilterComposante(""); }}
             className="px-3 py-2 text-sm text-slate-500 hover:text-slate-800 border border-slate-300 rounded-lg"
           >
             <X className="w-4 h-4" />
@@ -505,10 +553,10 @@ export function ManageResponsibles({
         <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 flex flex-col items-center gap-3 text-slate-400">
           <Users className="w-12 h-12" />
           <p className="font-medium">
-            {search || filterRole ? "Aucun résultat pour cette recherche" : "Aucun responsable pour cette année"}
+            {search || filterRole || filterComposante ? "Aucun résultat pour cette recherche" : "Aucun responsable pour cette année"}
           </p>
-          {(search || filterRole) && (
-            <button onClick={() => { setSearch(""); setFilterRole(""); }} className="text-sm text-indigo-600 hover:underline">
+          {(search || filterRole || filterComposante) && (
+            <button onClick={() => { setSearch(""); setFilterRole(""); setFilterComposante(""); }} className="text-sm text-indigo-600 hover:underline">
               Effacer les filtres
             </button>
           )}
@@ -583,15 +631,42 @@ export function ManageResponsibles({
                         <div className="text-xs text-slate-500 mb-2">Affectations ({currentYear.year})</div>
                         <div className="flex flex-wrap gap-2">
                           {person.assignments.map((assignment) => (
-                            <span
-                              key={`${assignment.role}-${assignment.id_entite}`}
-                              className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs"
-                            >
-                              {roleLabelMap.get(assignment.role) ||
-                                getRoleLabel(assignment.role as UserRole) ||
-                                assignment.role}{" "}
-                              - {assignment.entite}
-                            </span>
+                            <div key={`${assignment.id_affectation}`} className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs">
+                              <span>
+                                {roleLabelMap.get(assignment.role) ||
+                                  getRoleLabel(assignment.role as UserRole) ||
+                                  assignment.role}{" "}
+                                - {assignment.entite}
+                              </span>
+                              {canEdit && (
+                                confirmDeleteAffId === assignment.id_affectation ? (
+                                  <span className="flex items-center gap-1 ml-1">
+                                    <button
+                                      onClick={() => handleRemoveAffectation(assignment.id_affectation)}
+                                      className="text-red-600 hover:text-red-800 font-medium"
+                                      title="Confirmer la suppression"
+                                    >
+                                      ✓
+                                    </button>
+                                    <button
+                                      onClick={() => setConfirmDeleteAffId(null)}
+                                      className="text-slate-500 hover:text-slate-700"
+                                      title="Annuler"
+                                    >
+                                      ✗
+                                    </button>
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => setConfirmDeleteAffId(assignment.id_affectation)}
+                                    className="ml-1 text-slate-400 hover:text-red-600 transition-colors"
+                                    title="Supprimer cette affectation"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )
+                              )}
+                            </div>
                           ))}
                         </div>
                       </div>

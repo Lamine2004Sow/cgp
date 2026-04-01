@@ -10,10 +10,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateAffectationDto = void 0;
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class UpdateAffectationDto {
     id_role;
     date_fin;
+    id_affectation_n_plus_1;
 }
 exports.UpdateAffectationDto = UpdateAffectationDto;
 __decorate([
@@ -26,4 +28,10 @@ __decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", Object)
 ], UpdateAffectationDto.prototype, "date_fin", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    __metadata("design:type", Object)
+], UpdateAffectationDto.prototype, "id_affectation_n_plus_1", void 0);
 //# sourceMappingURL=update-affectation.dto.js.map

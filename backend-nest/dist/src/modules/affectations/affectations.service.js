@@ -9,9 +9,31 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AffectationsService = void 0;
+exports.AffectationsService = exports.UpsertContactDto = void 0;
 const common_1 = require("@nestjs/common");
+const class_validator_1 = require("class-validator");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
+class UpsertContactDto {
+    email_fonctionnelle;
+    telephone;
+    bureau;
+}
+exports.UpsertContactDto = UpsertContactDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], UpsertContactDto.prototype, "email_fonctionnelle", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], UpsertContactDto.prototype, "telephone", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], UpsertContactDto.prototype, "bureau", void 0);
 const toAffectationResponse = (a) => ({
     id_affectation: Number(a.id_affectation),
     id_user: Number(a.id_user),
@@ -20,6 +42,15 @@ const toAffectationResponse = (a) => ({
     id_annee: Number(a.id_annee),
     date_debut: a.date_debut.toISOString().slice(0, 10),
     date_fin: a.date_fin ? a.date_fin.toISOString().slice(0, 10) : null,
+    id_affectation_n_plus_1: a.id_affectation_n_plus_1 ? Number(a.id_affectation_n_plus_1) : null,
+    superviseur: a.affectation_n_plus_1
+        ? {
+            id_affectation: Number(a.affectation_n_plus_1.id_affectation),
+            id_role: a.affectation_n_plus_1.id_role,
+            nom: a.affectation_n_plus_1.utilisateur?.nom ?? null,
+            prenom: a.affectation_n_plus_1.utilisateur?.prenom ?? null,
+        }
+        : null,
 });
 let AffectationsService = class AffectationsService {
     prisma;
@@ -56,6 +87,9 @@ let AffectationsService = class AffectationsService {
         }
         const affectation = await this.prisma.affectation.findUnique({
             where: { id_affectation: parsedId },
+            include: {
+                affectation_n_plus_1: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
+            },
         });
         if (!affectation) {
             throw new common_1.NotFoundException('Affectation introuvable');
@@ -90,6 +124,16 @@ let AffectationsService = class AffectationsService {
                 ...(payload.date_fin !== undefined
                     ? { date_fin: payload.date_fin ? new Date(payload.date_fin) : null }
                     : {}),
+                ...(payload.id_affectation_n_plus_1 !== undefined
+                    ? {
+                        id_affectation_n_plus_1: payload.id_affectation_n_plus_1 != null
+                            ? BigInt(payload.id_affectation_n_plus_1)
+                            : null,
+                    }
+                    : {}),
+            },
+            include: {
+                affectation_n_plus_1: { include: { utilisateur: { select: { nom: true, prenom: true } } } },
             },
         });
         return toAffectationResponse(updated);
@@ -109,6 +153,44 @@ let AffectationsService = class AffectationsService {
             throw new common_1.NotFoundException('Affectation introuvable');
         }
         await this.prisma.affectation.delete({ where: { id_affectation: parsedId } });
+    }
+    async upsertContact(id, data) {
+        let parsedId;
+        try {
+            parsedId = BigInt(id);
+        }
+        catch {
+            throw new common_1.NotFoundException('Affectation introuvable');
+        }
+        const affectation = await this.prisma.affectation.findUnique({
+            where: { id_affectation: parsedId },
+        });
+        if (!affectation) {
+            throw new common_1.NotFoundException('Affectation introuvable');
+        }
+        const existingContact = await this.prisma.contact_role.findFirst({
+            where: { id_affectation: parsedId },
+        });
+        const payload = {
+            email_fonctionnelle: data.email_fonctionnelle ?? null,
+            telephone: data.telephone ?? null,
+            bureau: data.bureau ?? null,
+        };
+        const contact = existingContact
+            ? await this.prisma.contact_role.update({
+                where: { id_contact_role: existingContact.id_contact_role },
+                data: payload,
+            })
+            : await this.prisma.contact_role.create({
+                data: { id_affectation: parsedId, ...payload },
+            });
+        return {
+            id_contact_role: Number(contact.id_contact_role),
+            id_affectation: Number(contact.id_affectation),
+            email_fonctionnelle: contact.email_fonctionnelle,
+            telephone: contact.telephone,
+            bureau: contact.bureau,
+        };
     }
 };
 exports.AffectationsService = AffectationsService;

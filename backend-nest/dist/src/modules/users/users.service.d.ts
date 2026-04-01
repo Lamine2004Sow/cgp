@@ -5,6 +5,7 @@ import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
 import type { CurrentUser } from '../../common/types/current-user';
 export interface UserRoleRow {
+    id_affectation: number;
     role: string;
     entite: string;
     id_entite: number;

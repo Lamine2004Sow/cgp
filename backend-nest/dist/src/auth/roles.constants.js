@@ -2,17 +2,27 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ROLE_IDS = void 0;
 exports.ROLE_IDS = {
+    SERVICES_CENTRAUX: 'services-centraux',
+    ADMINISTRATEUR: 'administrateur',
     DIRECTEUR_COMPOSANTE: 'directeur-composante',
     DIRECTEUR_ADMINISTRATIF: 'directeur-administratif',
     DIRECTEUR_ADMINISTRATIF_ADJOINT: 'directeur-administratif-adjoint',
     DIRECTEUR_DEPARTEMENT: 'directeur-departement',
+    VICE_PRESIDENT_DEPARTEMENT: 'vice-president-departement',
+    DIRECTEUR_ADJOINT_LICENCE: 'directeur-adjoint-licence',
+    RESPONSABLE_SERVICE_PEDAGOGIQUE: 'responsable-service-pedagogique',
+    RESPONSABLE_ADJOINT_SERVICE_PEDAGOGIQUE: 'responsable-adjoint-service-pedagogique',
     DIRECTEUR_MENTION: 'directeur-mention',
     DIRECTEUR_SPECIALITE: 'directeur-specialite',
     RESPONSABLE_FORMATION: 'responsable-formation',
     RESPONSABLE_ANNEE: 'responsable-annee',
+    DIRECTEUR_ETUDES: 'directeur-etudes',
+    RESPONSABLE_QUALITE: 'responsable-qualite',
+    RESPONSABLE_INTERNATIONAL: 'responsable-international',
+    REFERENT_COMMUN: 'referent-commun',
+    DIRECTEUR_ADJOINT_ECOLE: 'directeur-adjoint-ecole',
+    SECRETARIAT_PEDAGOGIQUE: 'secretariat-pedagogique',
     UTILISATEUR_SIMPLE: 'utilisateur-simple',
     LECTURE_SEULE: 'lecture-seule',
-    ADMINISTRATEUR: 'administrateur',
-    SERVICES_CENTRAUX: 'services-centraux',
 };
 //# sourceMappingURL=roles.constants.js.map

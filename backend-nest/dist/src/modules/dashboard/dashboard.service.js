@@ -12,15 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
-const RESPONSABLE_ROLE_IDS = [
-    'directeur-composante',
-    'directeur-administratif',
-    'directeur-administratif-adjoint',
-    'directeur-departement',
-    'directeur-mention',
-    'directeur-specialite',
-    'responsable-formation',
-    'responsable-annee',
+const NON_RESPONSABLE_ROLES = [
+    'services-centraux',
+    'administrateur',
+    'utilisateur-simple',
+    'lecture-seule',
 ];
 let DashboardService = class DashboardService {
     prisma;
@@ -32,23 +28,18 @@ let DashboardService = class DashboardService {
         if (!year) {
             throw new common_1.NotFoundException('Aucune année disponible.');
         }
-        const [niveauCount, fallbackFormationCount, responsablesRows, departements, composantes] = await this.prisma.$transaction([
+        const [niveauCount, mentionCount, responsablesRows, departements, composantes] = await this.prisma.$transaction([
             this.prisma.entite_structure.count({
-                where: {
-                    id_annee: year.id_annee,
-                    type_entite: 'NIVEAU',
-                },
+                where: { id_annee: year.id_annee, type_entite: 'NIVEAU' },
             }),
             this.prisma.entite_structure.count({
-                where: {
-                    id_annee: year.id_annee,
-                    type_entite: { in: ['MENTION', 'PARCOURS'] },
-                },
+                where: { id_annee: year.id_annee, type_entite: 'MENTION' },
             }),
             this.prisma.affectation.findMany({
                 where: {
                     id_annee: year.id_annee,
-                    id_role: { in: RESPONSABLE_ROLE_IDS },
+                    id_role: { notIn: NON_RESPONSABLE_ROLES },
+                    role: { est_administratif: false },
                 },
                 distinct: ['id_user'],
                 select: { id_user: true },
@@ -69,7 +60,9 @@ let DashboardService = class DashboardService {
         return {
             yearId: Number(year.id_annee),
             yearLabel: year.libelle,
-            formations: niveauCount > 0 ? niveauCount : fallbackFormationCount,
+            niveaux: niveauCount,
+            mentions: mentionCount,
+            formations: mentionCount,
             responsables: responsablesRows.length,
             departements,
             composantes,

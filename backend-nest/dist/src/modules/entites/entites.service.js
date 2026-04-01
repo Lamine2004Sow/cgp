@@ -12,15 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EntitesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
-const RESPONSABLE_ROLE_IDS = new Set([
-    'directeur-composante',
-    'directeur-administratif',
-    'directeur-administratif-adjoint',
-    'directeur-departement',
-    'directeur-mention',
-    'directeur-specialite',
-    'responsable-formation',
-    'responsable-annee',
+const NON_RESPONSABLE_ROLES = new Set([
+    'services-centraux',
+    'administrateur',
+    'utilisateur-simple',
+    'lecture-seule',
 ]);
 let EntitesService = class EntitesService {
     prisma;
@@ -112,6 +108,7 @@ let EntitesService = class EntitesService {
                 include: {
                     utilisateur: true,
                     role: true,
+                    contact_role: true,
                 },
             }),
             this.prisma.delegation.count({ where: { id_entite: BigInt(id) } }),
@@ -125,20 +122,32 @@ let EntitesService = class EntitesService {
                 where: {
                     id_entite: { in: descendantIdBigInts },
                     id_annee: BigInt(idAnnee),
-                    id_role: { in: [...RESPONSABLE_ROLE_IDS] },
+                    id_role: { notIn: [...NON_RESPONSABLE_ROLES] },
                 },
             });
-        const mapPerson = (a) => ({
-            id_user: Number(a.id_user),
-            nom: a.utilisateur.nom,
-            prenom: a.utilisateur.prenom,
-            email_institutionnel: a.utilisateur.email_institutionnel,
-            telephone: a.utilisateur.telephone,
-            bureau: a.utilisateur.bureau,
-            id_role: a.id_role,
-            role_libelle: a.role?.libelle ?? a.id_role,
-            is_responsable: RESPONSABLE_ROLE_IDS.has(a.id_role),
-        });
+        const mapPerson = (a) => {
+            const cr = a.contact_role?.[0] ?? null;
+            return {
+                id_affectation: Number(a.id_affectation),
+                id_user: Number(a.id_user),
+                nom: a.utilisateur.nom,
+                prenom: a.utilisateur.prenom,
+                email_institutionnel: a.utilisateur.email_institutionnel,
+                telephone: a.utilisateur.telephone,
+                bureau: a.utilisateur.bureau,
+                id_role: a.id_role,
+                role_libelle: a.role?.libelle ?? a.id_role,
+                is_responsable: !NON_RESPONSABLE_ROLES.has(a.id_role) && a.role?.est_administratif === false,
+                contact: cr
+                    ? {
+                        id_contact_role: Number(cr.id_contact_role),
+                        email_fonctionnelle: cr.email_fonctionnelle,
+                        telephone: cr.telephone,
+                        bureau: cr.bureau,
+                    }
+                    : null,
+            };
+        };
         const allPeople = affectations.map(mapPerson);
         const responsables = allPeople.filter((p) => p.is_responsable);
         const secretariat = allPeople.filter((p) => !p.is_responsable);

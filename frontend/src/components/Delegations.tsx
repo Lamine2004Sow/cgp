@@ -430,6 +430,7 @@ function DelegationCard({
   delegation: ApiDelegation;
   onRevoke: (id: number) => void;
 }) {
+  const [confirmRevoke, setConfirmRevoke] = useState(false);
   const active = delegation.statut === "ACTIVE";
   const statusLabel = active ? "Active" : delegation.statut === "ANNULEE" ? "Annulee" : "Expiree";
   const StatusIcon = active ? CheckCircle : delegation.statut === "ANNULEE" ? XCircle : Clock;
@@ -474,13 +475,31 @@ function DelegationCard({
       </div>
       {active && (
         <div className="mt-4">
-          <button
-            onClick={() => onRevoke(delegation.id_delegation)}
-            className="px-3 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors flex items-center gap-2"
-          >
-            <AlertCircle className="w-4 h-4" />
-            Revoquer
-          </button>
+          {confirmRevoke ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600">Confirmer la révocation ?</span>
+              <button
+                onClick={() => { onRevoke(delegation.id_delegation); setConfirmRevoke(false); }}
+                className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Confirmer
+              </button>
+              <button
+                onClick={() => setConfirmRevoke(false)}
+                className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmRevoke(true)}
+              className="px-3 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <AlertCircle className="w-4 h-4" />
+              Revoquer
+            </button>
+          )}
         </div>
       )}
     </div>

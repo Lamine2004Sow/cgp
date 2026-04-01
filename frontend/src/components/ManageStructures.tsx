@@ -154,6 +154,11 @@ export function ManageStructures({
     if (!authLogin || !selectedId || !detail) return;
     setSaving(true);
     setError(null);
+    if (!form.nom?.trim()) {
+      setError("Le nom de la structure est obligatoire");
+      setSaving(false);
+      return;
+    }
     try {
       const payload: Record<string, string | null | undefined> = {
         nom: form.nom,
@@ -219,7 +224,7 @@ export function ManageStructures({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 space-y-3">
-            <h2 className="font-medium text-slate-900">Structures ({currentYear.label})</h2>
+            <h2 className="font-medium text-slate-900">Structures ({currentYear.year})</h2>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Composante</label>
               <select

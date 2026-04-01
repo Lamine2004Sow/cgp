@@ -136,6 +136,10 @@ function getEntitesInComposante(entites: EntiteStructure[], composanteId: number
   return entites.filter((e) => result.has(e.id_entite));
 }
 
+function daysOpen(dateCreation: string): number {
+  return Math.floor((Date.now() - new Date(dateCreation).getTime()) / (1000 * 60 * 60 * 24));
+}
+
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export function ErrorReports({
@@ -151,6 +155,7 @@ export function ErrorReports({
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<"all" | "OUVERT" | "EN_COURS" | "CLOTURE">("all");
   const [filterComposante, setFilterComposante] = useState<string>("");
+  const [filterType, setFilterType] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [closingId, setClosingId] = useState<number | null>(null);
@@ -296,13 +301,14 @@ export function ErrorReports({
   const filteredReports = useMemo(() => {
     return reports.filter((r) => {
       if (filterStatus !== "all" && r.statut !== filterStatus) return false;
+      if (filterType && r.type_signalement !== filterType) return false;
       if (filterComposante && r.id_entite_cible) {
         const inScope = filteredEntites.some((e) => e.id_entite === r.id_entite_cible);
         if (!inScope) return false;
       }
       return true;
     });
-  }, [reports, filterStatus, filterComposante, filteredEntites]);
+  }, [reports, filterStatus, filterType, filterComposante, filteredEntites]);
 
   return (
     <div className="space-y-8">
@@ -447,7 +453,14 @@ export function ErrorReports({
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         {/* Filtres */}
         <div className="flex flex-wrap items-center gap-3 mb-5">
-          <h3 className="text-slate-900 mr-auto">Signalements</h3>
+          <h3 className="text-slate-900 mr-auto">
+            Signalements
+            {filteredReports.length !== reports.length && (
+              <span className="ml-2 text-sm font-normal text-slate-500">
+                {filteredReports.length} / {reports.length}
+              </span>
+            )}
+          </h3>
 
           {/* Filtre composante (SC uniquement) */}
           {isSC && composantes.length > 0 && (
@@ -464,6 +477,18 @@ export function ErrorReports({
               ))}
             </select>
           )}
+
+          {/* Filtre type */}
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+          >
+            <option value="">Tous les types</option>
+            {SIGNALEMENT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
 
           <select
             value={filterStatus}
@@ -606,6 +631,11 @@ function SignalementCard({
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
         <span>#{report.id_signalement}</span>
         <span>{new Date(report.date_creation).toLocaleDateString("fr-FR")}</span>
+        {report.statut === "OUVERT" && (
+          <span className="text-orange-600 font-medium">
+            Ouvert depuis {daysOpen(report.date_creation)} j
+          </span>
+        )}
         <span>Par : <span className="font-medium">{report.auteur_nom ?? `#${report.auteur_id}`}</span></span>
         {report.user_cible_nom && (
           <span>Personne : <span className="font-medium text-slate-700">{report.user_cible_nom}</span></span>

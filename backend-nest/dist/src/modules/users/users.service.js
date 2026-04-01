@@ -148,11 +148,11 @@ let UsersService = class UsersService {
         await this.prisma.utilisateur.update({
             where: { id_user: parsedId },
             data: {
-                nom: payload.nom,
-                prenom: payload.prenom,
-                email_institutionnel: payload.email_institutionnel,
-                telephone: payload.telephone,
-                bureau: payload.bureau,
+                ...(payload.nom !== undefined ? { nom: payload.nom } : {}),
+                ...(payload.prenom !== undefined ? { prenom: payload.prenom } : {}),
+                ...(payload.email_institutionnel !== undefined ? { email_institutionnel: payload.email_institutionnel } : {}),
+                ...(payload.telephone !== undefined ? { telephone: payload.telephone } : {}),
+                ...(payload.bureau !== undefined ? { bureau: payload.bureau } : {}),
             },
         });
         const updated = await this.findOne(id);
@@ -190,6 +190,7 @@ let UsersService = class UsersService {
             telephone: user.telephone,
             bureau: user.bureau,
             roles: (user.affectation || []).map((affectation) => ({
+                id_affectation: Number(affectation.id_affectation),
                 role: affectation.id_role,
                 entite: affectation.entite_structure?.nom ?? `Entite ${affectation.id_entite}`,
                 id_entite: Number(affectation.id_entite),
