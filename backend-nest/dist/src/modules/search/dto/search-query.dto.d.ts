@@ -3,6 +3,8 @@ export declare class SearchQueryDto {
     q?: string;
     roleId?: string;
     typeEntite?: string;
+    typeDiplome?: string;
+    entiteIds?: string;
     page?: number;
     pageSize?: number;
 }

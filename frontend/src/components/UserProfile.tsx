@@ -146,7 +146,7 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
             </label>
             <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg">
               <Mail className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-900">{user.email || "Non renseigne"}</span>
+              <span className="text-slate-900">{user.email || "Non renseigné"}</span>
             </div>
             <p className="text-xs text-slate-500 mt-1">Non modifiable (email CAS)</p>
           </div>
@@ -157,7 +157,7 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
             </label>
             <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg">
               <Mail className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-900">{user.secondaryEmail || "Non renseigne"}</span>
+              <span className="text-slate-900">{user.secondaryEmail || "Non renseigné"}</span>
             </div>
             <p className="text-xs text-slate-500 mt-1">Lecture seule</p>
           </div>
@@ -165,7 +165,7 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Civilité</label>
             <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900">
-              {user.genre ? GENDER_LABELS[user.genre] || user.genre : "Non renseignee"}
+              {user.genre ? GENDER_LABELS[user.genre] || user.genre : "Non renseignée"}
             </div>
             <p className="text-xs text-slate-500 mt-1">Lecture seule</p>
           </div>
@@ -175,13 +175,13 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
               Catégorie de personnel
             </label>
             <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900">
-              {user.category ? CATEGORY_LABELS[user.category] || user.category : "Non renseignee"}
+              {user.category ? CATEGORY_LABELS[user.category] || user.category : "Non renseignée"}
             </div>
             <p className="text-xs text-slate-500 mt-1">Lecture seule</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Telephone</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Téléphone</label>
             {isEditing ? (
               <input
                 type="tel"
@@ -193,7 +193,7 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg">
                 <Phone className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-900">{user.phone || "Non renseigne"}</span>
+                <span className="text-slate-900">{user.phone || "Non renseigné"}</span>
               </div>
             )}
           </div>
@@ -211,7 +211,7 @@ export function UserProfile({ user, currentYear, authLogin, onUserUpdate }: User
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg">
                 <Building className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-900">{user.office || "Non renseigne"}</span>
+                <span className="text-slate-900">{user.office || "Non renseigné"}</span>
               </div>
             )}
           </div>

@@ -18,14 +18,26 @@ let SearchService = class SearchService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    parseEntiteIds(raw) {
+        if (!raw)
+            return null;
+        const ids = raw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .map((s) => BigInt(s));
+        return ids.length > 0 ? ids : null;
+    }
     async responsables(query) {
         const { page, pageSize, skip } = (0, pagination_1.normalizePagination)({
             page: query.page,
             pageSize: query.pageSize,
         });
+        const entiteIds = this.parseEntiteIds(query.entiteIds);
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
             ...(query.roleId ? { id_role: query.roleId } : {}),
+            ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
             ...(query.q
                 ? {
                     OR: [
@@ -79,10 +91,17 @@ let SearchService = class SearchService {
             page: query.page,
             pageSize: query.pageSize,
         });
+        const entiteIds = this.parseEntiteIds(query.entiteIds);
         const formationTypes = ['MENTION', 'PARCOURS', 'NIVEAU'];
+        const typedFormation = this.toEntiteType(query.typeEntite);
+        const typeFilter = typedFormation
+            ? { type_entite: typedFormation }
+            : { type_entite: { in: formationTypes } };
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
-            type_entite: { in: formationTypes },
+            ...typeFilter,
+            ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
+            ...(query.typeDiplome ? { type_diplome: { contains: query.typeDiplome, mode: 'insensitive' } } : {}),
             ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
         };
         const [entites, total] = await this.prisma.$transaction([
@@ -129,9 +148,11 @@ let SearchService = class SearchService {
             pageSize: query.pageSize,
         });
         const typedEntite = this.toEntiteType(query.typeEntite);
+        const entiteIds = this.parseEntiteIds(query.entiteIds);
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
             ...(typedEntite ? { type_entite: typedEntite } : {}),
+            ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
             ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
         };
         const [entites, total] = await this.prisma.$transaction([
@@ -163,8 +184,10 @@ let SearchService = class SearchService {
             page: query.page,
             pageSize: query.pageSize,
         });
+        const entiteIds = this.parseEntiteIds(query.entiteIds);
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
+            ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
             ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
             OR: [{ tel_service: { not: null } }, { bureau_service: { not: null } }],
         };

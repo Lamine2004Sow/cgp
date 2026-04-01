@@ -799,7 +799,7 @@ export function ManageResponsibles({
                       <span className="text-slate-900">{person.secondaryEmail || "-"}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 text-sm">Telephone: </span>
+                      <span className="text-slate-500 text-sm">Téléphone: </span>
                       <span className="text-slate-900">{person.phone || "-"}</span>
                     </div>
                     <div>
@@ -1011,7 +1011,7 @@ function EditForm({
         onChange={(value) => setFormData({ ...formData, email: value })}
       />
       <Field
-        label="Telephone"
+        label="Téléphone"
         value={formData.telephone}
         onChange={(value) => setFormData({ ...formData, telephone: value })}
       />

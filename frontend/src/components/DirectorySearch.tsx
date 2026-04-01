@@ -64,10 +64,13 @@ const PAGE_SIZE = 20;
 
 type ApiRole = { id: string; libelle: string };
 
-export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps) {
+export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySearchProps) {
   const [activeTab, setActiveTab] = useState<SearchTab>("responsables");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [composanteFilter, setComposanteFilter] = useState("");
+  const [typeEntiteFilter, setTypeEntiteFilter] = useState("");
+  const [typeDiplomeFilter, setTypeDiplomeFilter] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,10 +82,39 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
   const [allRoles, setAllRoles] = useState<ApiRole[]>([]);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
+  // Composantes disponibles pour le filtre
+  const composantes = useMemo(
+    () => entites.filter((e) => e.type_entite === "COMPOSANTE"),
+    [entites],
+  );
+
+  // Calcul des IDs enfants d'une composante sélectionnée (BFS sur l'arbre local)
+  const entiteIds = useMemo((): string | undefined => {
+    if (!composanteFilter) return undefined;
+    const byParent = new Map<number, number[]>();
+    entites.forEach((e) => {
+      if (e.id_entite_parent) {
+        if (!byParent.has(e.id_entite_parent)) byParent.set(e.id_entite_parent, []);
+        byParent.get(e.id_entite_parent)!.push(e.id_entite);
+      }
+    });
+    const result = new Set<number>();
+    const queue = [Number(composanteFilter)];
+    while (queue.length) {
+      const id = queue.shift()!;
+      result.add(id);
+      (byParent.get(id) ?? []).forEach((c) => queue.push(c));
+    }
+    return Array.from(result).join(",");
+  }, [composanteFilter, entites]);
+
   useEffect(() => {
     const tab = readQueryParam("ds_tab");
     const q = readQueryParam("ds_q");
     const role = readQueryParam("ds_role");
+    const comp = readQueryParam("ds_comp");
+    const type = readQueryParam("ds_type");
+    const diplome = readQueryParam("ds_diplome");
     const p = readQueryParam("ds_page");
 
     if (tab === "responsables" || tab === "formations" || tab === "structures" || tab === "secretariats") {
@@ -90,17 +122,23 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
     }
     setQuery(q || "");
     setRoleFilter(role || "");
+    setComposanteFilter(comp || "");
+    setTypeEntiteFilter(type || "");
+    setTypeDiplomeFilter(diplome || "");
     setPage(p ? Number(p) : 1);
     setFiltersHydrated(true);
   }, []);
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, query, roleFilter, currentYear.id]);
+  }, [activeTab, query, roleFilter, composanteFilter, typeEntiteFilter, typeDiplomeFilter, currentYear.id]);
 
   useEffect(() => {
-    if (activeTab !== "responsables") {
-      setRoleFilter("");
+    // Réinitialiser les filtres spécifiques à chaque onglet au changement d'onglet
+    if (activeTab !== "responsables") setRoleFilter("");
+    if (activeTab !== "formations") {
+      setTypeDiplomeFilter("");
+      if (activeTab !== "structures") setTypeEntiteFilter("");
     }
   }, [activeTab]);
 
@@ -124,11 +162,14 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
         params.set("yearId", currentYear.id);
         params.set("page", String(page));
         params.set("pageSize", String(PAGE_SIZE));
-        if (query.trim()) {
-          params.set("q", query.trim());
+        if (query.trim()) params.set("q", query.trim());
+        if (entiteIds) params.set("entiteIds", entiteIds);
+        if (activeTab === "responsables" && roleFilter) params.set("roleId", roleFilter);
+        if ((activeTab === "formations" || activeTab === "structures") && typeEntiteFilter) {
+          params.set("typeEntite", typeEntiteFilter);
         }
-        if (activeTab === "responsables" && roleFilter) {
-          params.set("roleId", roleFilter);
+        if (activeTab === "formations" && typeDiplomeFilter) {
+          params.set("typeDiplome", typeDiplomeFilter);
         }
 
         const path = `/search/${activeTab}?${params.toString()}`;
@@ -158,7 +199,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
     return () => {
       mounted = false;
     };
-  }, [activeTab, authLogin, currentYear.id, query, roleFilter, page]);
+  }, [activeTab, authLogin, currentYear.id, query, roleFilter, entiteIds, typeEntiteFilter, typeDiplomeFilter, page]);
 
   const roleOptions = useMemo(
     () => allRoles.map((r) => ({ id: r.id, label: r.libelle })),
@@ -166,11 +207,16 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
   );
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const hasActiveFilters = Boolean(query.trim() || roleFilter);
+  const hasActiveFilters = Boolean(
+    query.trim() || roleFilter || composanteFilter || typeEntiteFilter || typeDiplomeFilter,
+  );
 
   const resetFilters = () => {
     setQuery("");
     setRoleFilter("");
+    setComposanteFilter("");
+    setTypeEntiteFilter("");
+    setTypeDiplomeFilter("");
   };
 
   useEffect(() => {
@@ -179,9 +225,12 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
       ds_tab: activeTab,
       ds_q: query,
       ds_role: roleFilter,
+      ds_comp: composanteFilter,
+      ds_type: typeEntiteFilter,
+      ds_diplome: typeDiplomeFilter,
       ds_page: page === 1 ? "" : page,
     });
-  }, [activeTab, query, roleFilter, page, filtersHydrated]);
+  }, [activeTab, query, roleFilter, composanteFilter, typeEntiteFilter, typeDiplomeFilter, page, filtersHydrated]);
 
   return (
     <div className="space-y-6">
@@ -202,7 +251,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
             { id: "responsables", label: "Responsables", icon: Users },
             { id: "formations", label: "Formations", icon: GraduationCap },
             { id: "structures", label: "Structures", icon: Building2 },
-            { id: "secretariats", label: "Secretariats", icon: Mail },
+            { id: "secretariats", label: "Secrétariats", icon: Mail },
           ] as const).map((tab) => (
             <button
               key={tab.id}
@@ -227,8 +276,23 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
               type: "search",
               value: query,
               onChange: (value) => setQuery(value),
-              placeholder: "Rechercher...",
+              placeholder: "Nom, prénom, email…",
             },
+            ...(composantes.length > 0
+              ? [
+                  {
+                    key: "composante",
+                    label: "Composante",
+                    type: "select" as const,
+                    value: composanteFilter,
+                    onChange: (value: string) => setComposanteFilter(value),
+                    options: [
+                      { value: "", label: "Toutes les composantes" },
+                      ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
+                    ],
+                  },
+                ]
+              : []),
             ...(activeTab === "responsables"
               ? [
                   {
@@ -244,6 +308,57 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
                   },
                 ]
               : []),
+            ...(activeTab === "formations"
+              ? [
+                  {
+                    key: "typeFormation",
+                    label: "Type",
+                    type: "select" as const,
+                    value: typeEntiteFilter,
+                    onChange: (value: string) => setTypeEntiteFilter(value),
+                    options: [
+                      { value: "", label: "Tous les types" },
+                      { value: "MENTION", label: "Mention" },
+                      { value: "PARCOURS", label: "Parcours" },
+                      { value: "NIVEAU", label: "Niveau / Année" },
+                    ],
+                  },
+                  {
+                    key: "typeDiplome",
+                    label: "Diplôme",
+                    type: "select" as const,
+                    value: typeDiplomeFilter,
+                    onChange: (value: string) => setTypeDiplomeFilter(value),
+                    options: [
+                      { value: "", label: "Tous les diplômes" },
+                      { value: "Licence", label: "Licence" },
+                      { value: "Master", label: "Master" },
+                      { value: "BUT", label: "BUT" },
+                      { value: "Ingénieur", label: "Ingénieur" },
+                      { value: "DU", label: "DU" },
+                    ],
+                  },
+                ]
+              : []),
+            ...(activeTab === "structures"
+              ? [
+                  {
+                    key: "typeStructure",
+                    label: "Type",
+                    type: "select" as const,
+                    value: typeEntiteFilter,
+                    onChange: (value: string) => setTypeEntiteFilter(value),
+                    options: [
+                      { value: "", label: "Tous les types" },
+                      { value: "COMPOSANTE", label: "Composante" },
+                      { value: "DEPARTEMENT", label: "Département" },
+                      { value: "MENTION", label: "Mention" },
+                      { value: "PARCOURS", label: "Parcours" },
+                      { value: "NIVEAU", label: "Niveau / Année" },
+                    ],
+                  },
+                ]
+              : []),
           ]}
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}
@@ -255,7 +370,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
 
         {!loading && activeTab === "responsables" && (
           <div className="space-y-3">
-            {responsables.length === 0 && <div className="text-slate-500">Aucun resultat</div>}
+            {responsables.length === 0 && <div className="text-slate-500">Aucun résultat</div>}
             {responsables.map((item) => (
               <div key={item.id_affectation} className="border border-slate-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
@@ -265,7 +380,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
                     </div>
                     <div className="text-sm text-indigo-700">{item.role_label}</div>
                     <div className="text-sm text-slate-600">
-                      {item.entite_nom || `Entite ${item.id_entite}`} ({item.type_entite || "N/A"})
+                      {item.entite_nom || `Entité ${item.id_entite}`} ({item.type_entite || "N/A"})
                     </div>
                   </div>
                   <div className="text-sm text-slate-500">{item.email_institutionnel || "-"}</div>
@@ -277,7 +392,7 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
 
         {!loading && activeTab === "formations" && (
           <div className="space-y-3">
-            {formations.length === 0 && <div className="text-slate-500">Aucun resultat</div>}
+            {formations.length === 0 && <div className="text-slate-500">Aucun résultat</div>}
             {formations.map((item) => (
               <div key={item.id_entite} className="border border-slate-200 rounded-lg p-4">
                 <div className="text-slate-900 font-medium">
@@ -298,21 +413,46 @@ export function DirectorySearch({ currentYear, authLogin }: DirectorySearchProps
 
         {!loading && activeTab === "structures" && (
           <div className="space-y-3">
-            {structures.length === 0 && <div className="text-slate-500">Aucun resultat</div>}
-            {structures.map((item) => (
-              <div key={item.id_entite} className="border border-slate-200 rounded-lg p-4">
-                <div className="text-slate-900 font-medium">
-                  {item.nom} <span className="text-slate-500 text-sm">({item.type_entite})</span>
+            {structures.length === 0 && <div className="text-slate-500">Aucun résultat</div>}
+            {structures.map((item) => {
+              const parent = item.id_entite_parent
+                ? entites.find((e) => e.id_entite === item.id_entite_parent)
+                : null;
+              return (
+                <div key={item.id_entite} className="border border-slate-200 rounded-lg p-4">
+                  <div className="text-slate-900 font-medium">
+                    {item.nom} <span className="text-slate-500 text-sm">({item.type_entite})</span>
+                  </div>
+                  {parent && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      Rattaché à : {parent.nom} ({parent.type_entite})
+                    </div>
+                  )}
+                  {(item.tel_service || item.bureau_service) && (
+                    <div className="text-sm text-slate-600 mt-1 flex flex-wrap gap-4">
+                      {item.tel_service && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5" />
+                          {item.tel_service}
+                        </span>
+                      )}
+                      {item.bureau_service && (
+                        <span className="flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5" />
+                          {item.bureau_service}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">ID parent: {item.id_entite_parent ?? "-"}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {!loading && activeTab === "secretariats" && (
           <div className="space-y-3">
-            {secretariats.length === 0 && <div className="text-slate-500">Aucun resultat</div>}
+            {secretariats.length === 0 && <div className="text-slate-500">Aucun résultat</div>}
             {secretariats.map((item) => (
               <div key={item.id_entite} className="border border-slate-200 rounded-lg p-4">
                 <div className="text-slate-900 font-medium">

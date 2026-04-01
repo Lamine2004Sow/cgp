@@ -21,6 +21,15 @@ export class SearchQueryDto {
   typeEntite?: string;
 
   @IsOptional()
+  @IsString()
+  typeDiplome?: string;
+
+  /** IDs d'entités à inclure (liste séparée par virgule, calculée côté frontend à partir de la composante sélectionnée) */
+  @IsOptional()
+  @IsString()
+  entiteIds?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

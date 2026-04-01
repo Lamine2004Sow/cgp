@@ -3,6 +3,7 @@ import { SearchQueryDto } from './dto/search-query.dto';
 export declare class SearchService {
     private readonly prisma;
     constructor(prisma: PrismaService);
+    private parseEntiteIds;
     responsables(query: SearchQueryDto): Promise<{
         items: {
             id_affectation: number;

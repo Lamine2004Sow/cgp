@@ -349,7 +349,7 @@ export function Delegations({
                 onChange={(e) => setNewDelegation({ ...newDelegation, right: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
               >
-                <option value="">Selectionner un droit</option>
+                <option value="">Sélectionner un droit</option>
                 {rightsOptions.map((right) => (
                   <option key={right.value} value={right.value}>
                     {right.label}
@@ -444,7 +444,7 @@ export function Delegations({
         {loading && delegations.length === 0 ? (
           <div className="text-slate-500">Chargement...</div>
         ) : filteredDelegations.length === 0 ? (
-          <div className="text-slate-500">Aucune delegation</div>
+          <div className="text-slate-500">Aucune délégation</div>
         ) : (
           <div className="space-y-4">
             {filteredDelegations.map((delegation) => (
@@ -452,6 +452,7 @@ export function Delegations({
                 key={delegation.id_delegation}
                 delegation={delegation}
                 onRevoke={handleRevoke}
+                canRevoke={isSC || String(delegation.delegant_id) === currentUserId}
               />
             ))}
           </div>
@@ -464,13 +465,15 @@ export function Delegations({
 function DelegationCard({
   delegation,
   onRevoke,
+  canRevoke,
 }: {
   delegation: ApiDelegation;
   onRevoke: (id: number) => void;
+  canRevoke: boolean;
 }) {
   const [confirmRevoke, setConfirmRevoke] = useState(false);
   const active = delegation.statut === "ACTIVE";
-  const statusLabel = active ? "Active" : delegation.statut === "ANNULEE" ? "Annulee" : "Expiree";
+  const statusLabel = active ? "Active" : delegation.statut === "ANNULEE" ? "Annulée" : "Expirée";
   const StatusIcon = active ? CheckCircle : delegation.statut === "ANNULEE" ? XCircle : Clock;
 
   return (
@@ -478,7 +481,7 @@ function DelegationCard({
       <div className="flex items-start justify-between">
         <div>
           <div className="text-slate-900 font-medium">
-            {delegation.delegant_nom || "Delegant"} {"->"} {delegation.delegataire_nom || "Delegataire"}
+            {delegation.delegant_nom || "Délégant"} {"->"} {delegation.delegataire_nom || "Délégataire"}
           </div>
           <div className="text-sm text-slate-600">
             {delegation.entite_nom || "Structure"} | Droit:{" "}
@@ -500,7 +503,7 @@ function DelegationCard({
       <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
         <div className="flex items-center gap-1">
           <Calendar className="w-4 h-4" />
-          Debut: {delegation.date_debut}
+          Début : {delegation.date_debut}
         </div>
         <div className="flex items-center gap-1">
           <Calendar className="w-4 h-4" />
@@ -511,7 +514,7 @@ function DelegationCard({
           ID: {delegation.id_delegation}
         </div>
       </div>
-      {active && (
+      {active && canRevoke && (
         <div className="mt-4">
           {confirmRevoke ? (
             <div className="flex items-center gap-2">
@@ -535,7 +538,7 @@ function DelegationCard({
               className="px-3 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4" />
-              Revoquer
+              Révoquer
             </button>
           )}
         </div>

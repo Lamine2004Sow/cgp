@@ -4,7 +4,7 @@ Date : 1 avril 2026
 
 ## 0. Suivi des corrections appliquées
 
-Dernière mise à jour : 1 avril 2026 (session 2)
+Dernière mise à jour : 1 avril 2026 (session 3)
 
 Corrections déjà appliquées dans le code :
 
@@ -85,10 +85,56 @@ Corrections déjà appliquées dans le code :
   - `frontend/src/types.ts`
   - `.filter().includes(role)` remplacé par `DIRECTION_ROLES.includes(role) && role !== 'services-centraux' && role !== 'administrateur'`.
 
+- [x] Bug TypeScript corrigé dans `Delegations.tsx` : icône `Calendar` supprimée des imports mais toujours utilisée.
+  - `frontend/src/components/Delegations.tsx`
+  - `Calendar` réajouté aux imports Lucide.
+- [x] Bug TypeScript corrigé dans `types.ts` : `canRequestCustomRole` générait une erreur TS2345.
+  - `frontend/src/types.ts`
+  - `.filter().includes(role)` remplacé par `DIRECTION_ROLES.includes(role) && role !== 'services-centraux' && role !== 'administrateur'`.
+- [x] Compteur "Formations" du dashboard corrigé pour refléter la réalité métier.
+  - `backend-nest/src/modules/dashboard/dashboard.service.ts`
+  - Le compteur agrège maintenant MENTION + PARCOURS + NIVEAU au lieu de dupliquer le count MENTION.
+  - Le filtre résiduel `est_administratif: false` supprimé des affectations responsables (redondant avec `NON_RESPONSABLE_ROLES`).
+- [x] Liste de rôles dans DirectorySearch décorrélée des résultats courants.
+  - `frontend/src/components/DirectorySearch.tsx`
+  - Les rôles disponibles dans le filtre sont maintenant chargés depuis `GET /roles` au montage du composant.
+  - Un rôle absent de la page courante apparaît quand même dans la liste de filtre.
+- [x] Overlay custom de ManageStructures converti en Dialog Radix.
+  - `frontend/src/components/ManageStructures.tsx`
+  - Le formulaire d'édition utilise maintenant `Dialog` / `DialogContent` / `DialogFooter` comme ManageResponsibles.
+  - Fermeture par Escape et gestion du focus gérées par Radix.
+- [x] Code dupliqué backend extrait dans un fichier partagé.
+  - `backend-nest/src/common/utils/role-support.utils.ts` (nouveau fichier)
+  - `SUPPORT_ROLE_HINTS`, `normalizeRoleText` et `isSupportRole` centralisés.
+  - `entites.service.ts` et `organigrammes.service.ts` importent depuis ce fichier.
+- [x] Libellés sans accents corrigés dans tous les composants.
+  - `Delegations.tsx` : "Delegations existantes" → "Délégations existantes", "Annulee" → "Annulée", "Expiree" → "Expirée", "Revoquer" → "Révoquer", "Aucune delegation" → "Aucune délégation", "Selectionner un droit" → "Sélectionner un droit", "Debut:" → "Début :", "Delegant/Delegataire" → "Délégant/Délégataire".
+  - `DirectorySearch.tsx` : "Secretariats" → "Secrétariats", "Aucun resultat" → "Aucun résultat" (×4).
+  - `UserProfile.tsx` : "Non renseigne" → "Non renseigné", "Non renseignee" → "Non renseignée", "Telephone" → "Téléphone".
+  - `ManageResponsibles.tsx` : "Telephone" → "Téléphone" (×2).
+  - `ManageRoles.tsx` : "Validee" → "Validée", "Refusee" → "Refusée", "Roles propres a certaines composantes" → "Rôles propres à certaines composantes", accents placeholder corrigés.
+- [x] Bouton Révoquer masqué pour les utilisateurs sans droit de révocation.
+  - `frontend/src/components/Delegations.tsx`
+  - Le bouton n'est visible que pour le délégant lui-même ou les services centraux / administrateur.
+  - Prop `canRevoke` passée à `DelegationCard` depuis le composant parent.
+- [x] Filtres DirectorySearch refaits et cohérents.
+  - `backend-nest/src/modules/search/dto/search-query.dto.ts`
+  - `backend-nest/src/modules/search/search.service.ts`
+  - `frontend/src/components/DirectorySearch.tsx`
+  - Ajout de `entiteIds` (liste d'IDs séparés par virgule, calculée côté frontend à partir de la composante sélectionnée) dans le DTO et dans les 4 endpoints de recherche.
+  - Ajout de `typeDiplome` dans le DTO et dans le service `formations`.
+  - `typeEntite` branché dans le frontend (existait en backend mais n'était pas utilisé).
+  - La prop `entites` reçue par `DirectorySearch` depuis `App.tsx` était ignorée — maintenant utilisée pour construire le filtre composante et le BFS des IDs enfants.
+  - Filtre composante disponible sur tous les onglets.
+  - Filtre type (MENTION / PARCOURS / NIVEAU) disponible sur l'onglet formations.
+  - Filtre type (COMPOSANTE / DEPARTEMENT / MENTION / PARCOURS / NIVEAU) sur l'onglet structures.
+  - Filtre diplôme (Licence, Master, BUT, Ingénieur, DU) sur l'onglet formations.
+  - Persistance URL étendue : `ds_comp`, `ds_type`, `ds_diplome`.
+  - Cartes "Structures" : affichent maintenant le nom de l'entité parente au lieu de l'ID brut.
+
 ## 0.1 Points de vigilance en suspens
 
-- **Code dupliqué** : `SUPPORT_ROLE_HINTS` et `normalizeRoleText` existent en double dans `entites.service.ts` et `organigrammes.service.ts`. À extraire dans un fichier partagé (`roles.utils.ts`) lors d'un prochain passage.
-- **Détection "support" par label** : la logique `isSupportRole` repose sur des mots-clés en dur. Si un rôle secrétariat a un libellé atypique en base, il sera classé comme responsable. À surveiller lors de l'import de données réelles.
+- **Détection "support" par label** : la logique `isSupportRole` repose sur des mots-clés en dur dans `role-support.utils.ts`. Si un rôle secrétariat a un libellé atypique en base, il sera classé comme responsable. À surveiller lors de l'import de données réelles.
 
 ## 1. Périmètre et sources utilisées
 
@@ -646,21 +692,22 @@ Ces corrections ont un bon ratio impact / effort :
 
 ### Recherche / fiches / organigrammes
 
-- [ ] Ajouter des filtres en cascade : composante -> type diplôme -> département -> mention -> parcours -> niveau.
-- [ ] Décorréler la liste des rôles de filtre des résultats courants.
+- [x] Ajouter des filtres composante / type / diplôme dans DirectorySearch (backend + frontend).
+- [ ] Filtres en cascade stricts : composante -> département -> mention -> parcours (sélection dépendante des résultats du niveau supérieur).
+- [x] Décorréler la liste des rôles de filtre des résultats courants (chargé depuis GET /roles).
 - [x] Enrichir `ManageStructures` avec les champs métier manquants (code composante, campus, mails, type composante).
 - [x] Enrichir `ManageResponsibles` avec les champs métier manquants (genre, catégorie, email secondaire).
 - [ ] Refaire l’organigramme pour refléter la hiérarchie réelle et non uniquement l’arbre générique.
 - [ ] Utiliser le N+1 pour compléter la hiérarchie quand nécessaire.
-- [ ] Corriger les compteurs de dashboard pour qu’ils reflètent la réalité métier.
+- [x] Corriger les compteurs de dashboard pour qu’ils reflètent la réalité métier (MENTION+PARCOURS+NIVEAU, suppression filtre est_administratif).
 
 ### UX / modales
 
 - [x] Remplacer les overlays custom par `Dialog` / `AlertDialog` (ManageResponsibles, Delegations).
 - [x] Uniformiser les confirmations de suppression (ManageResponsibles).
-- [ ] Garantir focus, fermeture clavier et accessibilité sur toutes les modales.
-- [ ] Éviter les actions visibles mais interdites.
-- [ ] Harmoniser les libellés entre les écrans.
+- [x] Garantir focus, fermeture clavier et accessibilité sur les modales (ManageResponsibles + ManageStructures via Radix Dialog).
+- [x] Éviter les actions visibles mais interdites (Delegations : Révoquer masqué si non autorisé).
+- [x] Harmoniser les libellés entre les écrans (accents, casse, terminologie).
 
 ### Auth / comptes de test
 
@@ -675,6 +722,133 @@ Ces corrections ont un bon ratio impact / effort :
 - [ ] Stabiliser les tests backend locaux.
 - [ ] Ajouter un smoke test minimal des écrans critiques.
 - [ ] Documenter les scénarios fonctionnels de recette à partir de `Annuaire.xlsx`.
+
+## 10. Pages et modules absents — à créer ou à reconstruire
+
+Ces manques ont été identifiés en croisant le code existant, les documents Sprint 4 et `Annuaire.xlsx`.
+
+### 10.1 Module Personnes externes — absent
+
+Constat :
+- `personne_externe` existe dans Prisma (nom, prénom, email, organisation, fonction).
+- Aucun module NestJS (`PersonnesExternesModule`), aucun contrôleur, aucune route.
+- Aucun écran frontend, aucun type TypeScript exposé.
+- Pourtant les docs Sprint 4 mentionnent des contacts externes (jurys, intervenants, conseils).
+
+Pourquoi c'est un problème :
+- La table existe mais est inutilisée et invisible côté application.
+- On ne peut pas gérer ni afficher les membres externes d'un conseil de perfectionnement.
+
+À faire :
+- [ ] Créer `backend-nest/src/modules/personnes-externes/` (CRUD minimal, filtre par organisation/fonction).
+- [ ] Exposer dans `GET /personnes-externes` avec pagination.
+- [ ] Créer une page frontend "Personnes externes" accessible aux SC et directeurs.
+
+### 10.2 Module Conseils de perfectionnement — absent
+
+Constat :
+- Mentionné explicitement dans les documents de Sprint 4 et Sprint 3.
+- Aucune table Prisma dédiée (`conseil_perfectionnement`, `membre_conseil`, `action_conseil`).
+- Aucun module backend, aucun écran frontend.
+- Le module `signalements` ne couvre pas du tout ce besoin.
+
+Pourquoi c'est un problème :
+- C'est une fonctionnalité explicitement demandée par les clientes.
+- Sans modèle de données dédié, le module est impossible à greffer proprement.
+
+À faire :
+- [ ] Ajouter les tables Prisma : `conseil_perfectionnement`, `membre_conseil`, `action_conseil`.
+- [ ] Créer `backend-nest/src/modules/conseils/` (CRUD + membres).
+- [ ] Créer une page frontend "Conseils de perfectionnement" (liste, fiche, membres, actions).
+
+### 10.3 Gestion du N+1 hiérarchique — table présente, UI absente
+
+Constat :
+- `affectation.id_affectation_n_plus_1` existe en Prisma.
+- `AffectationsService` le lit et le retourne dans `GET /affectations/:id`.
+- Mais aucun écran ne permet de visualiser ni de modifier le N+1 d'une affectation.
+- L'organigramme n'en tient pas compte.
+
+Pourquoi c'est un problème :
+- La hiérarchie responsable N / N+1 est un besoin métier explicite.
+- Sans UI, le champ est stocké mais jamais alimenté correctement (il l'est déjà partiellement via PATCH mais pas de façon guidée).
+
+À faire :
+- [ ] Afficher le superviseur N+1 dans la fiche d'une affectation (ManageResponsibles ou détail affectation).
+- [ ] Permettre de sélectionner/modifier le N+1 dans un formulaire d'affectation.
+- [ ] Utiliser le N+1 dans la construction de l'organigramme.
+
+### 10.4 Code composante et code diplôme — stockés mais jamais filtrables
+
+Constat :
+- `composante.code_composante` existe en base.
+- `entite_structure` (mention) porte `type_diplome` et `code_interne`.
+- `parcours` porte `code_parcours`.
+- Ces codes sont connus des gestionnaires métier (ex : "903-IG", "925-IUTB").
+- Aucun filtre, aucune recherche, aucun affichage de ces codes dans l'annuaire ou les fiches.
+
+Pourquoi c'est un problème :
+- Les utilisateurs métier naviguent par code composante, pas par nom complet.
+- L'import/export doit correspondre à ces codes pour être utilisable.
+- Actuellement le filtre diplôme dans DirectorySearch est une liste statique (Licence, Master…) non alignée sur les vrais types stockés en base.
+
+À faire :
+- [ ] Exposer `code_composante` dans la recherche et les fiches structures.
+- [ ] Afficher `code_parcours` et `code_interne` dans les fiches formations.
+- [ ] Charger les vraies valeurs `type_diplome` depuis `GET /entites` au lieu d'une liste statique dans DirectorySearch.
+- [ ] Permettre la recherche par code composante dans la barre de recherche globale.
+
+### 10.5 ImportExport — format non utilisable par un métier
+
+Constat (déjà partiellement dans 4.8) :
+- Aucun template CSV téléchargeable.
+- Les colonnes exigent des IDs techniques internes.
+- Aucun support XLSX malgré la mention dans certains textes UI.
+- L'écran de preview ne valide pas les règles métier (catégorie, rôle compatible, mail institutionnel…).
+
+À faire :
+- [ ] Fournir un template CSV téléchargeable avec colonnes métier (code composante, code rôle libellé, nom, prénom, email).
+- [ ] Ajouter la validation métier à la preview (catégorie enseignant vs administratif, domaine email, rôle autorisé).
+- [ ] Décider officiellement si XLSX sera supporté et documenter la décision.
+
+### 10.6 Dashboard — indicateurs incomplets
+
+Constat :
+- Le dashboard affiche : formations, responsables, départements, composantes.
+- Il manque :
+  - nombre de délégations actives
+  - nombre de signalements ouverts
+  - nombre d'affectations sans N+1
+  - nombre d'alertes A1-A10 actives (quand ce module existera)
+
+À faire :
+- [ ] Enrichir `DashboardService` avec : délégations actives, signalements ouverts.
+- [ ] Ajouter une section "Alertes" sur le dashboard quand des incohérences sont détectées.
+
+### 10.7 NotificationBell — backend présent mais notifications non alimentées
+
+Constat :
+- `NotificationBell.tsx` appelle `GET /notifications` et `PATCH /notifications/:id/read`.
+- Le module `backend-nest/src/modules/notifications/` existe avec contrôleur et service.
+- Le frontend gère les erreurs silencieusement (catch vide) donc pas de crash.
+- Problème : aucun mécanisme ne crée des notifications côté backend (ni depuis les signalements, ni depuis les alertes, ni depuis les délégations).
+
+Pourquoi c'est un problème :
+- La cloche est toujours vide, ce qui donne l'impression d'un composant mort.
+- Le polling toutes les 60 secondes crée des requêtes inutiles.
+
+À faire :
+- [ ] Alimenter les notifications depuis les événements métier (nouvelle délégation reçue, signalement répondu, etc.).
+- [ ] En attendant, ce composant est fonctionnel mais inerte — pas urgent.
+
+### 10.8 ErrorReports (Signalements) — modales custom à remplacer
+
+Constat :
+- `ErrorReports.tsx` utilise encore des overlays custom (`fixed inset-0 z-50`) au lieu de `Dialog` Radix.
+- Incohérent avec ManageResponsibles et ManageStructures qui utilisent Radix.
+
+À faire :
+- [ ] Remplacer les overlays custom d'ErrorReports par `Dialog` / `AlertDialog` Radix.
 
 ## 9. Recommandation finale
 

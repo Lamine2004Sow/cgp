@@ -16,6 +16,13 @@ import { UserRole, AcademicYear, EntiteStructure } from "../types";
 import { apiFetch } from "../lib/api";
 import { FilterBar } from "./ui/filter-bar";
 import { readQueryParam, writeQueryParams } from "../lib/url-state";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./ui/dialog";
 
 interface ErrorReportsProps {
   userRole: UserRole;

@@ -271,7 +271,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
               Demandes de rôles
             </h3>
             <p className="text-sm text-slate-600 mt-1">
-              Roles propres a certaines composantes - validation par services centraux
+              Rôles propres à certaines composantes – validation par les services centraux
             </p>
           </div>
           {canRequest && (
@@ -298,7 +298,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                   value={newRequest.roleName}
                   onChange={(e) => setNewRequest({ ...newRequest, roleName: e.target.value })}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Ex: Responsable Qualite"
+                  placeholder="Ex : Responsable Qualité"
                 />
               </div>
               <div>
@@ -320,7 +320,7 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
                   onChange={(e) => setNewRequest({ ...newRequest, justificatif: e.target.value })}
                   rows={3}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Informations complementaires"
+                  placeholder="Informations complémentaires"
                 />
               </div>
               <div className="flex gap-3">
@@ -426,10 +426,10 @@ export function ManageRoles({ currentYear, authLogin, userRole }: ManageRolesPro
 
 function StatusBadge({ status }: { status: ApiRoleRequest["statut"] }) {
   if (status === "VALIDEE") {
-    return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">Validee</span>;
+    return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">Validée</span>;
   }
   if (status === "REFUSEE") {
-    return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs">Refusee</span>;
+    return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs">Refusée</span>;
   }
   return (
     <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs">En attente</span>

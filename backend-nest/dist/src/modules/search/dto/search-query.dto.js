@@ -17,6 +17,8 @@ class SearchQueryDto {
     q;
     roleId;
     typeEntite;
+    typeDiplome;
+    entiteIds;
     page;
     pageSize;
 }
@@ -43,6 +45,16 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], SearchQueryDto.prototype, "typeEntite", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SearchQueryDto.prototype, "typeDiplome", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SearchQueryDto.prototype, "entiteIds", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),
