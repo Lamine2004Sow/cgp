@@ -43,12 +43,20 @@ let SearchService = class SearchService {
                     OR: [
                         { utilisateur: { nom: { contains: query.q, mode: 'insensitive' } } },
                         { utilisateur: { prenom: { contains: query.q, mode: 'insensitive' } } },
+                        { utilisateur: { login: { contains: query.q, mode: 'insensitive' } } },
                         {
                             utilisateur: {
                                 email_institutionnel: { contains: query.q, mode: 'insensitive' },
                             },
                         },
                         { entite_structure: { nom: { contains: query.q, mode: 'insensitive' } } },
+                        {
+                            entite_structure: {
+                                composante: {
+                                    code_composante: { contains: query.q, mode: 'insensitive' },
+                                },
+                            },
+                        },
                     ],
                 }
                 : {}),
@@ -102,7 +110,16 @@ let SearchService = class SearchService {
             ...typeFilter,
             ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
             ...(query.typeDiplome ? { type_diplome: { contains: query.typeDiplome, mode: 'insensitive' } } : {}),
-            ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
+            ...(query.q
+                ? {
+                    OR: [
+                        { nom: { contains: query.q, mode: 'insensitive' } },
+                        { parcours: { code_parcours: { contains: query.q, mode: 'insensitive' } } },
+                        { niveau: { libelle_court: { contains: query.q, mode: 'insensitive' } } },
+                        { mention: { type_diplome: { contains: query.q, mode: 'insensitive' } } },
+                    ],
+                }
+                : {}),
         };
         const [entites, total] = await this.prisma.$transaction([
             this.prisma.entite_structure.findMany({
@@ -153,11 +170,31 @@ let SearchService = class SearchService {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
             ...(typedEntite ? { type_entite: typedEntite } : {}),
             ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
-            ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
+            ...(query.q
+                ? {
+                    OR: [
+                        { nom: { contains: query.q, mode: 'insensitive' } },
+                        {
+                            composante: {
+                                code_composante: { contains: query.q, mode: 'insensitive' },
+                            },
+                        },
+                        {
+                            departement: {
+                                code_interne: { contains: query.q, mode: 'insensitive' },
+                            },
+                        },
+                    ],
+                }
+                : {}),
         };
         const [entites, total] = await this.prisma.$transaction([
             this.prisma.entite_structure.findMany({
                 where,
+                include: {
+                    composante: { select: { code_composante: true } },
+                    departement: { select: { code_interne: true } },
+                },
                 orderBy: [{ type_entite: 'asc' }, { nom: 'asc' }],
                 skip,
                 take: pageSize,
@@ -173,6 +210,8 @@ let SearchService = class SearchService {
                 nom: entite.nom,
                 tel_service: entite.tel_service,
                 bureau_service: entite.bureau_service,
+                code_composante: entite.composante?.code_composante ?? null,
+                code_interne: entite.departement?.code_interne ?? null,
             })),
             page,
             pageSize,

@@ -35,12 +35,20 @@ export class SearchService {
             OR: [
               { utilisateur: { nom: { contains: query.q, mode: 'insensitive' as const } } },
               { utilisateur: { prenom: { contains: query.q, mode: 'insensitive' as const } } },
+              { utilisateur: { login: { contains: query.q, mode: 'insensitive' as const } } },
               {
                 utilisateur: {
                   email_institutionnel: { contains: query.q, mode: 'insensitive' as const },
                 },
               },
               { entite_structure: { nom: { contains: query.q, mode: 'insensitive' as const } } },
+              {
+                entite_structure: {
+                  composante: {
+                    code_composante: { contains: query.q, mode: 'insensitive' as const },
+                  },
+                },
+              },
             ],
           }
         : {}),
@@ -101,7 +109,16 @@ export class SearchService {
       ...typeFilter,
       ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
       ...(query.typeDiplome ? { type_diplome: { contains: query.typeDiplome, mode: 'insensitive' as const } } : {}),
-      ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' as const } } : {}),
+      ...(query.q
+        ? {
+            OR: [
+              { nom: { contains: query.q, mode: 'insensitive' as const } },
+              { parcours: { code_parcours: { contains: query.q, mode: 'insensitive' as const } } },
+              { niveau: { libelle_court: { contains: query.q, mode: 'insensitive' as const } } },
+              { mention: { type_diplome: { contains: query.q, mode: 'insensitive' as const } } },
+            ],
+          }
+        : {}),
     };
 
     const [entites, total] = await this.prisma.$transaction([
@@ -156,12 +173,32 @@ export class SearchService {
       ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
       ...(typedEntite ? { type_entite: typedEntite } : {}),
       ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
-      ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' as const } } : {}),
+      ...(query.q
+        ? {
+            OR: [
+              { nom: { contains: query.q, mode: 'insensitive' as const } },
+              {
+                composante: {
+                  code_composante: { contains: query.q, mode: 'insensitive' as const },
+                },
+              },
+              {
+                departement: {
+                  code_interne: { contains: query.q, mode: 'insensitive' as const },
+                },
+              },
+            ],
+          }
+        : {}),
     };
 
     const [entites, total] = await this.prisma.$transaction([
       this.prisma.entite_structure.findMany({
         where,
+        include: {
+          composante: { select: { code_composante: true } },
+          departement: { select: { code_interne: true } },
+        },
         orderBy: [{ type_entite: 'asc' }, { nom: 'asc' }],
         skip,
         take: pageSize,
@@ -178,6 +215,8 @@ export class SearchService {
         nom: entite.nom,
         tel_service: entite.tel_service,
         bureau_service: entite.bureau_service,
+        code_composante: entite.composante?.code_composante ?? null,
+        code_interne: entite.departement?.code_interne ?? null,
       })),
       page,
       pageSize,

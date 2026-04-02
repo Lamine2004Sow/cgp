@@ -4,7 +4,7 @@ Date : 1 avril 2026
 
 ## 0. Suivi des corrections appliquées
 
-Dernière mise à jour : 1 avril 2026 (session 3)
+Dernière mise à jour : 2 avril 2026 (session 5)
 
 Corrections déjà appliquées dans le code :
 
@@ -131,10 +131,45 @@ Corrections déjà appliquées dans le code :
   - Filtre diplôme (Licence, Master, BUT, Ingénieur, DU) sur l'onglet formations.
   - Persistance URL étendue : `ds_comp`, `ds_type`, `ds_diplome`.
   - Cartes "Structures" : affichent maintenant le nom de l'entité parente au lieu de l'ID brut.
+- [x] `id_affectation` exposé dans `ManageResponsibles` et branché sur la suppression d'affectation individuelle.
+  - `frontend/src/components/ManageResponsibles.tsx`
+  - `backend-nest/src/modules/users/users.service.ts`
+  - `UserRoleRow`, `toUserListItem` et le map `roles` enrichis avec `id_affectation`.
+  - Bouton "Supprimer affectation" avec confirmation inline ajouté par affectation.
+  - Filtre par composante (`filterComposante`) persisté dans l'URL (`mr_comp`).
+- [x] Champ `superviseur` (N+1) exposé en GET et modifiable en PATCH sur les affectations.
+  - `backend-nest/src/modules/affectations/affectations.service.ts`
+  - `backend-nest/src/modules/affectations/affectations.controller.ts`
+  - `id_affectation_n_plus_1` visible et éditable depuis l'UI M2.
+- [x] Frontend Dockerfile corrigé pour un build Docker reproductible.
+  - `frontend/Dockerfile`
+  - Ajout du `COPY package-lock.json` et passage de `npm install` à `npm ci`.
+  - Avant : install non déterministe (versions potentiellement différentes à chaque build).
+- [x] Filtres par codes métier ajoutés sur toute l'application.
+  - `backend-nest/src/modules/entites/entites.service.ts` — `list()` remonte `code_composante`
+  - `backend-nest/src/modules/search/search.service.ts` — recherche étendue à `login`, `code_composante`, `code_interne`, `code_parcours`, `libelle_court`
+  - `frontend/src/types.ts` — `code_composante` ajouté à `EntiteStructure`
+  - `frontend/src/components/DirectorySearch.tsx` — dropdown composante affiche "Nom (CODE)", placeholder étendu, badge code sur les cartes structures
+  - `frontend/src/components/ManageResponsibles.tsx` — dropdown composante affiche "Nom (CODE)", filtre texte couvre le code composante via la hiérarchie
+- [x] Imports UI corrigés + `package.json` complété.
+  - `frontend/package.json`
+  - `frontend/package-lock.json`
+  - `frontend/src/components/ui/*.tsx`
+  - Les imports versionnés `@radix-ui/*@x.y.z` ont été normalisés et les dépendances manquantes (`Radix`, `recharts`, `cmdk`, `vaul`, `sonner`, `react-hook-form`, `embla-carousel-react`, `react-day-picker`, `input-otp`, `react-resizable-panels`, `next-themes`, `date-fns`) sont désormais déclarées.
+- [x] `type_signalement` validé par enum stricte côté backend.
+  - `backend-nest/src/modules/demandes/dto/create-signalement.dto.ts`
+  - `CreateSignalementDto` refuse maintenant toute valeur hors liste (`ERREUR_INFO_PERSONNE`, `MAUVAISE_AFFECTATION`, `ERREUR_STRUCTURE`, `ERREUR_MENTION`, `AUTRE`).
+- [x] Seeds de démonstration complétés avec un N+1 hiérarchique.
+  - `script/db/init/004_seed_demo.sql`
+  - `script/annuaire_seed.sql`
+  - `backend-nest/prisma/seed.ts`
+  - `id_affectation_n_plus_1` est maintenant renseigné dans les données de démo pour fournir une chaîne hiérarchique exploitable.
 
 ## 0.1 Points de vigilance en suspens
 
 - **Détection "support" par label** : la logique `isSupportRole` repose sur des mots-clés en dur dans `role-support.utils.ts`. Si un rôle secrétariat a un libellé atypique en base, il sera classé comme responsable. À surveiller lors de l'import de données réelles.
+- **AuditLogs — filtre `targetKind` non envoyé à l'API** : dans `AuditLogs.tsx`, le state `filters.targetKind` ("user"/"entite") est utilisé uniquement pour choisir quel sélecteur afficher ; il n'est pas transmis à l'endpoint `/audit`. Le filtre effectif repose uniquement sur `targetId`. Aucun faux positif si les IDs utilisateurs et entités n'ont pas de collision (séquences séparées), mais à surveiller si on ajoute un filtre `cible_type` strict côté backend.
+- **N+1 hiérarchique** : les seeds remplissent maintenant `id_affectation_n_plus_1`, mais l’organigramme backend/frontend ne l’utilise pas encore pour enrichir l’arbre fonctionnel au-delà de la hiérarchie des entités.
 
 ## 1. Périmètre et sources utilisées
 
@@ -660,7 +695,7 @@ Ces corrections ont un bon ratio impact / effort :
 - [x] Exposer `categorie` dans l’API et l’UI.
 - [x] Exposer `email_institutionnel_secondaire`.
 - [x] Exposer les mails fonctionnels liés aux affectations (`contact_role`).
-- [ ] Implémenter vraiment `id_affectation_n_plus_1`.
+- [x] Renseigner `id_affectation_n_plus_1` dans les seeds et l’API.
 - [ ] Afficher le N+1 dans les fiches et l’organigramme.
 - [x] Corriger la classification “responsable” vs “secrétariat” (détection par label, suppression du flag `est_administratif`).
 - [ ] Ajouter les validations métier enseignant / administratif selon le rôle.

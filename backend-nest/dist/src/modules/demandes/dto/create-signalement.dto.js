@@ -33,6 +33,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(exports.SIGNALEMENT_TYPES),
     __metadata("design:type", String)
 ], CreateSignalementDto.prototype, "type_signalement", void 0);
 __decorate([

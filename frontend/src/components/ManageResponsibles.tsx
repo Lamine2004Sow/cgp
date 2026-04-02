@@ -217,7 +217,17 @@ export function ManageResponsibles({
         p.name.toLowerCase().includes(q) ||
         p.login.toLowerCase().includes(q) ||
         p.email.toLowerCase().includes(q) ||
-        p.secondaryEmail?.toLowerCase().includes(q);
+        p.secondaryEmail?.toLowerCase().includes(q) ||
+        p.assignments.some((a) => {
+          // Remonte la hiérarchie pour trouver un code_composante correspondant
+          let current: EntiteStructure | undefined = entiteMap.get(a.id_entite);
+          while (current) {
+            if (current.code_composante?.toLowerCase().includes(q)) return true;
+            if (!current.id_entite_parent) break;
+            current = entiteMap.get(current.id_entite_parent);
+          }
+          return false;
+        });
       const matchRole =
         !filterRole ||
         p.assignments.some((a) => a.role === filterRole);
@@ -627,7 +637,10 @@ export function ManageResponsibles({
             onChange: (value) => setFilterComposante(value),
             options: [
               { value: "", label: "Toutes les composantes" },
-              ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
+              ...composantes.map((c) => ({
+                value: String(c.id_entite),
+                label: c.code_composante ? `${c.nom} (${c.code_composante})` : c.nom,
+              })),
             ],
           },
         ]}

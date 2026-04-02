@@ -39,6 +39,8 @@ export interface EntiteStructure {
   nom: string;
   tel_service?: string | null;
   bureau_service?: string | null;
+  /** Code métier de la composante (ex. "903") — présent uniquement pour type COMPOSANTE */
+  code_composante?: string | null;
 }
 
 /** Personne affectée sur une structure (responsable ou secrétariat) */

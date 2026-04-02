@@ -602,6 +602,69 @@ insert into contact_role (id_contact_role, id_affectation, email_fonctionnelle, 
   (3056, 2100, 'nadi.tomeh@lipn.univ-paris13.fr', 'fonction'),
   (3057, 2101, 'flavien.breuvart@lipn.univ-paris13.fr', 'fonction');
 
+-- Alimente un N+1 de démo en choisissant d'abord un responsable de la même entité,
+-- sinon un responsable de l'entité parente la plus proche.
+with recursive entite_ancestors as (
+  select
+    e.id_entite as source_entite,
+    e.id_entite as ancestor_entite,
+    0 as depth
+  from entite_structure e
+  union all
+  select
+    ancestors.source_entite,
+    parent.id_entite as ancestor_entite,
+    ancestors.depth + 1
+  from entite_ancestors ancestors
+  join entite_structure current on current.id_entite = ancestors.ancestor_entite
+  join entite_structure parent on parent.id_entite = current.id_entite_parent
+),
+ranked_supervisors as (
+  select
+    child.id_affectation as child_id,
+    supervisor.id_affectation as supervisor_id,
+    row_number() over (
+      partition by child.id_affectation
+      order by
+        case when ancestors.depth = 0 then 0 else 1 end,
+        ancestors.depth asc,
+        case
+          when ancestors.depth = 0 then supervisor_role.niveau_hierarchique
+        end desc nulls last,
+        case
+          when ancestors.depth > 0 then supervisor_role.niveau_hierarchique
+        end asc nulls last,
+        supervisor.id_affectation asc
+    ) as rn
+  from affectation child
+  join role child_role on child_role.id_role = child.id_role
+  join entite_ancestors ancestors on ancestors.source_entite = child.id_entite
+  join affectation supervisor
+    on supervisor.id_annee = child.id_annee
+    and supervisor.id_entite = ancestors.ancestor_entite
+    and supervisor.id_affectation <> child.id_affectation
+  join role supervisor_role on supervisor_role.id_role = supervisor.id_role
+  where child.id_role not in ('services-centraux', 'administrateur', 'lecture-seule')
+    and supervisor.id_role not in ('services-centraux', 'administrateur', 'utilisateur-simple', 'lecture-seule')
+    and supervisor.id_role not like '%secretariat%'
+    and supervisor.id_role not like '%assistante%'
+    and supervisor.id_role not like '%assistant%'
+    and supervisor.id_role not like '%gestionnaire%'
+    and supervisor.id_role not like '%coordonnatrice%'
+    and supervisor.id_role not like '%coordinatrice%'
+    and supervisor.id_role not like '%coordonatrice%'
+    and supervisor.id_role not like '%contact%'
+    and (
+      (ancestors.depth = 0 and supervisor_role.niveau_hierarchique < child_role.niveau_hierarchique)
+      or ancestors.depth > 0
+    )
+)
+update affectation target
+set id_affectation_n_plus_1 = ranked.supervisor_id
+from ranked_supervisors ranked
+where ranked.rn = 1
+  and target.id_affectation = ranked.child_id;
+
 -- Recalage des sequences
 select setval(pg_get_serial_sequence('entite_structure','id_entite'), (select max(id_entite) from entite_structure));
 select setval(pg_get_serial_sequence('utilisateur','id_user'), (select max(id_user) from utilisateur));

@@ -78,6 +78,17 @@ interface EntitesIds {
   niveau: bigint;
 }
 
+const DEMO_SUPERVISOR_BY_LOGIN: Partial<Record<string, string>> = {
+  'da.infocom': 'dc.infocom',
+  'dir.dept.info': 'dc.infocom',
+  'dir.mention.l3': 'dir.dept.info',
+  'dir.spec.ia': 'dir.mention.l3',
+  'resp.form.info': 'dir.spec.ia',
+  'resp.annee.l2': 'resp.form.info',
+  'ens.dupont': 'dir.dept.info',
+  'viewer.readonly': 'dir.dept.info',
+};
+
 async function ensureRole(params: {
   id: string;
   libelle: string;
@@ -393,6 +404,8 @@ async function main() {
     { login: 'viewer.readonly',nom: 'Viewer',     prenom: 'Readonly',   roleId: 'lecture-seule',       entiteKey: 'departement' },
   ];
 
+  const affectationIdsByLogin = new Map<string, bigint>();
+
   for (const user of users) {
     const created = await prisma.utilisateur.upsert({
       where: { login: user.login },
@@ -410,8 +423,9 @@ async function main() {
     const existing = await prisma.affectation.findFirst({
       where: { id_user: created.id_user, id_role: user.roleId, id_entite: entiteId, id_annee: annee.id_annee },
     });
-    if (!existing) {
-      await prisma.affectation.create({
+    const affectation =
+      existing ??
+      (await prisma.affectation.create({
         data: {
           id_user: created.id_user,
           id_role: user.roleId,
@@ -420,8 +434,25 @@ async function main() {
           date_debut: new Date('2025-09-01'),
           date_fin: null,
         },
-      });
+      }));
+
+    affectationIdsByLogin.set(user.login, affectation.id_affectation);
+  }
+
+  for (const [login, supervisorLogin] of Object.entries(DEMO_SUPERVISOR_BY_LOGIN)) {
+    const affectationId = affectationIdsByLogin.get(login);
+    const supervisorId = supervisorLogin
+      ? affectationIdsByLogin.get(supervisorLogin)
+      : null;
+
+    if (!affectationId || !supervisorId) {
+      continue;
     }
+
+    await prisma.affectation.update({
+      where: { id_affectation: affectationId },
+      data: { id_affectation_n_plus_1: supervisorId },
+    });
   }
 
   // eslint-disable-next-line no-console

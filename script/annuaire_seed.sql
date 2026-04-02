@@ -960,6 +960,69 @@ INSERT INTO affectation (id_user, id_role, id_entite, id_annee, date_debut) VALU
   (5149, 'services-centraux', 2000, 1, '2025-09-01'),
   (5150, 'administrateur', 2000, 1, '2025-09-01');
 
+-- Renseigne un N+1 de démonstration en privilégiant un responsable de la même entité,
+-- puis le responsable le plus proche sur la chaîne d'entités parente.
+WITH RECURSIVE entite_ancestors AS (
+  SELECT
+    e.id_entite AS source_entite,
+    e.id_entite AS ancestor_entite,
+    0 AS depth
+  FROM entite_structure e
+  UNION ALL
+  SELECT
+    ancestors.source_entite,
+    parent.id_entite AS ancestor_entite,
+    ancestors.depth + 1
+  FROM entite_ancestors ancestors
+  JOIN entite_structure current ON current.id_entite = ancestors.ancestor_entite
+  JOIN entite_structure parent ON parent.id_entite = current.id_entite_parent
+),
+ranked_supervisors AS (
+  SELECT
+    child.id_affectation AS child_id,
+    supervisor.id_affectation AS supervisor_id,
+    ROW_NUMBER() OVER (
+      PARTITION BY child.id_affectation
+      ORDER BY
+        CASE WHEN ancestors.depth = 0 THEN 0 ELSE 1 END,
+        ancestors.depth ASC,
+        CASE
+          WHEN ancestors.depth = 0 THEN supervisor_role.niveau_hierarchique
+        END DESC NULLS LAST,
+        CASE
+          WHEN ancestors.depth > 0 THEN supervisor_role.niveau_hierarchique
+        END ASC NULLS LAST,
+        supervisor.id_affectation ASC
+    ) AS rn
+  FROM affectation child
+  JOIN role child_role ON child_role.id_role = child.id_role
+  JOIN entite_ancestors ancestors ON ancestors.source_entite = child.id_entite
+  JOIN affectation supervisor
+    ON supervisor.id_annee = child.id_annee
+    AND supervisor.id_entite = ancestors.ancestor_entite
+    AND supervisor.id_affectation <> child.id_affectation
+  JOIN role supervisor_role ON supervisor_role.id_role = supervisor.id_role
+  WHERE child.id_role NOT IN ('services-centraux', 'administrateur', 'lecture-seule')
+    AND supervisor.id_role NOT IN ('services-centraux', 'administrateur', 'utilisateur-simple', 'lecture-seule')
+    AND supervisor.id_role NOT LIKE '%secretariat%'
+    AND supervisor.id_role NOT LIKE '%assistante%'
+    AND supervisor.id_role NOT LIKE '%assistant%'
+    AND supervisor.id_role NOT LIKE '%gestionnaire%'
+    AND supervisor.id_role NOT LIKE '%coordonnatrice%'
+    AND supervisor.id_role NOT LIKE '%coordinatrice%'
+    AND supervisor.id_role NOT LIKE '%coordonatrice%'
+    AND supervisor.id_role NOT LIKE '%contact%'
+    AND (
+      (ancestors.depth = 0 AND supervisor_role.niveau_hierarchique < child_role.niveau_hierarchique)
+      OR ancestors.depth > 0
+    )
+)
+UPDATE affectation target
+SET id_affectation_n_plus_1 = ranked.supervisor_id
+FROM ranked_supervisors ranked
+WHERE ranked.rn = 1
+  AND target.id_affectation = ranked.child_id;
+
 COMMIT;
 
 SELECT 'Seed terminé' as status,

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 
 export const SIGNALEMENT_TYPES = [
   'ERREUR_INFO_PERSONNE',
@@ -17,7 +17,8 @@ export class CreateSignalementDto {
 
   @IsOptional()
   @IsString()
-  type_signalement?: string;
+  @IsIn(SIGNALEMENT_TYPES)
+  type_signalement?: SignalementType;
 
   @IsOptional()
   @Type(() => Number)

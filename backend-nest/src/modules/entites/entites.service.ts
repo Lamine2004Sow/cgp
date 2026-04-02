@@ -11,6 +11,8 @@ export type EntiteListItem = {
   nom: string;
   tel_service: string | null;
   bureau_service: string | null;
+  /** Code métier de la composante (ex. "903"), null pour les autres types */
+  code_composante?: string | null;
 };
 
 /** Rôles qui ne sont jamais des "responsables" d'entité (accès global ou purement lecture) */
@@ -119,6 +121,7 @@ export class EntitesService {
     const items = await this.prisma.entite_structure.findMany({
       where: yearId ? { id_annee: BigInt(yearId) } : undefined,
       orderBy: { id_entite: 'asc' },
+      include: { composante: { select: { code_composante: true } } },
     });
     return items.map((item) => ({
       id_entite: Number(item.id_entite),
@@ -128,6 +131,7 @@ export class EntitesService {
       nom: item.nom,
       tel_service: item.tel_service,
       bureau_service: item.bureau_service,
+      code_composante: item.composante?.code_composante ?? null,
     }));
   }
 

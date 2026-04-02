@@ -51,6 +51,8 @@ type ApiStructure = {
   nom: string;
   tel_service: string | null;
   bureau_service: string | null;
+  code_composante?: string | null;
+  code_interne?: string | null;
 };
 
 type PagedResponse<T> = {
@@ -276,7 +278,7 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
               type: "search",
               value: query,
               onChange: (value) => setQuery(value),
-              placeholder: "Nom, prénom, email…",
+              placeholder: "Nom, prénom, login, email, code composante…",
             },
             ...(composantes.length > 0
               ? [
@@ -288,7 +290,10 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
                     onChange: (value: string) => setComposanteFilter(value),
                     options: [
                       { value: "", label: "Toutes les composantes" },
-                      ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
+                      ...composantes.map((c) => ({
+                        value: String(c.id_entite),
+                        label: c.code_composante ? `${c.nom} (${c.code_composante})` : c.nom,
+                      })),
                     ],
                   },
                 ]
@@ -420,8 +425,13 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
                 : null;
               return (
                 <div key={item.id_entite} className="border border-slate-200 rounded-lg p-4">
-                  <div className="text-slate-900 font-medium">
+                  <div className="text-slate-900 font-medium flex items-baseline gap-2">
                     {item.nom} <span className="text-slate-500 text-sm">({item.type_entite})</span>
+                    {(item.code_composante || item.code_interne) && (
+                      <span className="text-xs font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                        {item.code_composante ?? item.code_interne}
+                      </span>
+                    )}
                   </div>
                   {parent && (
                     <div className="text-xs text-slate-500 mt-1">

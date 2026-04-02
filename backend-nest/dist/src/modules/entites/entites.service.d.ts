@@ -8,6 +8,7 @@ export type EntiteListItem = {
     nom: string;
     tel_service: string | null;
     bureau_service: string | null;
+    code_composante?: string | null;
 };
 export type AffectationPerson = {
     id_affectation: number;

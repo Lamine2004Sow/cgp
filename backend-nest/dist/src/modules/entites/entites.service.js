@@ -57,6 +57,7 @@ let EntitesService = class EntitesService {
         const items = await this.prisma.entite_structure.findMany({
             where: yearId ? { id_annee: BigInt(yearId) } : undefined,
             orderBy: { id_entite: 'asc' },
+            include: { composante: { select: { code_composante: true } } },
         });
         return items.map((item) => ({
             id_entite: Number(item.id_entite),
@@ -66,6 +67,7 @@ let EntitesService = class EntitesService {
             nom: item.nom,
             tel_service: item.tel_service,
             bureau_service: item.bureau_service,
+            code_composante: item.composante?.code_composante ?? null,
         }));
     }
     async getDescendantEntiteIds(idEntite, idAnnee) {

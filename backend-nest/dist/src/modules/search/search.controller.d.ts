@@ -50,6 +50,8 @@ export declare class SearchController {
             nom: string;
             tel_service: string | null;
             bureau_service: string | null;
+            code_composante: string | null;
+            code_interne: string | null;
         }[];
         page: number;
         pageSize: number;
