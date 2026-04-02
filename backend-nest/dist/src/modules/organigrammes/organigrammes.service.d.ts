@@ -90,6 +90,9 @@ export declare class OrganigrammesService {
     private buildTree;
     private mapOrganigramme;
     private toCsv;
+    private buildLayout;
+    private escapeXml;
+    private toSvg;
     private toPdf;
     private isServicesCentraux;
     private canAccessEntiteInYear;

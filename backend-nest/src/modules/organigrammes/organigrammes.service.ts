@@ -24,6 +24,26 @@ export interface ApiOrgNode {
   responsables?: ApiResponsable[];
 }
 
+interface LayoutNode {
+  node: ApiOrgNode;
+  level: number;
+  x: number;
+  y: number;
+  subtreeW: number;
+}
+
+interface OrgChartLayout {
+  layoutNodes: LayoutNode[];
+  canvasW: number;
+  canvasH: number;
+  boxW: number;
+  boxH: number;
+  headerH: number;
+  vGap: number;
+  pageMargin: number;
+  fills: [number, number, number][];
+}
+
 const HIDDEN_ORG_ROLE_IDS = new Set<string>([
   ROLE_IDS.SERVICES_CENTRAUX,
   ROLE_IDS.ADMINISTRATEUR,
@@ -191,10 +211,14 @@ export class OrganigrammesService {
       fileName += '.csv';
       mimeType = 'text/csv';
       content = Buffer.from(this.toCsv(arbre), 'utf-8');
+    } else if (normalizedFormat === 'SVG') {
+      fileName += '.svg';
+      mimeType = 'image/svg+xml';
+      content = Buffer.from(this.toSvg(arbre, organigramme.id_annee), 'utf-8');
     } else {
       fileName += '.pdf';
       mimeType = 'application/pdf';
-      content = this.toPdf(arbre, organigramme.id_annee);
+      content = await this.toPdf(arbre, organigramme.id_annee);
     }
 
     await this.prisma.organigramme.update({
@@ -342,7 +366,153 @@ export class OrganigrammesService {
     return `${header}\n${rows.join('\n')}`;
   }
 
-  private toPdf(root: ApiOrgNode, year: number): Buffer {
+  private buildLayout(root: ApiOrgNode): OrgChartLayout {
+    const BOX_W = 200;
+    const BOX_H = 54;
+    const H_GAP = 28;
+    const V_GAP = 60;
+    const PAGE_MARGIN = 50;
+    const HEADER_H = 60;
+
+    const FILLS: [number, number, number][] = [
+      [99, 102, 241],
+      [59, 130, 246],
+      [16, 185, 129],
+      [245, 158, 11],
+    ];
+
+    const computeWidth = (node: ApiOrgNode): number => {
+      const children = node.children ?? [];
+      if (children.length === 0) return BOX_W;
+      const childrenW = children.reduce(
+        (sum, child) => sum + computeWidth(child),
+        (children.length - 1) * H_GAP,
+      );
+      return Math.max(BOX_W, childrenW);
+    };
+
+    const layoutNodes: LayoutNode[] = [];
+
+    const placeNode = (
+      node: ApiOrgNode,
+      level: number,
+      leftEdge: number,
+      subtreeW: number,
+    ) => {
+      const centerX = leftEdge + subtreeW / 2;
+      const y = HEADER_H + level * (BOX_H + V_GAP);
+      layoutNodes.push({ node, level, x: centerX, y, subtreeW });
+
+      const children = node.children ?? [];
+      if (children.length === 0) return;
+
+      let cursor = leftEdge;
+      for (const child of children) {
+        const childWidth = computeWidth(child);
+        placeNode(child, level + 1, cursor, childWidth);
+        cursor += childWidth + H_GAP;
+      }
+    };
+
+    const totalW = computeWidth(root);
+    placeNode(root, 0, PAGE_MARGIN, totalW);
+
+    const maxLevel = Math.max(...layoutNodes.map((node) => node.level));
+    const canvasW = totalW + PAGE_MARGIN * 2;
+    const canvasH = HEADER_H + (maxLevel + 1) * (BOX_H + V_GAP) + PAGE_MARGIN;
+
+    return {
+      layoutNodes,
+      canvasW,
+      canvasH,
+      boxW: BOX_W,
+      boxH: BOX_H,
+      headerH: HEADER_H,
+      vGap: V_GAP,
+      pageMargin: PAGE_MARGIN,
+      fills: FILLS,
+    };
+  }
+
+  private escapeXml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  private toSvg(root: ApiOrgNode, year: number): string {
+    const {
+      layoutNodes,
+      canvasW,
+      canvasH,
+      boxW,
+      boxH,
+      headerH,
+      vGap,
+      pageMargin,
+      fills,
+    } = this.buildLayout(root);
+
+    const parts: string[] = [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}" role="img" aria-label="Organigramme ${year}">`,
+      `<rect width="${canvasW}" height="${canvasH}" fill="#ffffff"/>`,
+      `<rect x="0" y="0" width="${canvasW}" height="${headerH}" fill="#4f46e5"/>`,
+      `<text x="${pageMargin}" y="36" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Organigramme ${year}</text>`,
+    ];
+
+    for (const layoutNode of layoutNodes) {
+      const parentBottomY = layoutNode.y + boxH;
+      for (const child of layoutNode.node.children ?? []) {
+        const childLayout = layoutNodes.find((node) => node.node === child);
+        if (!childLayout) continue;
+        const midY = parentBottomY + vGap / 2;
+        parts.push(
+          `<path d="M ${layoutNode.x} ${parentBottomY} L ${layoutNode.x} ${midY} L ${childLayout.x} ${midY} L ${childLayout.x} ${childLayout.y}" fill="none" stroke="#94a3b8" stroke-width="1.5"/>`,
+        );
+      }
+    }
+
+    for (const layoutNode of layoutNodes) {
+      const [r, g, b] = fills[Math.min(layoutNode.level, fills.length - 1)];
+      const boxX = layoutNode.x - boxW / 2;
+      const label =
+        layoutNode.node.nom.length > 28
+          ? `${layoutNode.node.nom.slice(0, 26)}...`
+          : layoutNode.node.nom;
+      const responsables = (layoutNode.node.responsables ?? [])
+        .slice(0, 2)
+        .map((resp) => `${resp.prenom} ${resp.nom}`)
+        .join(', ');
+      const respLabel =
+        responsables.length > 34 ? `${responsables.slice(0, 32)}...` : responsables;
+
+      parts.push(
+        `<rect x="${boxX + 2}" y="${layoutNode.y + 2}" width="${boxW}" height="${boxH}" rx="6" fill="#0f172a" fill-opacity="0.12"/>`,
+      );
+      parts.push(
+        `<rect x="${boxX}" y="${layoutNode.y}" width="${boxW}" height="${boxH}" rx="6" fill="rgb(${r}, ${g}, ${b})"/>`,
+      );
+      parts.push(
+        `<text x="${boxX + 8}" y="${layoutNode.y + 18}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">${this.escapeXml(label)}</text>`,
+      );
+      parts.push(
+        `<text x="${boxX + 8}" y="${layoutNode.y + 30}" fill="#ffffff" fill-opacity="0.8" font-family="Arial, Helvetica, sans-serif" font-size="7">${this.escapeXml(layoutNode.node.type_entite)}</text>`,
+      );
+      if (respLabel) {
+        parts.push(
+          `<text x="${boxX + 8}" y="${layoutNode.y + 44}" fill="#e0e7ff" font-family="Arial, Helvetica, sans-serif" font-size="6.5">${this.escapeXml(respLabel)}</text>`,
+        );
+      }
+    }
+
+    parts.push('</svg>');
+    return parts.join('');
+  }
+
+  private toPdf(root: ApiOrgNode, year: number): Promise<Buffer> {
     // ── layout constants ──────────────────────────────────────────────────
     const BOX_W = 200;
     const BOX_H = 54;
@@ -418,7 +588,11 @@ export class OrganigrammesService {
     });
 
     const chunks: Buffer[] = [];
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    const pdfBuffer = new Promise<Buffer>((resolve, reject) => {
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+    });
 
     // header bar
     doc.rect(0, 0, canvasW, HEADER_H).fill('#4f46e5');
@@ -491,7 +665,7 @@ export class OrganigrammesService {
 
     doc.end();
 
-    return Buffer.concat(chunks);
+    return pdfBuffer;
   }
 
   private isServicesCentraux(user: CurrentUser): boolean {

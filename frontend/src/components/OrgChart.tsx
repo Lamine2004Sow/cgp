@@ -35,6 +35,8 @@ type ApiOrgNode = {
   responsables?: ApiResponsable[];
 };
 
+type ExportFormat = "PDF" | "CSV" | "JSON" | "SVG" | "PNG";
+
 const levelLabel = (type: string) => {
   const normalized = type.toLowerCase();
   if (normalized === "composante") return "Composante";
@@ -236,7 +238,61 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
     }
   };
 
-  const handleExport = async (format: "PDF" | "CSV" | "JSON") => {
+  const decodeBase64 = (contentBase64: string) => {
+    const binary = atob(contentBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  };
+
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const svgToPngBlob = async (svgText: string) => {
+    const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Impossible de convertir le SVG en PNG"));
+        img.src = url;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("Canvas indisponible pour l'export PNG");
+      }
+
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0);
+
+      return await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Impossible de générer le PNG"));
+        }, "image/png");
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleExport = async (format: ExportFormat) => {
     if (!authLogin || !orgaMeta) return;
     setExportLoading(true);
     setError(null);
@@ -245,22 +301,21 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         fileName: string;
         mimeType: string;
         contentBase64: string;
-      }>(`/organigrammes/${orgaMeta.id_organigramme}/export?format=${format}`, {
+      }>(`/organigrammes/${orgaMeta.id_organigramme}/export?format=${format === "PNG" ? "SVG" : format}`, {
         login: authLogin,
       });
 
-      const binary = atob(data.contentBase64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i += 1) {
-        bytes[i] = binary.charCodeAt(i);
+      const bytes = decodeBase64(data.contentBase64);
+
+      if (format === "PNG") {
+        const svgText = new TextDecoder().decode(bytes);
+        const pngBlob = await svgToPngBlob(svgText);
+        const pngFileName = data.fileName.replace(/\.svg$/i, ".png");
+        downloadBlob(pngBlob, pngFileName);
+        return;
       }
-      const blob = new Blob([bytes], { type: data.mimeType });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = data.fileName;
-      link.click();
-      URL.revokeObjectURL(url);
+
+      downloadBlob(new Blob([bytes], { type: data.mimeType }), data.fileName);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur export");
     } finally {
@@ -491,8 +546,8 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         <h3 className="text-slate-900 mb-4">Exports</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {(["PDF", "CSV", "JSON"] as const).map((format) => (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {(["PDF", "PNG", "SVG", "CSV", "JSON"] as const).map((format) => (
             <button
               key={format}
               onClick={() => {

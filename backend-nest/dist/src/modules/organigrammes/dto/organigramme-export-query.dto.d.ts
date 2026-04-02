@@ -1,3 +1,3 @@
 export declare class OrganigrammeExportQueryDto {
-    format?: 'PDF' | 'CSV' | 'JSON';
+    format?: 'PDF' | 'CSV' | 'JSON' | 'SVG';
 }
