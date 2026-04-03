@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1234}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./script/db/init:/docker-entrypoint-initdb.d:ro
@@ -27,7 +27,7 @@ services:
       NODE_ENV: development
       PORT: "3001"
       AUTH_MODE: ${AUTH_MODE:-mock}
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-1234}@db:5433/${POSTGRES_DB:-CGP}?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-1234}@db:5432/${POSTGRES_DB:-CGP}?schema=public"
     depends_on:
       db:
         condition: service_healthy
@@ -54,7 +54,7 @@ services:
     build:
       context: ./backend-nest
     environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-1234}@db:5433/${POSTGRES_DB:-CGP}?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-1234}@db:5432/${POSTGRES_DB:-CGP}?schema=public"
     depends_on:
       db:
         condition: service_healthy
