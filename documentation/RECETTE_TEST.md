@@ -124,14 +124,19 @@ Scénarios:
 - filtrer par hiérarchie structurelle
 - exporter en PDF
 - exporter en JSON ou CSV
-- figer un organigramme si connecté en service central
+- figer puis défiger un organigramme si connecté en service central
 - ouvrir un organigramme déjà généré depuis la bibliothèque
+- vérifier qu'un rôle non `services-centraux` peut consulter un organigramme généré hors de sa structure
+- vérifier que ce même rôle ne peut pas générer un organigramme hors de sa structure
 
 Points d'attention:
 
 - la vue personnes doit afficher des personnes uniquement
 - l'affiliation structurelle doit rester visible
+- le mail institutionnel et le mail secondaire doivent apparaître en vue personnes quand ils existent
+- en vue structures, le détail rapide des responsables doit rester limité à nom, prénom et mail institutionnel
 - la chaîne hiérarchique N+1 ne doit pas être cassée par les filtres
+- la bibliothèque doit servir à la consultation élargie sans élargir les droits de génération
 
 ## 4.9 Années universitaires
 

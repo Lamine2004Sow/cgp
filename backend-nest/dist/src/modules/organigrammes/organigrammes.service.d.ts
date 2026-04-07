@@ -21,6 +21,7 @@ export interface ApiOrgNode {
     role_label?: string | null;
     structure_nom?: string | null;
     email_institutionnel?: string | null;
+    email_secondaire?: string | null;
     hierarchy_level?: number | null;
     children?: ApiOrgNode[];
     responsables?: ApiResponsable[];
@@ -34,7 +35,7 @@ interface BuildTreeOptions {
 export declare class OrganigrammesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    list(user: CurrentUser, yearId?: number): Promise<{
+    list(_user: CurrentUser, yearId?: number): Promise<{
         id_organigramme: number;
         id_annee: number;
         id_entite_racine: number;
@@ -46,6 +47,9 @@ export declare class OrganigrammesService {
         visibility_scope: string | null;
     }[]>;
     latest(user: CurrentUser, yearId: number, options?: BuildTreeOptions): Promise<{
+        organigramme: null;
+        arbre: null;
+    } | {
         organigramme: {
             id_organigramme: number;
             id_annee: number;
@@ -59,7 +63,7 @@ export declare class OrganigrammesService {
         };
         arbre: ApiOrgNode | null;
     }>;
-    getTreeById(user: CurrentUser, id: string, options?: BuildTreeOptions): Promise<{
+    getTreeById(_user: CurrentUser, id: string, options?: BuildTreeOptions): Promise<{
         organigramme: {
             id_organigramme: number;
             id_annee: number;
@@ -87,7 +91,7 @@ export declare class OrganigrammesService {
         };
         arbre: ApiOrgNode | null;
     }>;
-    freeze(id: string): Promise<{
+    setFreezeState(id: string, estFige?: boolean): Promise<{
         organigramme: {
             id_organigramme: number;
             id_annee: number;
@@ -123,6 +127,7 @@ export declare class OrganigrammesService {
     private toSvg;
     private toPdf;
     private isServicesCentraux;
+    private listScopedToUser;
     private canAccessEntiteInYear;
 }
 export {};

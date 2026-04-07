@@ -3,6 +3,7 @@ import { OrganigrammesListQueryDto } from './dto/organigrammes-list-query.dto';
 import { OrganigrammeGenerateDto } from './dto/organigramme-generate.dto';
 import { OrganigrammeExportQueryDto } from './dto/organigramme-export-query.dto';
 import { OrganigrammeTreeQueryDto } from './dto/organigramme-tree-query.dto';
+import { UpdateOrganigrammeFreezeDto } from './dto/update-organigramme-freeze.dto';
 import type { CurrentUser as CurrentUserType } from '../../common/types/current-user';
 type OrganigrammeDto = {
     id_organigramme: number;
@@ -33,7 +34,7 @@ export declare class OrganigrammesController {
         organigramme: OrganigrammeDto;
         arbre: ApiOrgNode | null;
     }>;
-    freeze(id: string): Promise<{
+    freeze(id: string, payload: UpdateOrganigrammeFreezeDto): Promise<{
         organigramme: OrganigrammeDto;
     }>;
     export(user: CurrentUserType, id: string, query: OrganigrammeExportQueryDto): Promise<{

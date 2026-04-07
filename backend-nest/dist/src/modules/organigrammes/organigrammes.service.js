@@ -41,31 +41,25 @@ let OrganigrammesService = class OrganigrammesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async list(user, yearId) {
+    async list(_user, yearId) {
         const items = await this.prisma.organigramme.findMany({
             where: yearId ? { id_annee: BigInt(yearId) } : undefined,
             orderBy: { generated_at: 'desc' },
         });
-        if (this.isServicesCentraux(user)) {
-            return items.map((item) => this.mapOrganigramme(item));
-        }
-        const filtered = [];
-        for (const item of items) {
-            const canAccess = await this.canAccessEntiteInYear(user, String(item.id_entite_racine), String(item.id_annee));
-            if (canAccess) {
-                filtered.push(item);
-            }
-        }
-        return filtered.map((item) => this.mapOrganigramme(item));
+        return items.map((item) => this.mapOrganigramme(item));
     }
     async latest(user, yearId, options) {
-        const items = await this.list(user, yearId);
+        const items = this.isServicesCentraux(user)
+            ? await this.list(user, yearId)
+            : await this.listScopedToUser(user, yearId);
         const organigramme = items[0] ?? null;
-        const rootId = organigramme?.id_entite_racine ?? null;
-        const arbre = await this.buildTree(yearId, rootId ?? undefined, options);
+        if (!organigramme) {
+            return { organigramme: null, arbre: null };
+        }
+        const arbre = await this.buildTree(yearId, organigramme.id_entite_racine, options);
         return { organigramme: organigramme ?? null, arbre };
     }
-    async getTreeById(user, id, options) {
+    async getTreeById(_user, id, options) {
         let parsedId;
         try {
             parsedId = BigInt(id);
@@ -78,10 +72,6 @@ let OrganigrammesService = class OrganigrammesService {
         });
         if (!organigramme) {
             throw new common_1.NotFoundException('Organigramme not found');
-        }
-        const canAccess = await this.canAccessEntiteInYear(user, String(organigramme.id_entite_racine), String(organigramme.id_annee));
-        if (!canAccess) {
-            throw new common_1.ForbiddenException('Out of scope organigramme');
         }
         const arbre = await this.buildTree(Number(organigramme.id_annee), Number(organigramme.id_entite_racine), options);
         return { organigramme: this.mapOrganigramme(organigramme), arbre };
@@ -106,17 +96,26 @@ let OrganigrammesService = class OrganigrammesService {
             !this.isServicesCentraux(user)) {
             throw new common_1.ForbiddenException('Generation at NIVEAU level is restricted to services centraux');
         }
-        const organigramme = await this.prisma.organigramme.create({
-            data: {
+        const latestForRoot = await this.prisma.organigramme.findFirst({
+            where: {
                 id_annee: BigInt(yearId),
                 id_entite_racine: BigInt(rootId),
-                generated_by: BigInt(user.userId),
             },
+            orderBy: { generated_at: 'desc' },
         });
+        const organigramme = latestForRoot && !latestForRoot.est_fige
+            ? latestForRoot
+            : await this.prisma.organigramme.create({
+                data: {
+                    id_annee: BigInt(yearId),
+                    id_entite_racine: BigInt(rootId),
+                    generated_by: BigInt(user.userId),
+                },
+            });
         const arbre = await this.buildTree(yearId, rootId);
         return { organigramme: this.mapOrganigramme(organigramme), arbre };
     }
-    async freeze(id) {
+    async setFreezeState(id, estFige = true) {
         let parsedId;
         try {
             parsedId = BigInt(id);
@@ -126,7 +125,7 @@ let OrganigrammesService = class OrganigrammesService {
         }
         const organigramme = await this.prisma.organigramme.update({
             where: { id_organigramme: parsedId },
-            data: { est_fige: true },
+            data: { est_fige: estFige },
         });
         return { organigramme: this.mapOrganigramme(organigramme) };
     }
@@ -226,6 +225,9 @@ let OrganigrammesService = class OrganigrammesService {
             affectation.utilisateur.prenom.toLowerCase().includes(normalizedQuery) ||
             affectation.utilisateur.login.toLowerCase().includes(normalizedQuery) ||
             (affectation.utilisateur.email_institutionnel || '')
+                .toLowerCase()
+                .includes(normalizedQuery) ||
+            (affectation.utilisateur.email_institutionnel_secondaire || '')
                 .toLowerCase()
                 .includes(normalizedQuery) ||
             (affectation.role?.libelle || affectation.id_role)
@@ -427,6 +429,7 @@ let OrganigrammesService = class OrganigrammesService {
                     structure_nom: affiliationByAffectationId.get(affectationId) ??
                         this.buildAffiliationLabel(Number(affectation.id_entite), entiteById, rootId),
                     email_institutionnel: affectation.utilisateur.email_institutionnel,
+                    email_secondaire: affectation.utilisateur.email_institutionnel_secondaire,
                     hierarchy_level: affectation.role?.niveau_hierarchique ?? null,
                     children: [],
                 });
@@ -778,6 +781,20 @@ let OrganigrammesService = class OrganigrammesService {
     }
     isServicesCentraux(user) {
         return user.affectations.some((affectation) => affectation.roleId === roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX);
+    }
+    async listScopedToUser(user, yearId) {
+        const items = await this.prisma.organigramme.findMany({
+            where: yearId ? { id_annee: BigInt(yearId) } : undefined,
+            orderBy: { generated_at: 'desc' },
+        });
+        const filtered = [];
+        for (const item of items) {
+            const canAccess = await this.canAccessEntiteInYear(user, String(item.id_entite_racine), String(item.id_annee));
+            if (canAccess) {
+                filtered.push(item);
+            }
+        }
+        return filtered.map((item) => this.mapOrganigramme(item));
     }
     async canAccessEntiteInYear(user, entiteId, yearId) {
         if (this.isServicesCentraux(user)) {

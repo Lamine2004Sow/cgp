@@ -124,12 +124,12 @@ Selon la route:
 
 | Méthode | Route | Accès | Usage |
 | --- | --- | --- | --- |
-| `GET` | `/organigrammes` | tous rôles | liste des organigrammes |
-| `GET` | `/organigrammes/latest` | tous rôles | dernier organigramme de l'année, avec arbre filtré |
-| `POST` | `/organigrammes/generate` | SC, DC, DA, DAA, DD, DM, DS, RF | génération d'un organigramme |
-| `GET` | `/organigrammes/:id/tree` | tous rôles | lecture d'un organigramme existant, avec filtres |
-| `PATCH` | `/organigrammes/:id/freeze` | services centraux | fige un organigramme |
-| `GET` | `/organigrammes/:id/export` | tous rôles | export PDF, CSV, JSON ou SVG |
+| `GET` | `/organigrammes` | tous rôles | liste des organigrammes déjà générés de l'année |
+| `GET` | `/organigrammes/latest` | tous rôles | dernier organigramme de l'année dans le périmètre de l'utilisateur, avec arbre filtré |
+| `POST` | `/organigrammes/generate` | SC, DC, DA, DAA, DD, DM, DS, RF | génération d'un organigramme dans le périmètre autorisé du rôle |
+| `GET` | `/organigrammes/:id/tree` | tous rôles | lecture d'un organigramme existant, avec filtres, y compris hors périmètre de génération |
+| `PATCH` | `/organigrammes/:id/freeze` | services centraux | fige ou défige un organigramme |
+| `GET` | `/organigrammes/:id/export` | tous rôles | export PDF, CSV, JSON ou SVG d'un organigramme consultable |
 
 ### Paramètres utiles
 
@@ -141,6 +141,13 @@ Selon la route:
 - `roleId`
 - `entiteIds`
 - `format`
+
+### Notes d'autorisation
+
+- la consultation des organigrammes déjà générés est plus large que la génération
+- la génération reste bornée à la structure de l'utilisateur et à ses descendants, sauf `services-centraux`
+- `latest` reste volontairement limité au périmètre de l'utilisateur hors `services-centraux`
+- `PATCH /organigrammes/:id/freeze` accepte `est_fige=true|false`
 
 ## 10. Délégations
 

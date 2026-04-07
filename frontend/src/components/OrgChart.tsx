@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { User, UserRole, AcademicYear, EntiteStructure, canGenerateOrgChart, getRoleLabelSafe } from "../types";
+import { User, UserRole, AcademicYear, EntiteStructure, canGenerateOrgChart } from "../types";
 import { Download, GitBranch, Lock, Unlock, FileDown, Eye } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import {
@@ -51,6 +51,7 @@ type ApiOrgNode = {
   role_label?: string | null;
   structure_nom?: string | null;
   email_institutionnel?: string | null;
+  email_secondaire?: string | null;
   hierarchy_level?: number | null;
   children?: ApiOrgNode[];
   responsables?: ApiResponsable[];
@@ -95,6 +96,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
   const [generatedSearch, setGeneratedSearch] = useState("");
   const [generatedTypeFilter, setGeneratedTypeFilter] = useState<string>("ALL");
   const [generatedStatusFilter, setGeneratedStatusFilter] = useState<"ALL" | "ACTIVE" | "FROZEN">("ALL");
+  const [generatedVisibleCount, setGeneratedVisibleCount] = useState<"5" | "10" | "20" | "ALL">("5");
   const [roles, setRoles] = useState<ApiRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -102,11 +104,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
 
   const canGenerate = canGenerateOrgChart(userRole);
   const canFreeze = userRole === "services-centraux";
-  const isTopLevel =
-    userRole === "services-centraux" ||
-    userRole === "directeur-composante" ||
-    userRole === "directeur-administratif" ||
-    userRole === "directeur-administratif-adjoint";
+  const canGenerateAllRoots = userRole === "services-centraux";
 
   const entiteMap = useMemo(() => {
     const map = new Map<number, EntiteStructure>();
@@ -141,7 +139,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         entite.code_composante?.toLowerCase().includes(normalizedSearch)
       );
     });
-    if (isTopLevel) return filteredByType;
+    if (canGenerateAllRoots) return filteredByType;
 
     const allowedRoots = currentUser.roles
       .filter((role) => role.year === currentYear.year)
@@ -152,7 +150,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
     return filteredByType.filter((entite) =>
       allowedRoots.some((allowedId) => isDescendant(entite.id_entite, allowedId)),
     );
-  }, [entites, currentYear.id, selectedType, currentUser.roles, currentYear.year, isTopLevel, entiteMap, rootSearch]);
+  }, [canGenerateAllRoots, entites, currentYear.id, selectedType, currentUser.roles, currentYear.year, entiteMap, rootSearch]);
 
   useEffect(() => {
     if (rootOptions.length && !selectedRoot) {
@@ -193,30 +191,37 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
       .catch(() => setRoles([]));
   }, [authLogin]);
 
+  const loadOrganigrammesList = async () => {
+    if (!authLogin) return [];
+    const orgaList = await apiFetch<{ items: ApiOrganigramme[] }>(
+      `/organigrammes?yearId=${currentYear.id}`,
+      { login: authLogin },
+    );
+    setOrganigrammes(orgaList.items || []);
+    return orgaList.items || [];
+  };
+
   const loadLatest = async () => {
     if (!authLogin) return;
     setLoading(true);
     setError(null);
     try {
-      const orgaList = await apiFetch<{ items: ApiOrganigramme[] }>(
-        `/organigrammes?yearId=${currentYear.id}`,
-        { login: authLogin },
-      );
-      setOrganigrammes(orgaList.items || []);
-      if (orgaList.items?.length) {
-        setSelectedOrgaId(String(orgaList.items[0].id_organigramme));
-      }
+      await loadOrganigrammesList();
 
-      const data = await apiFetch<{ organigramme: ApiOrganigramme | null; arbre: ApiOrgNode }>(
+      const data = await apiFetch<{ organigramme: ApiOrganigramme | null; arbre: ApiOrgNode | null }>(
         `/organigrammes/latest?yearId=${currentYear.id}&${buildTreeQuery().replace(/^\?/, "")}`,
         { login: authLogin },
       );
       setTree(data.arbre || null);
       setOrgaMeta(data.organigramme || null);
+      setSelectedOrgaId(
+        data.organigramme ? String(data.organigramme.id_organigramme) : "",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de chargement");
       setTree(null);
       setOrgaMeta(null);
+      setSelectedOrgaId("");
     } finally {
       setLoading(false);
     }
@@ -243,12 +248,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         },
       );
       setSelectedOrgaId(String(generated.organigramme.id_organigramme));
-      // Rafraîchir la liste sans écraser l'orgaMeta courant
-      const orgaList = await apiFetch<{ items: ApiOrganigramme[] }>(
-        `/organigrammes?yearId=${currentYear.id}`,
-        { login: authLogin },
-      );
-      setOrganigrammes(orgaList.items || []);
+      await loadOrganigrammesList();
       await handleLoadOrganigramme(String(generated.organigramme.id_organigramme));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la generation");
@@ -262,7 +262,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<{ organigramme: ApiOrganigramme; arbre: ApiOrgNode }>(
+      const data = await apiFetch<{ organigramme: ApiOrganigramme; arbre: ApiOrgNode | null }>(
         `/organigrammes/${orgaId}/tree${buildTreeQuery()}`,
         { login: authLogin },
       );
@@ -281,11 +281,16 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
     targetViewMode: OrgChartViewMode,
   ) => {
     if (!authLogin) return;
-    setSelectedRoot(String(organigramme.id_entite_racine));
+    const canReuseAsGenerationRoot = rootOptions.some(
+      (entite) => entite.id_entite === organigramme.id_entite_racine,
+    );
+    if (canReuseAsGenerationRoot) {
+      setSelectedRoot(String(organigramme.id_entite_racine));
+    }
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<{ organigramme: ApiOrganigramme; arbre: ApiOrgNode }>(
+      const data = await apiFetch<{ organigramme: ApiOrganigramme; arbre: ApiOrgNode | null }>(
         `/organigrammes/${organigramme.id_organigramme}/tree${buildTreeQuery(targetViewMode)}`,
         { login: authLogin },
       );
@@ -326,21 +331,40 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
     }
   };
 
-  const handleFreeze = async () => {
-    if (!authLogin || !orgaMeta) return;
+  const handleSetFreezeState = async (
+    organigrammeId: number,
+    estFige: boolean,
+  ) => {
+    if (!authLogin) return;
     setLoading(true);
     setError(null);
     try {
       const data = await apiFetch<{ organigramme: ApiOrganigramme }>(
-        `/organigrammes/${orgaMeta.id_organigramme}/freeze`,
+        `/organigrammes/${organigrammeId}/freeze`,
         {
           method: "PATCH",
+          body: JSON.stringify({ est_fige: estFige }),
           login: authLogin,
         },
       );
-      setOrgaMeta(data.organigramme);
+      setOrganigrammes((prev) =>
+        prev.map((item) =>
+          item.id_organigramme === data.organigramme.id_organigramme
+            ? data.organigramme
+            : item,
+        ),
+      );
+      if (orgaMeta?.id_organigramme === data.organigramme.id_organigramme) {
+        setOrgaMeta(data.organigramme);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors du gel");
+      setError(
+        err instanceof Error
+          ? err.message
+          : estFige
+            ? "Erreur lors du gel"
+            : "Erreur lors du dégel",
+      );
     } finally {
       setLoading(false);
     }
@@ -490,6 +514,14 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
       });
   }, [entiteMap, generatedSearch, generatedStatusFilter, generatedTypeFilter, organigrammes]);
 
+  const visibleGeneratedOrganigrammes = useMemo(() => {
+    if (generatedVisibleCount === "ALL") {
+      return generatedOrganigrammes;
+    }
+
+    return generatedOrganigrammes.slice(0, Number(generatedVisibleCount));
+  }, [generatedOrganigrammes, generatedVisibleCount]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -555,7 +587,11 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
           <div className="p-4 border border-slate-200 rounded-lg">
             <div className="text-sm text-slate-600 mb-2">Portée de génération</div>
             <div className="text-sm text-slate-900 font-medium">
-              {canGenerate ? "Selon votre rôle" : "Consultation seule"}
+              {canGenerate
+                ? canGenerateAllRoots
+                  ? "Toutes les structures"
+                  : "Votre structure et ses sous-structures"
+                : "Consultation seule"}
             </div>
           </div>
         </div>
@@ -629,6 +665,9 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Sélectionner la structure racine
             </label>
+            <p className="text-xs text-slate-500 mb-2">
+              Cette liste est limitée aux structures que vous pouvez générer. Pour consulter d’autres organigrammes déjà créés, utilisez la bibliothèque ci-dessous.
+            </p>
             <select
               value={selectedRoot}
               onChange={(e) => setSelectedRoot(e.target.value)}
@@ -726,7 +765,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
               <Eye className="w-5 h-5" />
               Afficher / appliquer les filtres
             </button>
-            {canGenerate && !isFrozen && (
+            {canGenerate && (
               <button
                 onClick={() => {
                   if (!selectedRoot) {
@@ -742,14 +781,18 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
                 Générer l'organigramme
               </button>
             )}
-            {tree && canFreeze && !isFrozen && orgaMeta && (
+            {tree && canFreeze && orgaMeta && (
               <button
-                onClick={handleFreeze}
+                onClick={() => handleSetFreezeState(orgaMeta.id_organigramme, !isFrozen)}
                 disabled={loading}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60"
+                className={`px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 ${
+                  isFrozen
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
               >
-                <Lock className="w-5 h-5" />
-                Figer l'organigramme
+                {isFrozen ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                {isFrozen ? "Défiger l'organigramme" : "Figer l'organigramme"}
               </button>
             )}
           </div>
@@ -758,7 +801,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         {isFrozen && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm text-red-800">
-              <strong>Organigramme figé :</strong> Aucune modification possible.
+              <strong>Organigramme figé :</strong> vous pouvez le défiger ou générer une nouvelle version si nécessaire.
             </p>
           </div>
         )}
@@ -815,8 +858,29 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
                 Retrouvez rapidement un organigramme existant, filtrez la liste, puis ouvrez-le directement en vue structures ou personnes.
               </p>
             </div>
-            <div className="text-sm text-slate-500">
-              {generatedOrganigrammes.length} sur {organigrammes.length} affichés
+            <div className="flex flex-col items-start md:items-end gap-2">
+              <div className="text-sm text-slate-500">
+                {visibleGeneratedOrganigrammes.length} visibles sur {generatedOrganigrammes.length} résultat(s) filtré(s) et {organigrammes.length} au total
+              </div>
+              <div className="w-full md:w-40">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Nombre visible
+                </label>
+                <select
+                  value={generatedVisibleCount}
+                  onChange={(e) =>
+                    setGeneratedVisibleCount(
+                      e.target.value as "5" | "10" | "20" | "ALL",
+                    )
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="ALL">Tous</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -881,7 +945,7 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
         )}
         {generatedOrganigrammes.length > 0 && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {generatedOrganigrammes.map((organigramme) => {
+            {visibleGeneratedOrganigrammes.map((organigramme) => {
               const isCurrent = selectedOrgaId === String(organigramme.id_organigramme);
               return (
                 <div
@@ -949,6 +1013,25 @@ export function OrgChart({ userRole, currentYear, authLogin, entites, currentUse
                     >
                       Voir en personnes
                     </button>
+                    {canFreeze && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSetFreezeState(
+                            organigramme.id_organigramme,
+                            !organigramme.est_fige,
+                          )
+                        }
+                        disabled={loading}
+                        className={`px-4 py-2 text-white rounded-lg text-sm transition-colors disabled:opacity-60 ${
+                          organigramme.est_fige
+                            ? "bg-emerald-600 hover:bg-emerald-700"
+                            : "bg-red-600 hover:bg-red-700"
+                        }`}
+                      >
+                        {organigramme.est_fige ? "Défiger" : "Figer"}
+                      </button>
+                    )}
                     {isCurrent && (
                       <span className="px-3 py-2 text-xs rounded-lg bg-white border border-indigo-200 text-indigo-700">
                         Organigramme actuellement affiché
@@ -1009,7 +1092,9 @@ function OrgNode({ node, level = 0 }: { node: ApiOrgNode; level?: number }) {
   const { box, badge, connector } = isPersonNode ? personVariant : colorVariants[Math.min(level, 3)];
   const hasChildren = (node.children?.length ?? 0) > 0;
   const hasResps = !isPersonNode && (node.responsables?.length ?? 0) > 0;
-  const hasPersonDetails = isPersonNode && Boolean(node.structure_nom || node.email_institutionnel);
+  const hasPersonDetails = isPersonNode && Boolean(
+    node.structure_nom || node.email_institutionnel || node.email_secondaire,
+  );
 
   return (
     <div className="flex flex-col items-center">
@@ -1050,7 +1135,6 @@ function OrgNode({ node, level = 0 }: { node: ApiOrgNode; level?: number }) {
               {node.responsables!.map((resp) => (
                 <div key={`${resp.nom}-${resp.id_role}`} className="flex flex-col">
                   <span className="text-sm font-medium text-slate-800">{resp.prenom} {resp.nom}</span>
-                  <span className="text-xs text-slate-500">{getRoleLabelSafe(resp.id_role)}</span>
                   {resp.email_institutionnel && (
                     <span className="text-xs text-indigo-500 truncate">{resp.email_institutionnel}</span>
                   )}
@@ -1071,7 +1155,14 @@ function OrgNode({ node, level = 0 }: { node: ApiOrgNode; level?: number }) {
                 <div className="text-xs text-slate-500">Affiliation : {node.structure_nom}</div>
               )}
               {node.email_institutionnel && (
-                <div className="text-xs text-indigo-600 truncate">{node.email_institutionnel}</div>
+                <div className="text-xs text-indigo-600 truncate">
+                  Mail institutionnel : {node.email_institutionnel}
+                </div>
+              )}
+              {node.email_secondaire && (
+                <div className="text-xs text-slate-600 truncate">
+                  Autre mail : {node.email_secondaire}
+                </div>
               )}
             </div>
           </div>

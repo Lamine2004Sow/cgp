@@ -87,7 +87,11 @@ Réponse attendue: `HTTP/1.1 200 OK`
 ## Fonctionnalités clés déjà en place
 
 - gestion des années avec création, activation, archivage, clonage complet ou sélectif et suppression avec sauvegarde standardisée
-- organigrammes en vue `structures` et `personnes`, avec filtres et exports
+- organigrammes en vue `structures` et `personnes`, avec filtres, exports et bibliothèque des organigrammes déjà générés
+- vue personnes avec affiliation, mail institutionnel et mail secondaire
+- vue structures avec responsables affichés de manière simplifiée: nom, prénom et mail institutionnel
+- consultation des organigrammes générés possible au-delà du périmètre de génération, pour faciliter la recherche de contacts
+- génération d'organigrammes limitée au périmètre structurel du rôle, sauf pour les services centraux
 - filtres hiérarchiques dynamiques sur plusieurs écrans
 - import/export standardisé via classeur Excel XML `CGP_STANDARD_V1`
 - import ciblé possible sur une structure précise

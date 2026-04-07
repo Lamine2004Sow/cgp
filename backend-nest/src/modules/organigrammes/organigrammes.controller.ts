@@ -12,6 +12,7 @@ import { OrganigrammesListQueryDto } from './dto/organigrammes-list-query.dto';
 import { OrganigrammeGenerateDto } from './dto/organigramme-generate.dto';
 import { OrganigrammeExportQueryDto } from './dto/organigramme-export-query.dto';
 import { OrganigrammeTreeQueryDto } from './dto/organigramme-tree-query.dto';
+import { UpdateOrganigrammeFreezeDto } from './dto/update-organigramme-freeze.dto';
 import { ROLE_IDS } from '../../auth/roles.constants';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -87,8 +88,9 @@ export class OrganigrammesController {
   @Roles(ROLE_IDS.SERVICES_CENTRAUX)
   async freeze(
     @Param('id') id: string,
+    @Body() payload: UpdateOrganigrammeFreezeDto,
   ): Promise<{ organigramme: OrganigrammeDto }> {
-    return this.organigrammesService.freeze(id);
+    return this.organigrammesService.setFreezeState(id, payload.est_fige ?? true);
   }
 
   @Get(':id/export')

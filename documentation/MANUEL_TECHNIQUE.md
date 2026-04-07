@@ -285,14 +285,30 @@ Le module organigrammes supporte:
 - vue `personnes`
 - filtres de recherche, rôle et hiérarchie
 - export `PDF`, `CSV`, `JSON`, `SVG`
-- figer un organigramme
+- figer et défiger un organigramme
 - consultation d'une bibliothèque d'organigrammes déjà générés
+- limitation du nombre d'éléments affichés dans la bibliothèque, avec filtres pour retrouver le reste
+- réutilisation du dernier organigramme non figé quand une génération identique est relancée sur la même racine et la même année
 
 Dans la vue personnes:
 
 - seuls les nœuds personne sont affichés
 - l'affiliation structurelle apparaît dans les informations
+- le mail institutionnel principal et le mail secondaire apparaissent dans la fiche personne si disponibles
 - la hiérarchie N+1 reste prise en compte
+
+Dans la vue structures:
+
+- les responsables affichés dans le détail rapide sont volontairement simplifiés
+- seuls le nom, le prénom et le mail institutionnel sont présentés
+- le rôle n'est pas répété dans cette fiche rapide pour garder une lecture plus compacte
+
+Règles d'accès importantes:
+
+- `services-centraux` peuvent générer sur toute racine autorisée et figer ou défiger
+- les autres rôles de direction ne peuvent générer que sur leur structure et ses descendants
+- les organigrammes déjà générés peuvent être consultés par les autres rôles, y compris hors de leur périmètre de génération, pour permettre la recherche de contacts
+- le chargement par défaut du "dernier organigramme" reste borné au périmètre de l'utilisateur hors services centraux pour éviter d'ouvrir automatiquement un organigramme externe
 
 ## 8.3 Import / export standardisé
 
