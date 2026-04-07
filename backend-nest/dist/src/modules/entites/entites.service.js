@@ -45,8 +45,11 @@ let EntitesService = class EntitesService {
         }
         if (item.departement)
             detail.code_interne = item.departement.code_interne;
-        if (item.mention)
+        if (item.mention) {
             detail.type_diplome = item.mention.type_diplome;
+            detail.diplome_libelle = item.mention.diplome?.libelle ?? null;
+            detail.cycle = item.mention.cycle;
+        }
         if (item.parcours)
             detail.code_parcours = item.parcours.code_parcours;
         if (item.niveau)
@@ -102,7 +105,11 @@ let EntitesService = class EntitesService {
             include: {
                 composante: true,
                 departement: true,
-                mention: true,
+                mention: {
+                    include: {
+                        diplome: true,
+                    },
+                },
                 parcours: true,
                 niveau: true,
             },

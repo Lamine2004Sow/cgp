@@ -53,6 +53,8 @@ export type EntiteDetailBase = EntiteListItem & {
   campus?: string | null;
   code_interne?: string | null;
   type_diplome?: string | null;
+  diplome_libelle?: string | null;
+  cycle?: number | null;
   code_parcours?: string | null;
   libelle_court?: string | null;
 };
@@ -88,7 +90,11 @@ export class EntitesService {
       campus: string | null;
     } | null;
     departement?: { code_interne: string | null } | null;
-    mention?: { type_diplome: string | null } | null;
+    mention?: {
+      type_diplome: string | null;
+      cycle: number | null;
+      diplome?: { libelle: string | null } | null;
+    } | null;
     parcours?: { code_parcours: string | null } | null;
     niveau?: { libelle_court: string | null } | null;
   }): EntiteDetailBase {
@@ -111,7 +117,11 @@ export class EntitesService {
       detail.campus = item.composante.campus;
     }
     if (item.departement) detail.code_interne = item.departement.code_interne;
-    if (item.mention) detail.type_diplome = item.mention.type_diplome;
+    if (item.mention) {
+      detail.type_diplome = item.mention.type_diplome;
+      detail.diplome_libelle = item.mention.diplome?.libelle ?? null;
+      detail.cycle = item.mention.cycle;
+    }
     if (item.parcours) detail.code_parcours = item.parcours.code_parcours;
     if (item.niveau) detail.libelle_court = item.niveau.libelle_court;
     return detail;
@@ -168,7 +178,11 @@ export class EntitesService {
       include: {
         composante: true,
         departement: true,
-        mention: true,
+        mention: {
+          include: {
+            diplome: true,
+          },
+        },
         parcours: true,
         niveau: true,
       },

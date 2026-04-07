@@ -19,10 +19,20 @@ import {
   XCircle,
 } from "lucide-react";
 import { apiFetch } from "../lib/api";
+import { FilterBar } from "./ui/filter-bar";
+import {
+  EMPTY_HIERARCHY_FILTERS,
+  HIERARCHY_LEVELS,
+  type HierarchyFilters,
+  getFilteredEntites,
+  getHierarchyOptions,
+  updateHierarchyFilters,
+} from "../lib/entite-hierarchy";
 import {
   STANDARD_WORKBOOK_VERSION,
   downloadBase64File,
   getWorkbookSourceScopes,
+  getWorkbookStructureEntites,
   parseStandardWorkbookXml,
   type StandardWorkbookPayload,
 } from "../lib/standard-workbook";
@@ -168,6 +178,31 @@ const workbookStatusLabel: Record<WorkbookPreviewStatus, string> = {
   error: "Erreur",
 };
 
+const HIERARCHY_EMPTY_LABELS: Record<keyof HierarchyFilters, string> = {
+  composanteId: "Toutes les composantes",
+  departementId: "Tous les départements",
+  mentionId: "Toutes les mentions",
+  parcoursId: "Tous les parcours",
+  niveauId: "Tous les niveaux",
+};
+
+const formatEntiteOptionLabel = (entite: EntiteStructure) =>
+  entite.type_entite === "COMPOSANTE" && entite.code_composante
+    ? `${entite.nom} (${entite.code_composante})`
+    : entite.nom;
+
+const matchesEntiteSearch = (entite: EntiteStructure, rawSearch: string) => {
+  const search = rawSearch.trim().toLowerCase();
+  if (!search) return true;
+
+  return (
+    entite.nom.toLowerCase().includes(search) ||
+    String(entite.id_entite).includes(search) ||
+    entite.type_entite.toLowerCase().includes(search) ||
+    entite.code_composante?.toLowerCase().includes(search)
+  );
+};
+
 export function ImportExport({
   userRole,
   currentYear,
@@ -193,9 +228,13 @@ export function ImportExport({
 
   const [years, setYears] = useState<ApiYear[]>([]);
   const [workbookExportMode, setWorkbookExportMode] = useState<"year" | "structure">("year");
+  const [workbookExportSearch, setWorkbookExportSearch] = useState("");
+  const [workbookExportFilters, setWorkbookExportFilters] = useState<HierarchyFilters>(EMPTY_HIERARCHY_FILTERS);
   const [workbookExportEntiteId, setWorkbookExportEntiteId] = useState("");
   const [workbookFileName, setWorkbookFileName] = useState("");
   const [parsedWorkbook, setParsedWorkbook] = useState<StandardWorkbookPayload | null>(null);
+  const [workbookSourceSearch, setWorkbookSourceSearch] = useState("");
+  const [workbookSourceFilters, setWorkbookSourceFilters] = useState<HierarchyFilters>(EMPTY_HIERARCHY_FILTERS);
   const [workbookSourceScopeId, setWorkbookSourceScopeId] = useState("");
   const [workbookTargetYearId, setWorkbookTargetYearId] = useState(currentYear.id);
   const [createTargetYear, setCreateTargetYear] = useState(false);
@@ -215,16 +254,47 @@ export function ImportExport({
     () => entites.filter((entite) => String(entite.id_annee) === currentYear.id),
     [currentYear.id, entites],
   );
+  const workbookExportHierarchyOptions = useMemo(
+    () => getHierarchyOptions(currentYearEntites, workbookExportFilters, currentYear.id),
+    [currentYearEntites, workbookExportFilters, currentYear.id],
+  );
   const workbookExportOptions = useMemo(
     () =>
-      [...currentYearEntites].sort((left, right) =>
-        left.nom.localeCompare(right.nom, "fr", { sensitivity: "base" }),
-      ),
-    [currentYearEntites],
+      getFilteredEntites(currentYearEntites, workbookExportFilters, currentYear.id)
+        .filter((entite) => matchesEntiteSearch(entite, workbookExportSearch))
+        .sort((left, right) => left.nom.localeCompare(right.nom, "fr", { sensitivity: "base" })),
+    [currentYearEntites, workbookExportFilters, currentYear.id, workbookExportSearch],
+  );
+  const workbookStructureEntites = useMemo(
+    () => (parsedWorkbook ? getWorkbookStructureEntites(parsedWorkbook) : []),
+    [parsedWorkbook],
   );
   const workbookSourceScopes = useMemo(
     () => (parsedWorkbook ? getWorkbookSourceScopes(parsedWorkbook) : []),
     [parsedWorkbook],
+  );
+  const workbookSourceScopeMap = useMemo(
+    () => new Map(workbookSourceScopes.map((scope) => [scope.id, scope])),
+    [workbookSourceScopes],
+  );
+  const workbookSourceHierarchyOptions = useMemo(
+    () => getHierarchyOptions(workbookStructureEntites, workbookSourceFilters),
+    [workbookStructureEntites, workbookSourceFilters],
+  );
+  const filteredWorkbookSourceScopes = useMemo(
+    () =>
+      getFilteredEntites(workbookStructureEntites, workbookSourceFilters)
+        .filter((entite) => matchesEntiteSearch(entite, workbookSourceSearch))
+        .map(
+          (entite) =>
+            workbookSourceScopeMap.get(String(entite.id_entite)) ?? {
+              id: String(entite.id_entite),
+              label: `#${entite.id_entite} — ${formatEntiteOptionLabel(entite)} (${entite.type_entite})`,
+              type: entite.type_entite,
+            },
+        )
+        .sort((left, right) => left.label.localeCompare(right.label, "fr", { sensitivity: "base" })),
+    [workbookStructureEntites, workbookSourceFilters, workbookSourceSearch, workbookSourceScopeMap],
   );
   const filteredWorkbookPreview = useMemo(
     () =>
@@ -240,6 +310,26 @@ export function ImportExport({
       .then((data) => setYears(data.items || []))
       .catch(() => setYears([]));
   }, [authLogin, canUseStandardWorkbook]);
+
+  useEffect(() => {
+    if (
+      workbookExportEntiteId &&
+      !workbookExportOptions.some(
+        (entite) => String(entite.id_entite) === workbookExportEntiteId,
+      )
+    ) {
+      setWorkbookExportEntiteId("");
+    }
+  }, [workbookExportEntiteId, workbookExportOptions]);
+
+  useEffect(() => {
+    if (
+      workbookSourceScopeId &&
+      !filteredWorkbookSourceScopes.some((scope) => scope.id === workbookSourceScopeId)
+    ) {
+      setWorkbookSourceScopeId("");
+    }
+  }, [workbookSourceScopeId, filteredWorkbookSourceScopes]);
 
   const parseCsvLine = (line: string) => {
     const values: string[] = [];
@@ -311,6 +401,8 @@ export function ImportExport({
       const workbook = parseStandardWorkbookXml(content);
       setParsedWorkbook(workbook);
       setWorkbookFileName(file.name);
+      setWorkbookSourceSearch("");
+      setWorkbookSourceFilters(EMPTY_HIERARCHY_FILTERS);
       setWorkbookSourceScopeId(workbook.meta.scope_source_entite_id || "");
       setCreateTargetYear(false);
       setWorkbookTargetYearId(currentYear.id);
@@ -396,6 +488,8 @@ export function ImportExport({
   const resetWorkbookImport = () => {
     setParsedWorkbook(null);
     setWorkbookFileName("");
+    setWorkbookSourceSearch("");
+    setWorkbookSourceFilters(EMPTY_HIERARCHY_FILTERS);
     setWorkbookSourceScopeId("");
     setWorkbookPreviewItems([]);
     setWorkbookPreviewSummary(null);
@@ -403,6 +497,16 @@ export function ImportExport({
     setWorkbookStep("idle");
     setWorkbookMessage("");
     setWorkbookError(null);
+  };
+
+  const resetWorkbookExportFilters = () => {
+    setWorkbookExportSearch("");
+    setWorkbookExportFilters(EMPTY_HIERARCHY_FILTERS);
+  };
+
+  const resetWorkbookSourceFilters = () => {
+    setWorkbookSourceSearch("");
+    setWorkbookSourceFilters(EMPTY_HIERARCHY_FILTERS);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -588,7 +692,7 @@ export function ImportExport({
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Portée de l'export
@@ -620,22 +724,64 @@ export function ImportExport({
                   </div>
 
                   {workbookExportMode === "structure" && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Structure à exporter
-                      </label>
-                      <select
-                        value={workbookExportEntiteId}
-                        onChange={(e) => setWorkbookExportEntiteId(e.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
-                      >
-                        <option value="">Sélectionner une structure</option>
-                        {workbookExportOptions.map((entite) => (
-                          <option key={entite.id_entite} value={entite.id_entite}>
-                            #{entite.id_entite} — {entite.nom} ({entite.type_entite})
-                          </option>
-                        ))}
-                      </select>
+                    <div className="space-y-4">
+                      <FilterBar
+                        title="Filtrer les structures exportables"
+                        fields={[
+                          {
+                            key: "workbookExportSearch",
+                            label: "Recherche",
+                            type: "search",
+                            value: workbookExportSearch,
+                            onChange: (value) => setWorkbookExportSearch(value),
+                            placeholder: "Nom, ID, type, code composante…",
+                          },
+                          ...HIERARCHY_LEVELS.map((level) => ({
+                            key: `export-${level.key}`,
+                            label: level.label,
+                            type: "select" as const,
+                            value: workbookExportFilters[level.key],
+                            onChange: (value: string) =>
+                              setWorkbookExportFilters((prev) =>
+                                updateHierarchyFilters(prev, level.key, value),
+                              ),
+                            disabled: workbookExportHierarchyOptions[level.key].length === 0,
+                            options: [
+                              { value: "", label: HIERARCHY_EMPTY_LABELS[level.key] },
+                              ...workbookExportHierarchyOptions[level.key].map((entite) => ({
+                                value: String(entite.id_entite),
+                                label: formatEntiteOptionLabel(entite),
+                              })),
+                            ],
+                          })),
+                        ]}
+                        hasActiveFilters={
+                          workbookExportSearch.trim().length > 0 ||
+                          Object.values(workbookExportFilters).some(Boolean)
+                        }
+                        onReset={resetWorkbookExportFilters}
+                      />
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Structure à exporter
+                        </label>
+                        <select
+                          value={workbookExportEntiteId}
+                          onChange={(e) => setWorkbookExportEntiteId(e.target.value)}
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
+                        >
+                          <option value="">Sélectionner une structure</option>
+                          {workbookExportOptions.map((entite) => (
+                            <option key={entite.id_entite} value={entite.id_entite}>
+                              #{entite.id_entite} — {formatEntiteOptionLabel(entite)} ({entite.type_entite})
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-2 text-xs text-slate-500">
+                          {workbookExportOptions.length} structure(s) correspondent aux filtres.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -704,7 +850,7 @@ export function ImportExport({
 
                 {parsedWorkbook && (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
                           Année cible
@@ -723,24 +869,6 @@ export function ImportExport({
                         </select>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Périmètre du fichier
-                        </label>
-                        <select
-                          value={workbookSourceScopeId}
-                          onChange={(e) => setWorkbookSourceScopeId(e.target.value)}
-                          className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
-                        >
-                          <option value="">Tout le fichier</option>
-                          {workbookSourceScopes.map((scope) => (
-                            <option key={scope.id} value={scope.id}>
-                              {scope.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
                       <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
                         <input
                           type="checkbox"
@@ -751,6 +879,72 @@ export function ImportExport({
                         Créer l'année à partir du fichier
                       </label>
                     </div>
+
+                    {workbookStructureEntites.length > 0 ? (
+                      <div className="space-y-4">
+                        <FilterBar
+                          title="Filtrer les structures du fichier"
+                          fields={[
+                            {
+                              key: "workbookSourceSearch",
+                              label: "Recherche",
+                              type: "search",
+                              value: workbookSourceSearch,
+                              onChange: (value) => setWorkbookSourceSearch(value),
+                              placeholder: "Nom, ID, type, code composante…",
+                            },
+                            ...HIERARCHY_LEVELS.map((level) => ({
+                              key: `source-${level.key}`,
+                              label: level.label,
+                              type: "select" as const,
+                              value: workbookSourceFilters[level.key],
+                              onChange: (value: string) =>
+                                setWorkbookSourceFilters((prev) =>
+                                  updateHierarchyFilters(prev, level.key, value),
+                                ),
+                              disabled: workbookSourceHierarchyOptions[level.key].length === 0,
+                              options: [
+                                { value: "", label: HIERARCHY_EMPTY_LABELS[level.key] },
+                                ...workbookSourceHierarchyOptions[level.key].map((entite) => ({
+                                  value: String(entite.id_entite),
+                                  label: formatEntiteOptionLabel(entite),
+                                })),
+                              ],
+                            })),
+                          ]}
+                          hasActiveFilters={
+                            workbookSourceSearch.trim().length > 0 ||
+                            Object.values(workbookSourceFilters).some(Boolean)
+                          }
+                          onReset={resetWorkbookSourceFilters}
+                        />
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Périmètre du fichier
+                          </label>
+                          <select
+                            value={workbookSourceScopeId}
+                            onChange={(e) => setWorkbookSourceScopeId(e.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
+                          >
+                            <option value="">Tout le fichier</option>
+                            {filteredWorkbookSourceScopes.map((scope) => (
+                              <option key={scope.id} value={scope.id}>
+                                {scope.label}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="mt-2 text-xs text-slate-500">
+                            {filteredWorkbookSourceScopes.length} structure(s) correspondent aux filtres.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                        Ce fichier ne contient pas encore de structures exploitables pour un filtrage par périmètre.
+                      </div>
+                    )}
 
                     <div className="text-sm text-slate-500">
                       Source du fichier : {parsedWorkbook.meta.source_year_label || "non précisée"}

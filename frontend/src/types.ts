@@ -73,6 +73,8 @@ export interface EntiteStructureDetail extends EntiteStructure {
   campus?: string | null;
   code_interne?: string | null;
   type_diplome?: string | null;
+  diplome_libelle?: string | null;
+  cycle?: number | null;
   code_parcours?: string | null;
   libelle_court?: string | null;
   responsables: AffectationPerson[];

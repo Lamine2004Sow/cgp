@@ -117,6 +117,13 @@ export type WorkbookSourceScope = {
 };
 
 const SPREADSHEET_NS = "urn:schemas-microsoft-com:office:spreadsheet";
+const WORKBOOK_ENTITE_TYPES = new Set<EntiteStructure["type_entite"]>([
+  "COMPOSANTE",
+  "DEPARTEMENT",
+  "MENTION",
+  "PARCOURS",
+  "NIVEAU",
+]);
 
 function getAttributeNsAware(node: Element, localName: string) {
   return (
@@ -216,14 +223,77 @@ export function parseStandardWorkbookXml(content: string): StandardWorkbookPaylo
   };
 }
 
-export function getWorkbookSourceScopes(workbook: StandardWorkbookPayload): WorkbookSourceScope[] {
+function toFiniteNumber(value: string | null | undefined): number | null {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    return null;
+  }
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getWorkbookEntiteDisplayName(entite: EntiteStructure): string {
+  if (entite.type_entite === "COMPOSANTE" && entite.code_composante) {
+    return `${entite.nom} (${entite.code_composante})`;
+  }
+  return entite.nom;
+}
+
+function buildWorkbookEntitePath(
+  entiteId: number,
+  entiteMap: Map<number, EntiteStructure>,
+): string {
+  const labels: string[] = [];
+  let current = entiteMap.get(entiteId);
+
+  for (let depth = 0; depth < 16 && current; depth += 1) {
+    labels.unshift(getWorkbookEntiteDisplayName(current));
+    if (!current.id_entite_parent) {
+      break;
+    }
+    current = entiteMap.get(current.id_entite_parent);
+  }
+
+  return labels.join(" > ");
+}
+
+export function getWorkbookStructureEntites(
+  workbook: StandardWorkbookPayload,
+): EntiteStructure[] {
+  const yearId = toFiniteNumber(workbook.meta.source_year_id) ?? 0;
+
   return workbook.sheets.structures
-    .map((row) => ({
-      id: row.source_id_entite,
-      label: `${row.nom || row.source_id_entite} (${row.type_entite || "Structure"})`,
-      type: row.type_entite || "",
+    .map((row) => {
+      const id = toFiniteNumber(row.source_id_entite);
+      const type = row.type_entite as EntiteStructure["type_entite"];
+      if (!id || !WORKBOOK_ENTITE_TYPES.has(type)) {
+        return null;
+      }
+
+      return {
+        id_entite: id,
+        id_annee: yearId,
+        id_entite_parent: toFiniteNumber(row.source_parent_id_entite),
+        type_entite: type,
+        nom: row.nom || `Structure ${id}`,
+        tel_service: row.tel_service || null,
+        bureau_service: row.bureau_service || null,
+        code_composante: row.code_composante || null,
+      } satisfies EntiteStructure;
+    })
+    .filter((entite): entite is EntiteStructure => entite !== null);
+}
+
+export function getWorkbookSourceScopes(workbook: StandardWorkbookPayload): WorkbookSourceScope[] {
+  const entites = getWorkbookStructureEntites(workbook);
+  const entiteMap = new Map(entites.map((entite) => [entite.id_entite, entite]));
+
+  return entites
+    .map((entite) => ({
+      id: String(entite.id_entite),
+      label: `#${entite.id_entite} — ${buildWorkbookEntitePath(entite.id_entite, entiteMap)} (${entite.type_entite})`,
+      type: entite.type_entite,
     }))
-    .filter((row) => Boolean(row.id))
     .sort((left, right) => left.label.localeCompare(right.label, "fr", { sensitivity: "base" }));
 }
 
