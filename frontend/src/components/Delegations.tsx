@@ -12,6 +12,15 @@ import {
 import { apiFetch } from "../lib/api";
 import { FilterBar } from "./ui/filter-bar";
 import { readQueryParam, writeQueryParams } from "../lib/url-state";
+import {
+  EMPTY_HIERARCHY_FILTERS,
+  HIERARCHY_LEVELS,
+  type HierarchyFilters,
+  getFilteredEntites,
+  getHierarchyOptions,
+  matchesEntiteHierarchy,
+  updateHierarchyFilters,
+} from "../lib/entite-hierarchy";
 
 interface DelegationsProps {
   userRole: UserRole;
@@ -61,6 +70,14 @@ const rightsLabelMap = rightsOptions.reduce<Record<string, string>>((acc, right)
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+const HIERARCHY_EMPTY_LABELS: Record<keyof HierarchyFilters, string> = {
+  composanteId: "Toutes les composantes",
+  departementId: "Tous les départements",
+  mentionId: "Toutes les mentions",
+  parcoursId: "Tous les parcours",
+  niveauId: "Tous les niveaux",
+};
+
 export function Delegations({
   userRole,
   currentYear,
@@ -71,6 +88,7 @@ export function Delegations({
   const [delegations, setDelegations] = useState<ApiDelegation[]>([]);
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [search, setSearch] = useState("");
   const [filterActive, setFilterActive] = useState<"all" | "active" | "inactive">("active");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,35 +107,24 @@ export function Delegations({
     userRole === "directeur-administratif-adjoint";
   const canExport = isSC;
 
-  const [filterComposante, setFilterComposante] = useState<string>("");
-  const hasActiveFilters = Boolean(filterComposante || filterActive !== "all");
+  const [hierarchyFilters, setHierarchyFilters] = useState<HierarchyFilters>(EMPTY_HIERARCHY_FILTERS);
+  const hasActiveFilters = Boolean(
+    search || filterActive !== "all" || Object.values(hierarchyFilters).some(Boolean),
+  );
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
-  // Composantes racines (pour filtre SC)
-  const composantes = useMemo(
-    () => entites.filter((e) => e.type_entite === "COMPOSANTE"),
-    [entites],
+  const yearEntites = useMemo(
+    () => entites.filter((entite) => String(entite.id_annee) === currentYear.id),
+    [entites, currentYear.id],
   );
-
-  // Entités filtrées par composante sélectionnée (ou toutes si SC sans filtre)
-  const scopedEntites = useMemo(() => {
-    if (!filterComposante) return entites;
-    const result = new Set<number>();
-    const byParent = new Map<number, number[]>();
-    entites.forEach((e) => {
-      if (e.id_entite_parent) {
-        if (!byParent.has(e.id_entite_parent)) byParent.set(e.id_entite_parent, []);
-        byParent.get(e.id_entite_parent)!.push(e.id_entite);
-      }
-    });
-    const queue = [Number(filterComposante)];
-    while (queue.length) {
-      const id = queue.shift()!;
-      result.add(id);
-      (byParent.get(id) ?? []).forEach((c) => queue.push(c));
-    }
-    return entites.filter((e) => result.has(e.id_entite));
-  }, [entites, filterComposante]);
+  const hierarchyOptions = useMemo(
+    () => getHierarchyOptions(yearEntites, hierarchyFilters, currentYear.id),
+    [yearEntites, hierarchyFilters, currentYear.id],
+  );
+  const scopedEntites = useMemo(
+    () => getFilteredEntites(yearEntites, hierarchyFilters, currentYear.id),
+    [yearEntites, hierarchyFilters, currentYear.id],
+  );
 
   const loadData = async () => {
     if (!authLogin) return;
@@ -150,37 +157,76 @@ export function Delegations({
 
   useEffect(() => {
     const active = readQueryParam("dg_active");
+    const q = readQueryParam("dg_q");
     const comp = readQueryParam("dg_comp");
+    const dept = readQueryParam("dg_dept");
+    const mention = readQueryParam("dg_mention");
+    const parcours = readQueryParam("dg_parcours");
+    const niveau = readQueryParam("dg_niveau");
     if (active === "all" || active === "active" || active === "inactive") {
       setFilterActive(active);
     }
-    setFilterComposante(comp || "");
+    setSearch(q || "");
+    setHierarchyFilters({
+      composanteId: comp || "",
+      departementId: dept || "",
+      mentionId: mention || "",
+      parcoursId: parcours || "",
+      niveauId: niveau || "",
+    });
     setFiltersHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!filtersHydrated) return;
     writeQueryParams({
+      dg_q: search,
       dg_active: filterActive,
-      dg_comp: filterComposante,
+      dg_comp: hierarchyFilters.composanteId,
+      dg_dept: hierarchyFilters.departementId,
+      dg_mention: hierarchyFilters.mentionId,
+      dg_parcours: hierarchyFilters.parcoursId,
+      dg_niveau: hierarchyFilters.niveauId,
     });
-  }, [filterActive, filterComposante, filtersHydrated]);
+  }, [search, filterActive, hierarchyFilters, filtersHydrated]);
 
   const filteredDelegations = useMemo(() => {
-    const scopedIds = filterComposante
-      ? new Set(scopedEntites.map((e) => e.id_entite))
-      : null;
     return delegations.filter((delegation) => {
       const active = delegation.statut === "ACTIVE";
       if (filterActive === "active" && !active) return false;
       if (filterActive === "inactive" && active) return false;
-      if (scopedIds && delegation.id_entite && !scopedIds.has(delegation.id_entite)) return false;
-      return true;
+      if (
+        Object.values(hierarchyFilters).some(Boolean) &&
+        !matchesEntiteHierarchy(yearEntites, delegation.id_entite, hierarchyFilters, currentYear.id)
+      ) {
+        return false;
+      }
+
+      const normalizedSearch = search.trim().toLowerCase();
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const delegatedRight =
+        delegation.id_role ||
+        rightsLabelMap[delegation.type_droit || ""] ||
+        delegation.type_droit ||
+        "";
+
+      return (
+        String(delegation.id_delegation).includes(normalizedSearch) ||
+        String(delegation.id_entite).includes(normalizedSearch) ||
+        delegation.delegant_nom?.toLowerCase().includes(normalizedSearch) ||
+        delegation.delegataire_nom?.toLowerCase().includes(normalizedSearch) ||
+        delegation.entite_nom?.toLowerCase().includes(normalizedSearch) ||
+        delegatedRight.toLowerCase().includes(normalizedSearch)
+      );
     });
-  }, [delegations, filterActive, filterComposante, scopedEntites]);
+  }, [delegations, filterActive, hierarchyFilters, yearEntites, currentYear.id, search]);
 
   const resetFilters = () => {
-    setFilterComposante("");
+    setSearch("");
+    setHierarchyFilters(EMPTY_HIERARCHY_FILTERS);
     setFilterActive("all");
   };
 
@@ -410,6 +456,14 @@ export function Delegations({
           className="mb-4"
           fields={[
             {
+              key: "search",
+              label: "Recherche",
+              type: "search",
+              value: search,
+              onChange: (value) => setSearch(value),
+              placeholder: "ID, délégant, délégataire, structure ou droit...",
+            },
+            {
               key: "status",
               label: "Statut",
               type: "select",
@@ -421,21 +475,28 @@ export function Delegations({
                 { value: "inactive", label: "Inactives" },
               ],
             },
-            ...(isSC && composantes.length > 0
-              ? [
-                  {
-                    key: "composante",
-                    label: "Composante",
-                    type: "select" as const,
-                    value: filterComposante,
-                    onChange: (value: string) => setFilterComposante(value),
-                    options: [
-                      { value: "", label: "Toutes les composantes" },
-                      ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
-                    ],
-                  },
-                ]
-              : []),
+            ...HIERARCHY_LEVELS.map((level) => {
+              const options = hierarchyOptions[level.key];
+              return {
+                key: level.key,
+                label: level.label,
+                type: "select" as const,
+                value: hierarchyFilters[level.key],
+                onChange: (value: string) =>
+                  setHierarchyFilters((prev) => updateHierarchyFilters(prev, level.key, value)),
+                disabled: options.length === 0,
+                options: [
+                  { value: "", label: HIERARCHY_EMPTY_LABELS[level.key] },
+                  ...options.map((entite) => ({
+                    value: String(entite.id_entite),
+                    label:
+                      entite.type_entite === "COMPOSANTE" && entite.code_composante
+                        ? `${entite.nom} (${entite.code_composante})`
+                        : entite.nom,
+                  })),
+                ],
+              };
+            }),
           ]}
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}

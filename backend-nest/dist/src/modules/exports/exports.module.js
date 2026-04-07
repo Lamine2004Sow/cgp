@@ -10,13 +10,15 @@ exports.ExportsModule = void 0;
 const common_1 = require("@nestjs/common");
 const exports_controller_1 = require("./exports.controller");
 const exports_service_1 = require("./exports.service");
+const standard_workbook_service_1 = require("./standard-workbook.service");
 let ExportsModule = class ExportsModule {
 };
 exports.ExportsModule = ExportsModule;
 exports.ExportsModule = ExportsModule = __decorate([
     (0, common_1.Module)({
         controllers: [exports_controller_1.ExportsController],
-        providers: [exports_service_1.ExportsService],
+        providers: [exports_service_1.ExportsService, standard_workbook_service_1.StandardWorkbookService],
+        exports: [standard_workbook_service_1.StandardWorkbookService],
     })
 ], ExportsModule);
 //# sourceMappingURL=exports.module.js.map

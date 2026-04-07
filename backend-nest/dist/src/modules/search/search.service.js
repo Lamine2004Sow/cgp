@@ -18,6 +18,18 @@ let SearchService = class SearchService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    parseNumericId(raw) {
+        const value = raw?.trim();
+        if (!value || !/^\d+$/.test(value)) {
+            return null;
+        }
+        try {
+            return BigInt(value);
+        }
+        catch {
+            return null;
+        }
+    }
     parseEntiteIds(raw) {
         if (!raw)
             return null;
@@ -34,6 +46,7 @@ let SearchService = class SearchService {
             pageSize: query.pageSize,
         });
         const entiteIds = this.parseEntiteIds(query.entiteIds);
+        const numericId = this.parseNumericId(query.q);
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
             ...(query.roleId ? { id_role: query.roleId } : {}),
@@ -41,6 +54,13 @@ let SearchService = class SearchService {
             ...(query.q
                 ? {
                     OR: [
+                        ...(numericId
+                            ? [
+                                { id_affectation: numericId },
+                                { id_user: numericId },
+                                { id_entite: numericId },
+                            ]
+                            : []),
                         { utilisateur: { nom: { contains: query.q, mode: 'insensitive' } } },
                         { utilisateur: { prenom: { contains: query.q, mode: 'insensitive' } } },
                         { utilisateur: { login: { contains: query.q, mode: 'insensitive' } } },
@@ -100,6 +120,7 @@ let SearchService = class SearchService {
             pageSize: query.pageSize,
         });
         const entiteIds = this.parseEntiteIds(query.entiteIds);
+        const numericId = this.parseNumericId(query.q);
         const formationTypes = ['MENTION', 'PARCOURS', 'NIVEAU'];
         const typedFormation = this.toEntiteType(query.typeEntite);
         const typeFilter = typedFormation
@@ -113,6 +134,7 @@ let SearchService = class SearchService {
             ...(query.q
                 ? {
                     OR: [
+                        ...(numericId ? [{ id_entite: numericId }] : []),
                         { nom: { contains: query.q, mode: 'insensitive' } },
                         { parcours: { code_parcours: { contains: query.q, mode: 'insensitive' } } },
                         { niveau: { libelle_court: { contains: query.q, mode: 'insensitive' } } },
@@ -166,6 +188,7 @@ let SearchService = class SearchService {
         });
         const typedEntite = this.toEntiteType(query.typeEntite);
         const entiteIds = this.parseEntiteIds(query.entiteIds);
+        const numericId = this.parseNumericId(query.q);
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
             ...(typedEntite ? { type_entite: typedEntite } : {}),
@@ -173,6 +196,7 @@ let SearchService = class SearchService {
             ...(query.q
                 ? {
                     OR: [
+                        ...(numericId ? [{ id_entite: numericId }] : []),
                         { nom: { contains: query.q, mode: 'insensitive' } },
                         {
                             composante: {
@@ -224,10 +248,18 @@ let SearchService = class SearchService {
             pageSize: query.pageSize,
         });
         const entiteIds = this.parseEntiteIds(query.entiteIds);
+        const numericId = this.parseNumericId(query.q);
         const where = {
             ...(query.yearId ? { id_annee: BigInt(query.yearId) } : {}),
             ...(entiteIds ? { id_entite: { in: entiteIds } } : {}),
-            ...(query.q ? { nom: { contains: query.q, mode: 'insensitive' } } : {}),
+            ...(query.q
+                ? {
+                    OR: [
+                        ...(numericId ? [{ id_entite: numericId }] : []),
+                        { nom: { contains: query.q, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
             OR: [{ tel_service: { not: null } }, { bureau_service: { not: null } }],
         };
         const [entites, total] = await this.prisma.$transaction([

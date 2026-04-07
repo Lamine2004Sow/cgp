@@ -16,6 +16,7 @@ exports.ImportsController = void 0;
 const common_1 = require("@nestjs/common");
 const roles_constants_1 = require("../../auth/roles.constants");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const imports_service_1 = require("./imports.service");
 const import_responsables_dto_1 = require("./dto/import-responsables.dto");
 const import_confirm_dto_1 = require("./dto/import-confirm.dto");
@@ -34,6 +35,12 @@ let ImportsController = class ImportsController {
     async importResponsables(payload) {
         const result = await this.importsService.importResponsables(payload);
         return { result };
+    }
+    async previewWorkbook(user, payload) {
+        return this.importsService.previewWorkbook(user, payload);
+    }
+    async confirmWorkbook(user, payload) {
+        return this.importsService.importWorkbook(user, payload);
     }
 };
 exports.ImportsController = ImportsController;
@@ -61,6 +68,24 @@ __decorate([
     __metadata("design:paramtypes", [import_responsables_dto_1.ImportResponsablesDto]),
     __metadata("design:returntype", Promise)
 ], ImportsController.prototype, "importResponsables", null);
+__decorate([
+    (0, common_1.Post)('workbook/preview'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ImportsController.prototype, "previewWorkbook", null);
+__decorate([
+    (0, common_1.Post)('workbook/confirm'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ImportsController.prototype, "confirmWorkbook", null);
 exports.ImportsController = ImportsController = __decorate([
     (0, common_1.Controller)('imports'),
     __metadata("design:paramtypes", [imports_service_1.ImportsService])

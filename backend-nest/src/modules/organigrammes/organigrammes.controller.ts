@@ -11,6 +11,7 @@ import { OrganigrammesService, type ApiOrgNode } from './organigrammes.service';
 import { OrganigrammesListQueryDto } from './dto/organigrammes-list-query.dto';
 import { OrganigrammeGenerateDto } from './dto/organigramme-generate.dto';
 import { OrganigrammeExportQueryDto } from './dto/organigramme-export-query.dto';
+import { OrganigrammeTreeQueryDto } from './dto/organigramme-tree-query.dto';
 import { ROLE_IDS } from '../../auth/roles.constants';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -46,12 +47,12 @@ export class OrganigrammesController {
   @Roles(...Object.values(ROLE_IDS))
   async latest(
     @CurrentUser() user: CurrentUserType,
-    @Query() query: OrganigrammesListQueryDto,
+    @Query() query: OrganigrammeTreeQueryDto,
   ): Promise<{ organigramme: OrganigrammeDto | null; arbre: ApiOrgNode | null }> {
     if (!query.yearId) {
       return { organigramme: null, arbre: null };
     }
-    return this.organigrammesService.latest(user, query.yearId);
+    return this.organigrammesService.latest(user, query.yearId, query);
   }
 
   @Post('generate')
@@ -77,8 +78,9 @@ export class OrganigrammesController {
   async tree(
     @CurrentUser() user: CurrentUserType,
     @Param('id') id: string,
+    @Query() query: OrganigrammeTreeQueryDto,
   ): Promise<{ organigramme: OrganigrammeDto; arbre: ApiOrgNode | null }> {
-    return this.organigrammesService.getTreeById(user, id);
+    return this.organigrammesService.getTreeById(user, id, query);
   }
 
   @Patch(':id/freeze')
@@ -96,6 +98,6 @@ export class OrganigrammesController {
     @Param('id') id: string,
     @Query() query: OrganigrammeExportQueryDto,
   ) {
-    return this.organigrammesService.export(user, id, query.format || 'PDF');
+    return this.organigrammesService.export(user, id, query.format || 'PDF', query);
   }
 }

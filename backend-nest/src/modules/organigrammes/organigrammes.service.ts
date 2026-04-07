@@ -10,18 +10,39 @@ import { ROLE_IDS } from '../../auth/roles.constants';
 import { isSupportRole } from '../../common/utils/role-support.utils';
 
 export interface ApiResponsable {
+  id_user?: number;
+  id_affectation?: number;
   nom: string;
   prenom: string;
   email_institutionnel: string | null;
   id_role: string;
+  role_label?: string | null;
+  id_entite?: number;
+  entite_nom?: string | null;
 }
 
 export interface ApiOrgNode {
-  id_entite: number;
+  id_node: string;
+  kind: 'structure' | 'personne';
+  id_entite: number | null;
+  id_user?: number | null;
   nom: string;
-  type_entite: string;
+  type_entite: string | null;
+  role_label?: string | null;
+  structure_nom?: string | null;
+  email_institutionnel?: string | null;
+  hierarchy_level?: number | null;
   children?: ApiOrgNode[];
   responsables?: ApiResponsable[];
+}
+
+type OrganigrammeViewMode = 'STRUCTURES' | 'PERSONNES';
+
+interface BuildTreeOptions {
+  view?: string;
+  q?: string;
+  roleId?: string;
+  entiteIds?: string;
 }
 
 interface LayoutNode {
@@ -51,8 +72,15 @@ const HIDDEN_ORG_ROLE_IDS = new Set<string>([
   ROLE_IDS.LECTURE_SEULE,
 ]);
 
-function shouldDisplayInOrgChart(roleId: string, roleLabel?: string | null): boolean {
+function shouldDisplayInPeopleOrgChart(roleId: string): boolean {
   if (HIDDEN_ORG_ROLE_IDS.has(roleId)) {
+    return false;
+  }
+  return true;
+}
+
+function shouldDisplayInOrgChart(roleId: string, roleLabel?: string | null): boolean {
+  if (!shouldDisplayInPeopleOrgChart(roleId)) {
     return false;
   }
   return !isSupportRole(roleId, roleLabel);
@@ -87,17 +115,17 @@ export class OrganigrammesService {
     return filtered.map((item) => this.mapOrganigramme(item));
   }
 
-  async latest(user: CurrentUser, yearId: number) {
+  async latest(user: CurrentUser, yearId: number, options?: BuildTreeOptions) {
     const items = await this.list(user, yearId);
     const organigramme = items[0] ?? null;
 
     const rootId = organigramme?.id_entite_racine ?? null;
 
-    const arbre = await this.buildTree(yearId, rootId ?? undefined);
+    const arbre = await this.buildTree(yearId, rootId ?? undefined, options);
     return { organigramme: organigramme ?? null, arbre };
   }
 
-  async getTreeById(user: CurrentUser, id: string) {
+  async getTreeById(user: CurrentUser, id: string, options?: BuildTreeOptions) {
     let parsedId: bigint;
     try {
       parsedId = BigInt(id);
@@ -125,6 +153,7 @@ export class OrganigrammesService {
     const arbre = await this.buildTree(
       Number(organigramme.id_annee),
       Number(organigramme.id_entite_racine),
+      options,
     );
 
     return { organigramme: this.mapOrganigramme(organigramme), arbre };
@@ -189,14 +218,18 @@ export class OrganigrammesService {
     return { organigramme: this.mapOrganigramme(organigramme) };
   }
 
-  async export(user: CurrentUser, id: string, format: string) {
-    const { organigramme, arbre } = await this.getTreeById(user, id);
+  async export(user: CurrentUser, id: string, format: string, options?: BuildTreeOptions) {
+    const { organigramme, arbre } = await this.getTreeById(user, id, options);
     if (!arbre) {
       throw new NotFoundException('Organigramme tree not found');
     }
 
     const normalizedFormat = (format || 'PDF').toUpperCase();
+    const viewMode = this.normalizeViewMode(options?.view);
     let fileName = `organigramme-${organigramme.id_annee}-${organigramme.id_organigramme}`;
+    if (viewMode === 'PERSONNES') {
+      fileName += '-personnes';
+    }
     let mimeType = 'application/pdf';
     let content: Buffer;
 
@@ -236,7 +269,205 @@ export class OrganigrammesService {
     };
   }
 
-  private async buildTree(yearId: number, rootId?: number): Promise<ApiOrgNode | null> {
+  private normalizeViewMode(view?: string): OrganigrammeViewMode {
+    return view?.trim().toUpperCase() === 'PERSONNES' ? 'PERSONNES' : 'STRUCTURES';
+  }
+
+  private parseNumericId(raw?: string): bigint | null {
+    const value = raw?.trim();
+    if (!value || !/^\d+$/.test(value)) {
+      return null;
+    }
+
+    try {
+      return BigInt(value);
+    } catch {
+      return null;
+    }
+  }
+
+  private parseEntiteIds(raw?: string): Set<number> | null {
+    if (!raw?.trim()) {
+      return null;
+    }
+
+    const ids = raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => /^\d+$/.test(value))
+      .map((value) => Number(value));
+
+    return ids.length > 0 ? new Set(ids) : null;
+  }
+
+  private matchesPeopleFilter(
+    affectation: {
+      id_affectation: bigint;
+      id_affectation_n_plus_1: bigint | null;
+      id_user: bigint;
+      id_entite: bigint;
+      id_role: string;
+      utilisateur: {
+        login: string;
+        nom: string;
+        prenom: string;
+        email_institutionnel: string | null;
+      };
+      role: { libelle: string | null; niveau_hierarchique: number | null } | null;
+      entite_structure: { nom: string } | null;
+    },
+    options: BuildTreeOptions,
+    allowedEntiteIds: Set<number> | null,
+    affiliationLabel: string,
+  ): boolean {
+    const entiteId = Number(affectation.id_entite);
+    if (allowedEntiteIds && !allowedEntiteIds.has(entiteId)) {
+      return false;
+    }
+
+    if (options.roleId && affectation.id_role !== options.roleId) {
+      return false;
+    }
+
+    const q = options.q?.trim();
+    if (!q) {
+      return true;
+    }
+
+    const normalizedQuery = q.toLowerCase();
+    const numericId = this.parseNumericId(q);
+
+    if (
+      numericId &&
+      (affectation.id_affectation === numericId ||
+        affectation.id_user === numericId ||
+        affectation.id_entite === numericId)
+    ) {
+      return true;
+    }
+
+    return (
+      affectation.utilisateur.nom.toLowerCase().includes(normalizedQuery) ||
+      affectation.utilisateur.prenom.toLowerCase().includes(normalizedQuery) ||
+      affectation.utilisateur.login.toLowerCase().includes(normalizedQuery) ||
+      (affectation.utilisateur.email_institutionnel || '')
+        .toLowerCase()
+        .includes(normalizedQuery) ||
+      (affectation.role?.libelle || affectation.id_role)
+        .toLowerCase()
+        .includes(normalizedQuery) ||
+      (affectation.entite_structure?.nom || '').toLowerCase().includes(normalizedQuery) ||
+      affiliationLabel.toLowerCase().includes(normalizedQuery)
+    );
+  }
+
+  private sortTreeChildren(node: ApiOrgNode) {
+    if (!node.children?.length) {
+      return;
+    }
+
+    node.children.sort((left, right) => {
+      if (left.kind !== right.kind) {
+        return left.kind === 'structure' ? -1 : 1;
+      }
+      if (left.kind === 'personne' && right.kind === 'personne') {
+        const leftLevel = left.hierarchy_level ?? Number.MAX_SAFE_INTEGER;
+        const rightLevel = right.hierarchy_level ?? Number.MAX_SAFE_INTEGER;
+        if (leftLevel !== rightLevel) {
+          return leftLevel - rightLevel;
+        }
+      }
+      return left.nom.localeCompare(right.nom, 'fr', { sensitivity: 'base' });
+    });
+
+    node.children.forEach((child) => this.sortTreeChildren(child));
+  }
+
+  private prunePeopleTree(node: ApiOrgNode): ApiOrgNode | null {
+    if (node.kind === 'personne') {
+      return node;
+    }
+
+    const children = (node.children ?? [])
+      .map((child) => this.prunePeopleTree(child))
+      .filter((child): child is ApiOrgNode => Boolean(child));
+
+    if (children.length === 0) {
+      return null;
+    }
+
+    return {
+      ...node,
+      children,
+      responsables: undefined,
+    };
+  }
+
+  private collectDescendantEntiteIds(entites: Array<{
+    id_entite: bigint;
+    id_entite_parent: bigint | null;
+  }>, rootId?: number): Set<number> {
+    const childrenByParent = new Map<number, number[]>();
+
+    entites.forEach((entite) => {
+      const parentId = entite.id_entite_parent ? Number(entite.id_entite_parent) : null;
+      if (parentId == null) {
+        return;
+      }
+
+      const children = childrenByParent.get(parentId) ?? [];
+      children.push(Number(entite.id_entite));
+      childrenByParent.set(parentId, children);
+    });
+
+    if (!rootId) {
+      return new Set(entites.map((entite) => Number(entite.id_entite)));
+    }
+
+    const scope = new Set<number>();
+    const queue = [rootId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (currentId == null || scope.has(currentId)) {
+        continue;
+      }
+      scope.add(currentId);
+      (childrenByParent.get(currentId) ?? []).forEach((childId) => queue.push(childId));
+    }
+
+    return scope;
+  }
+
+  private buildAffiliationLabel(
+    entiteId: number,
+    entiteById: Map<number, { id_entite_parent: bigint | null; nom: string; type_entite: string }>,
+    rootId?: number,
+  ): string {
+    const chain: string[] = [];
+    let currentId: number | null = entiteId;
+
+    while (currentId != null) {
+      const entite = entiteById.get(currentId);
+      if (!entite) {
+        break;
+      }
+      chain.unshift(entite.nom);
+      if (rootId && currentId === rootId) {
+        break;
+      }
+      currentId = entite.id_entite_parent ? Number(entite.id_entite_parent) : null;
+    }
+
+    return chain.join(' / ');
+  }
+
+  private async buildTree(
+    yearId: number,
+    rootId?: number,
+    options?: BuildTreeOptions,
+  ): Promise<ApiOrgNode | null> {
+    const viewMode = this.normalizeViewMode(options?.view);
     const entites = await this.prisma.entite_structure.findMany({
       where: { id_annee: BigInt(yearId) },
       orderBy: { id_entite: 'asc' },
@@ -249,6 +480,8 @@ export class OrganigrammesService {
     const nodes = new Map<number, ApiOrgNode>();
     entites.forEach((entite) => {
       nodes.set(Number(entite.id_entite), {
+        id_node: `entite-${entite.id_entite}`,
+        kind: 'structure',
         id_entite: Number(entite.id_entite),
         nom: entite.nom,
         type_entite: entite.type_entite,
@@ -274,6 +507,17 @@ export class OrganigrammesService {
       return null;
     }
 
+    const entiteById = new Map(
+      entites.map((entite) => [
+        Number(entite.id_entite),
+        {
+          id_entite_parent: entite.id_entite_parent,
+          nom: entite.nom,
+          type_entite: entite.type_entite,
+        },
+      ]),
+    );
+
     const entiteIds = Array.from(nodes.keys());
     const affectations = await this.prisma.affectation.findMany({
       where: {
@@ -282,9 +526,143 @@ export class OrganigrammesService {
       },
       include: {
         utilisateur: true,
-        role: { select: { libelle: true } },
+        role: { select: { libelle: true, niveau_hierarchique: true } },
+        entite_structure: { select: { nom: true } },
       },
     });
+
+    if (viewMode === 'PERSONNES') {
+      const rootScopeEntiteIds = this.collectDescendantEntiteIds(entites, rootId);
+      const requestedEntiteIds = this.parseEntiteIds(options?.entiteIds);
+      const directMatchEntiteIds = requestedEntiteIds
+        ? new Set(
+            Array.from(rootScopeEntiteIds).filter((entiteId) => requestedEntiteIds.has(entiteId)),
+          )
+        : rootScopeEntiteIds;
+      const visibleAffectations = affectations.filter((affectation) => {
+        if (!shouldDisplayInPeopleOrgChart(affectation.id_role)) {
+          return false;
+        }
+
+        return rootScopeEntiteIds.has(Number(affectation.id_entite));
+      });
+      const affectationById = new Map(
+        visibleAffectations.map((affectation) => [
+          Number(affectation.id_affectation),
+          affectation,
+        ]),
+      );
+      const affiliationByAffectationId = new Map<number, string>();
+      const directMatchIds = new Set<number>();
+
+      visibleAffectations.forEach((affectation) => {
+        const affiliationLabel = this.buildAffiliationLabel(
+          Number(affectation.id_entite),
+          entiteById,
+          rootId,
+        );
+        const affectationId = Number(affectation.id_affectation);
+        affiliationByAffectationId.set(affectationId, affiliationLabel);
+        if (
+          !this.matchesPeopleFilter(
+            affectation,
+            options ?? {},
+            directMatchEntiteIds,
+            affiliationLabel,
+          )
+        ) {
+          return;
+        }
+        directMatchIds.add(affectationId);
+      });
+
+      if (directMatchIds.size === 0) {
+        return null;
+      }
+
+      const includedAffectationIds = new Set<number>();
+
+      directMatchIds.forEach((affectationId) => {
+        let currentId: number | null = affectationId;
+
+        while (currentId != null && !includedAffectationIds.has(currentId)) {
+          const currentAffectation = affectationById.get(currentId);
+          if (!currentAffectation) {
+            break;
+          }
+
+          includedAffectationIds.add(currentId);
+          currentId = currentAffectation.id_affectation_n_plus_1
+            ? Number(currentAffectation.id_affectation_n_plus_1)
+            : null;
+        }
+      });
+
+      const personNodes = new Map<number, ApiOrgNode>();
+
+      includedAffectationIds.forEach((affectationId) => {
+        const affectation = affectationById.get(affectationId);
+        if (!affectation) {
+          return;
+        }
+
+        personNodes.set(affectationId, {
+          id_node: `affectation-${affectation.id_affectation}`,
+          kind: 'personne',
+          id_entite: Number(affectation.id_entite),
+          id_user: Number(affectation.id_user),
+          nom: `${affectation.utilisateur.prenom} ${affectation.utilisateur.nom}`.trim(),
+          type_entite: 'PERSONNE',
+          role_label: affectation.role?.libelle ?? affectation.id_role,
+          structure_nom:
+            affiliationByAffectationId.get(affectationId) ??
+            this.buildAffiliationLabel(Number(affectation.id_entite), entiteById, rootId),
+          email_institutionnel: affectation.utilisateur.email_institutionnel,
+          hierarchy_level: affectation.role?.niveau_hierarchique ?? null,
+          children: [],
+        });
+      });
+
+      const personRoots: ApiOrgNode[] = [];
+
+      includedAffectationIds.forEach((affectationId) => {
+        const affectation = affectationById.get(affectationId);
+        const node = personNodes.get(affectationId);
+        if (!affectation || !node) {
+          return;
+        }
+
+        const supervisorId = affectation.id_affectation_n_plus_1
+          ? Number(affectation.id_affectation_n_plus_1)
+          : null;
+        const supervisorNode = supervisorId ? personNodes.get(supervisorId) : undefined;
+
+        if (supervisorNode) {
+          supervisorNode.children?.push(node);
+        } else {
+          personRoots.push(node);
+        }
+      });
+
+      personRoots.forEach((personRoot) => this.sortTreeChildren(personRoot));
+
+      if (personRoots.length === 0) {
+        return null;
+      }
+
+      if (personRoots.length === 1) {
+        return personRoots[0];
+      }
+
+      return {
+        id_node: `people-root-${root.id_entite ?? 'year'}`,
+        kind: 'structure',
+        id_entite: root.id_entite,
+        nom: `Hiérarchie des personnes - ${root.nom}`,
+        type_entite: 'PERSONNES',
+        children: personRoots,
+      };
+    }
 
     const responsablesMap = new Map<number, ApiResponsable[]>();
     affectations.forEach((affectation) => {
@@ -295,10 +673,15 @@ export class OrganigrammesService {
       const key = Number(affectation.id_entite);
       const list = responsablesMap.get(key) ?? [];
       list.push({
+        id_user: Number(affectation.id_user),
+        id_affectation: Number(affectation.id_affectation),
         nom: affectation.utilisateur.nom,
         prenom: affectation.utilisateur.prenom,
         email_institutionnel: affectation.utilisateur.email_institutionnel,
         id_role: affectation.id_role,
+        role_label: affectation.role?.libelle ?? affectation.id_role,
+        id_entite: Number(affectation.id_entite),
+        entite_nom: affectation.entite_structure?.nom ?? null,
       });
       responsablesMap.set(key, list);
     });
@@ -310,6 +693,7 @@ export class OrganigrammesService {
       }
     });
 
+    this.sortTreeChildren(root);
     return root;
   }
 
@@ -338,27 +722,48 @@ export class OrganigrammesService {
   }
 
   private toCsv(root: ApiOrgNode): string {
-    const header = ['id_entite', 'nom', 'type_entite', 'parent_entite', 'responsables'].join(',');
+    const header = [
+      'id_node',
+      'kind',
+      'id_entite',
+      'id_user',
+      'nom',
+      'type_entite',
+      'role_label',
+      'structure_nom',
+      'parent_id',
+      'responsables',
+      'email',
+    ].join(',');
     const rows: string[] = [];
 
-    const walk = (node: ApiOrgNode, parentId: number | null) => {
+    const walk = (node: ApiOrgNode, parentId: string | null) => {
       const responsables = (node.responsables || [])
-        .map((responsable) => `${responsable.prenom} ${responsable.nom} (${responsable.id_role})`)
+        .map(
+          (responsable) =>
+            `${responsable.prenom} ${responsable.nom} (${responsable.role_label ?? responsable.id_role})`,
+        )
         .join(' | ');
       rows.push(
         [
-          node.id_entite,
+          node.id_node,
+          node.kind,
+          node.id_entite ?? '',
+          node.id_user ?? '',
           node.nom,
-          node.type_entite,
+          node.type_entite ?? '',
+          node.role_label ?? '',
+          node.structure_nom ?? '',
           parentId ?? '',
           responsables,
+          node.email_institutionnel ?? '',
         ]
           .map((value) => `"${String(value).replace(/"/g, '""')}"`)
           .join(','),
       );
 
       for (const child of node.children || []) {
-        walk(child, node.id_entite);
+        walk(child, node.id_node);
       }
     };
 
@@ -443,6 +848,52 @@ export class OrganigrammesService {
       .replace(/'/g, '&apos;');
   }
 
+  private getNodeFill(layoutNode: LayoutNode, fills: [number, number, number][]): string {
+    if (layoutNode.node.kind === 'personne') {
+      return '#334155';
+    }
+
+    const [r, g, b] = fills[Math.min(layoutNode.level, fills.length - 1)];
+    return `#${r.toString(16).padStart(2, '0')}${g
+      .toString(16)
+      .padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  private getNodeText(node: ApiOrgNode) {
+    const title =
+      node.nom.length > 28 ? `${node.nom.slice(0, 26)}...` : node.nom;
+
+    if (node.kind === 'personne') {
+      const roleLabel = node.role_label ?? 'Personne';
+      const secondary =
+        roleLabel.length > 34 ? `${roleLabel.slice(0, 32)}...` : roleLabel;
+      const structureLabel = node.structure_nom ?? node.email_institutionnel ?? '';
+      const tertiary =
+        structureLabel.length > 34
+          ? `${structureLabel.slice(0, 32)}...`
+          : structureLabel;
+
+      return {
+        title,
+        secondary,
+        tertiary,
+      };
+    }
+
+    const responsables = (node.responsables ?? [])
+      .slice(0, 2)
+      .map((resp) => `${resp.prenom} ${resp.nom}`)
+      .join(', ');
+    const tertiary =
+      responsables.length > 34 ? `${responsables.slice(0, 32)}...` : responsables;
+
+    return {
+      title,
+      secondary: node.type_entite ?? '',
+      tertiary,
+    };
+  }
+
   private toSvg(root: ApiOrgNode, year: number): string {
     const {
       layoutNodes,
@@ -476,34 +927,24 @@ export class OrganigrammesService {
     }
 
     for (const layoutNode of layoutNodes) {
-      const [r, g, b] = fills[Math.min(layoutNode.level, fills.length - 1)];
       const boxX = layoutNode.x - boxW / 2;
-      const label =
-        layoutNode.node.nom.length > 28
-          ? `${layoutNode.node.nom.slice(0, 26)}...`
-          : layoutNode.node.nom;
-      const responsables = (layoutNode.node.responsables ?? [])
-        .slice(0, 2)
-        .map((resp) => `${resp.prenom} ${resp.nom}`)
-        .join(', ');
-      const respLabel =
-        responsables.length > 34 ? `${responsables.slice(0, 32)}...` : responsables;
+      const { title, secondary, tertiary } = this.getNodeText(layoutNode.node);
 
       parts.push(
         `<rect x="${boxX + 2}" y="${layoutNode.y + 2}" width="${boxW}" height="${boxH}" rx="6" fill="#0f172a" fill-opacity="0.12"/>`,
       );
       parts.push(
-        `<rect x="${boxX}" y="${layoutNode.y}" width="${boxW}" height="${boxH}" rx="6" fill="rgb(${r}, ${g}, ${b})"/>`,
+        `<rect x="${boxX}" y="${layoutNode.y}" width="${boxW}" height="${boxH}" rx="6" fill="${this.getNodeFill(layoutNode, fills)}"/>`,
       );
       parts.push(
-        `<text x="${boxX + 8}" y="${layoutNode.y + 18}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">${this.escapeXml(label)}</text>`,
+        `<text x="${boxX + 8}" y="${layoutNode.y + 18}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">${this.escapeXml(title)}</text>`,
       );
       parts.push(
-        `<text x="${boxX + 8}" y="${layoutNode.y + 30}" fill="#ffffff" fill-opacity="0.8" font-family="Arial, Helvetica, sans-serif" font-size="7">${this.escapeXml(layoutNode.node.type_entite)}</text>`,
+        `<text x="${boxX + 8}" y="${layoutNode.y + 30}" fill="#ffffff" fill-opacity="0.8" font-family="Arial, Helvetica, sans-serif" font-size="7">${this.escapeXml(secondary)}</text>`,
       );
-      if (respLabel) {
+      if (tertiary) {
         parts.push(
-          `<text x="${boxX + 8}" y="${layoutNode.y + 44}" fill="#e0e7ff" font-family="Arial, Helvetica, sans-serif" font-size="6.5">${this.escapeXml(respLabel)}</text>`,
+          `<text x="${boxX + 8}" y="${layoutNode.y + 44}" fill="#e0e7ff" font-family="Arial, Helvetica, sans-serif" font-size="6.5">${this.escapeXml(tertiary)}</text>`,
         );
       }
     }
@@ -623,43 +1064,35 @@ export class OrganigrammesService {
 
     // draw boxes
     for (const ln of layoutNodes) {
-      const [r, g, b] = FILLS[Math.min(ln.level, FILLS.length - 1)];
-      const fill = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
       const boxX = ln.x - BOX_W / 2;
+      const { title, secondary, tertiary } = this.getNodeText(ln.node);
 
       // shadow-like border
       doc.roundedRect(boxX + 2, ln.y + 2, BOX_W, BOX_H, 6).fill('#00000015');
       // box fill
-      doc.roundedRect(boxX, ln.y, BOX_W, BOX_H, 6).fill(fill);
+      doc.roundedRect(boxX, ln.y, BOX_W, BOX_H, 6).fill(this.getNodeFill(ln, FILLS));
 
-      // entity name (white, bold, truncated)
-      const label = ln.node.nom.length > 28 ? `${ln.node.nom.slice(0, 26)}…` : ln.node.nom;
+      // entity or person label
       doc
         .fillColor('#ffffff')
         .font('Helvetica-Bold')
         .fontSize(9)
-        .text(label, boxX + 8, ln.y + 8, { width: BOX_W - 16, lineBreak: false });
+        .text(title, boxX + 8, ln.y + 8, { width: BOX_W - 16, lineBreak: false });
 
-      // type badge text
+      // secondary line (type or role)
       doc
         .fillColor('#ffffffcc')
         .font('Helvetica')
         .fontSize(7)
-        .text(ln.node.type_entite, boxX + 8, ln.y + 23, { width: BOX_W - 16, lineBreak: false });
+        .text(secondary, boxX + 8, ln.y + 23, { width: BOX_W - 16, lineBreak: false });
 
-      // responsables (up to 2)
-      const resps = ln.node.responsables ?? [];
-      if (resps.length > 0) {
-        const respLine = resps
-          .slice(0, 2)
-          .map((r) => `${r.prenom} ${r.nom}`)
-          .join(', ');
-        const truncated = respLine.length > 34 ? `${respLine.slice(0, 32)}…` : respLine;
+      // tertiary line (responsables or structure/email)
+      if (tertiary) {
         doc
           .fillColor('#e0e7ff')
           .font('Helvetica')
           .fontSize(6.5)
-          .text(truncated, boxX + 8, ln.y + 37, { width: BOX_W - 16, lineBreak: false });
+          .text(tertiary, boxX + 8, ln.y + 37, { width: BOX_W - 16, lineBreak: false });
       }
     }
 

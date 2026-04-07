@@ -13,6 +13,14 @@ import { apiFetch } from "../lib/api";
 import { FilterBar } from "./ui/filter-bar";
 import { readQueryParam, writeQueryParams } from "../lib/url-state";
 import {
+  EMPTY_HIERARCHY_FILTERS,
+  HIERARCHY_LEVELS,
+  type HierarchyFilters,
+  getHierarchyOptions,
+  matchesEntiteHierarchy,
+  updateHierarchyFilters,
+} from "../lib/entite-hierarchy";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -140,6 +148,14 @@ const createEmptyUser = () => ({
 
 const getRoleId = (role: ApiRole) => role.id_role || role.id || "";
 
+const HIERARCHY_EMPTY_LABELS: Record<keyof HierarchyFilters, string> = {
+  composanteId: "Toutes les composantes",
+  departementId: "Tous les départements",
+  mentionId: "Toutes les mentions",
+  parcoursId: "Tous les parcours",
+  niveauId: "Tous les niveaux",
+};
+
 export function ManageResponsibles({
   userRole,
   currentYear,
@@ -161,7 +177,7 @@ export function ManageResponsibles({
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [filterComposante, setFilterComposante] = useState<string>("");
+  const [hierarchyFilters, setHierarchyFilters] = useState<HierarchyFilters>(EMPTY_HIERARCHY_FILTERS);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const [confirmDeleteAffId, setConfirmDeleteAffId] = useState<number | null>(null);
   const [confirmDeleteUserId, setConfirmDeleteUserId] = useState<string | null>(null);
@@ -170,9 +186,9 @@ export function ManageResponsibles({
   const canDelete = canDeleteUser(userRole);
 
   const entiteMap = useMemo(() => buildEntiteMap(entites), [entites]);
-  const composantes = useMemo(
-    () => entites.filter((e) => e.type_entite === "COMPOSANTE"),
-    [entites],
+  const hierarchyOptions = useMemo(
+    () => getHierarchyOptions(entites, hierarchyFilters, currentYear.id),
+    [entites, hierarchyFilters, currentYear.id],
   );
   const roleLabelMap = useMemo(
     () => new Map(roles.map((role) => [getRoleId(role), role.libelle])),
@@ -214,10 +230,16 @@ export function ManageResponsibles({
     return responsibles.filter((p) => {
       const matchSearch =
         !q ||
+        p.id.includes(q) ||
         p.name.toLowerCase().includes(q) ||
         p.login.toLowerCase().includes(q) ||
         p.email.toLowerCase().includes(q) ||
         p.secondaryEmail?.toLowerCase().includes(q) ||
+        p.assignments.some(
+          (assignment) =>
+            String(assignment.id_entite).includes(q) ||
+            String(assignment.id_affectation).includes(q),
+        ) ||
         p.assignments.some((a) => {
           // Remonte la hiérarchie pour trouver un code_composante correspondant
           let current: EntiteStructure | undefined = entiteMap.get(a.id_entite);
@@ -231,30 +253,23 @@ export function ManageResponsibles({
       const matchRole =
         !filterRole ||
         p.assignments.some((a) => a.role === filterRole);
-      const matchComposante =
-        !filterComposante ||
+      const matchHierarchy =
+        !Object.values(hierarchyFilters).some(Boolean) ||
         p.assignments.some((a) => {
-          const entite = entiteMap.get(a.id_entite);
-          if (!entite) return false;
-          // Cherche la composante dans la hiérarchie
-          let current: typeof entite | undefined = entite;
-          while (current) {
-            if (String(current.id_entite) === filterComposante) return true;
-            if (!current.id_entite_parent) break;
-            current = entiteMap.get(current.id_entite_parent);
-          }
-          return false;
+          return matchesEntiteHierarchy(entites, a.id_entite, hierarchyFilters, currentYear.id);
         });
-      return matchSearch && matchRole && matchComposante;
+      return matchSearch && matchRole && matchHierarchy;
     });
-  }, [responsibles, search, filterRole, filterComposante, entiteMap]);
+  }, [responsibles, search, filterRole, hierarchyFilters, entiteMap, entites, currentYear.id]);
 
-  const hasActiveFilters = Boolean(search || filterRole || filterComposante);
+  const hasActiveFilters = Boolean(
+    search || filterRole || Object.values(hierarchyFilters).some(Boolean),
+  );
 
   const resetFilters = () => {
     setSearch("");
     setFilterRole("");
-    setFilterComposante("");
+    setHierarchyFilters(EMPTY_HIERARCHY_FILTERS);
   };
 
   const loadData = async () => {
@@ -323,7 +338,13 @@ export function ManageResponsibles({
   useEffect(() => {
     setSearch(readQueryParam("mr_q"));
     setFilterRole(readQueryParam("mr_role"));
-    setFilterComposante(readQueryParam("mr_comp"));
+    setHierarchyFilters({
+      composanteId: readQueryParam("mr_comp"),
+      departementId: readQueryParam("mr_dept"),
+      mentionId: readQueryParam("mr_mention"),
+      parcoursId: readQueryParam("mr_parcours"),
+      niveauId: readQueryParam("mr_niveau"),
+    });
     setFiltersHydrated(true);
   }, []);
 
@@ -332,9 +353,13 @@ export function ManageResponsibles({
     writeQueryParams({
       mr_q: search,
       mr_role: filterRole,
-      mr_comp: filterComposante,
+      mr_comp: hierarchyFilters.composanteId,
+      mr_dept: hierarchyFilters.departementId,
+      mr_mention: hierarchyFilters.mentionId,
+      mr_parcours: hierarchyFilters.parcoursId,
+      mr_niveau: hierarchyFilters.niveauId,
     });
-  }, [search, filterRole, filterComposante, filtersHydrated]);
+  }, [search, filterRole, hierarchyFilters, filtersHydrated]);
 
   useEffect(() => {
     if (!focusUserId || responsibles.length === 0) return;
@@ -616,7 +641,7 @@ export function ManageResponsibles({
             type: "search",
             value: search,
             onChange: (value) => setSearch(value),
-            placeholder: "Rechercher par nom, login ou email...",
+            placeholder: "Rechercher par nom, login, email ou ID...",
           },
           {
             key: "role",
@@ -629,20 +654,28 @@ export function ManageResponsibles({
               ...roles.map((role) => ({ value: getRoleId(role), label: role.libelle })),
             ],
           },
-          {
-            key: "composante",
-            label: "Composante",
-            type: "select",
-            value: filterComposante,
-            onChange: (value) => setFilterComposante(value),
-            options: [
-              { value: "", label: "Toutes les composantes" },
-              ...composantes.map((c) => ({
-                value: String(c.id_entite),
-                label: c.code_composante ? `${c.nom} (${c.code_composante})` : c.nom,
-              })),
-            ],
-          },
+          ...HIERARCHY_LEVELS.map((level) => {
+            const options = hierarchyOptions[level.key];
+            return {
+              key: level.key,
+              label: level.label,
+              type: "select" as const,
+              value: hierarchyFilters[level.key],
+              onChange: (value: string) =>
+                setHierarchyFilters((prev) => updateHierarchyFilters(prev, level.key, value)),
+              disabled: options.length === 0,
+              options: [
+                { value: "", label: HIERARCHY_EMPTY_LABELS[level.key] },
+                ...options.map((entite) => ({
+                  value: String(entite.id_entite),
+                  label:
+                    entite.type_entite === "COMPOSANTE" && entite.code_composante
+                      ? `${entite.nom} (${entite.code_composante})`
+                      : entite.nom,
+                })),
+              ],
+            };
+          }),
         ]}
         hasActiveFilters={hasActiveFilters}
         onReset={resetFilters}
@@ -650,7 +683,7 @@ export function ManageResponsibles({
 
       <Dialog
         open={Boolean(editingId && formData)}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) closeEditDialog();
         }}
       >
@@ -686,7 +719,7 @@ export function ManageResponsibles({
 
       <Dialog
         open={Boolean(showAffectationFor && affectationPerson)}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) closeAffectationDialog();
         }}
       >
@@ -755,10 +788,12 @@ export function ManageResponsibles({
         <div className="bg-white rounded-xl p-12 shadow-sm border border-slate-200 flex flex-col items-center gap-3 text-slate-400">
           <Users className="w-12 h-12" />
           <p className="font-medium">
-            {search || filterRole || filterComposante ? "Aucun résultat pour cette recherche" : "Aucun responsable pour cette année"}
+            {search || filterRole || Object.values(hierarchyFilters).some(Boolean)
+              ? "Aucun résultat pour cette recherche"
+              : "Aucun responsable pour cette année"}
           </p>
-          {(search || filterRole || filterComposante) && (
-            <button onClick={() => { setSearch(""); setFilterRole(""); setFilterComposante(""); }} className="text-sm text-indigo-600 hover:underline">
+          {(search || filterRole || Object.values(hierarchyFilters).some(Boolean)) && (
+            <button onClick={resetFilters} className="text-sm text-indigo-600 hover:underline">
               Effacer les filtres
             </button>
           )}
@@ -884,7 +919,7 @@ export function ManageResponsibles({
 
       <AlertDialog
         open={Boolean(confirmDeleteUserId && deleteUserTarget)}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) setConfirmDeleteUserId(null);
         }}
       >
@@ -912,7 +947,7 @@ export function ManageResponsibles({
 
       <AlertDialog
         open={Boolean(confirmDeleteAffId && deleteAffectationTarget)}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) setConfirmDeleteAffId(null);
         }}
       >

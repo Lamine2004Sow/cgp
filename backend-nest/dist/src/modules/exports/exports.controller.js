@@ -31,6 +31,16 @@ let ExportsController = class ExportsController {
         });
         return { items };
     }
+    async exportWorkbook(query) {
+        if (!query.yearId) {
+            throw new common_1.BadRequestException("Le paramètre yearId est obligatoire.");
+        }
+        return this.exportsService.exportWorkbook({
+            yearId: query.yearId,
+            entiteId: query.entiteId,
+            template: query.template,
+        });
+    }
 };
 exports.ExportsController = ExportsController;
 __decorate([
@@ -41,6 +51,14 @@ __decorate([
     __metadata("design:paramtypes", [exports_query_dto_1.ExportsQueryDto]),
     __metadata("design:returntype", Promise)
 ], ExportsController.prototype, "exportResponsables", null);
+__decorate([
+    (0, common_1.Get)('workbook'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [exports_query_dto_1.ExportsQueryDto]),
+    __metadata("design:returntype", Promise)
+], ExportsController.prototype, "exportWorkbook", null);
 exports.ExportsController = ExportsController = __decorate([
     (0, common_1.Controller)('exports'),
     __metadata("design:paramtypes", [exports_service_1.ExportsService])

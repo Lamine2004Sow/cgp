@@ -11,7 +11,7 @@ export declare class AnneesController {
             libelle: string;
             date_debut: string;
             date_fin: string;
-            statut: import("@prisma/client").$Enums.annee_statut;
+            statut: string;
             id_annee_source: number | null;
         }[];
     }>;
@@ -21,7 +21,7 @@ export declare class AnneesController {
             libelle: string;
             date_debut: string;
             date_fin: string;
-            statut: import("@prisma/client").$Enums.annee_statut;
+            statut: string;
             id_annee_source: number | null;
         };
     }>;
@@ -31,7 +31,7 @@ export declare class AnneesController {
             libelle: string;
             date_debut: string;
             date_fin: string;
-            statut: import("@prisma/client").$Enums.annee_statut;
+            statut: string;
             id_annee_source: number | null;
         };
     }>;
@@ -41,8 +41,23 @@ export declare class AnneesController {
             libelle: string;
             date_debut: string;
             date_fin: string;
-            statut: import("@prisma/client").$Enums.annee_statut;
+            statut: string;
             id_annee_source: number | null;
+        };
+    }>;
+    remove(id: string): Promise<{
+        year: {
+            id_annee: number;
+            libelle: string;
+            date_debut: string;
+            date_fin: string;
+            statut: string;
+            id_annee_source: number | null;
+        };
+        backup: {
+            fileName: string;
+            mimeType: string;
+            contentBase64: string;
         };
     }>;
 }

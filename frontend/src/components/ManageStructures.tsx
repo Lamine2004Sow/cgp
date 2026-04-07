@@ -17,6 +17,14 @@ import { apiFetch } from "../lib/api";
 import { FilterBar } from "./ui/filter-bar";
 import { readQueryParam, writeQueryParams } from "../lib/url-state";
 import {
+  EMPTY_HIERARCHY_FILTERS,
+  HIERARCHY_LEVELS,
+  type HierarchyFilters,
+  getFilteredEntites,
+  getHierarchyOptions,
+  updateHierarchyFilters,
+} from "../lib/entite-hierarchy";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -42,29 +50,6 @@ const TYPE_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "NIVEAU", label: "Niveaux / Formations" },
 ];
 
-/** Retourne l'ensemble des id_entite descendants (récursif) d'une entité, dans la liste donnée */
-function getDescendantIds(entites: EntiteStructure[], rootId: number): Set<number> {
-  const byParent = new Map<number | null, number[]>();
-  for (const e of entites) {
-    const parent = e.id_entite_parent ?? null;
-    if (!byParent.has(parent)) byParent.set(parent, []);
-    byParent.get(parent)!.push(e.id_entite);
-  }
-  const out = new Set<number>();
-  const stack = [rootId];
-  while (stack.length > 0) {
-    const current = stack.pop()!;
-    const children = byParent.get(current) ?? [];
-    for (const c of children) {
-      if (!out.has(c)) {
-        out.add(c);
-        stack.push(c);
-      }
-    }
-  }
-  return out;
-}
-
 interface ManageStructuresProps {
   userRole: UserRole;
   currentYear: AcademicYear;
@@ -74,6 +59,14 @@ interface ManageStructuresProps {
 }
 
 type ApiEntiteDetail = EntiteStructureDetail;
+
+const HIERARCHY_EMPTY_LABELS: Record<keyof HierarchyFilters, string> = {
+  composanteId: "Toutes les composantes",
+  departementId: "Tous les départements",
+  mentionId: "Toutes les mentions",
+  parcoursId: "Tous les parcours",
+  niveauId: "Tous les niveaux",
+};
 
 export function ManageStructures({
   userRole,
@@ -96,27 +89,33 @@ export function ManageStructures({
     [entites, currentYear.id],
   );
 
-  const [filterComposanteId, setFilterComposanteId] = useState<number | "">("");
+  const [search, setSearch] = useState("");
+  const [hierarchyFilters, setHierarchyFilters] = useState<HierarchyFilters>(EMPTY_HIERARCHY_FILTERS);
   const [filterType, setFilterType] = useState<string>("");
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
-  const composantes = useMemo(
-    () => yearEntites.filter((e) => e.type_entite === "COMPOSANTE"),
-    [yearEntites],
+  const hierarchyOptions = useMemo(
+    () => getHierarchyOptions(yearEntites, hierarchyFilters, currentYear.id),
+    [yearEntites, hierarchyFilters, currentYear.id],
   );
 
   const filteredList = useMemo(() => {
-    let list = yearEntites;
-    if (filterComposanteId !== "") {
-      const id = Number(filterComposanteId);
-      const descendantIds = getDescendantIds(yearEntites, id);
-      list = yearEntites.filter((e) => e.id_entite === id || descendantIds.has(e.id_entite));
-    }
+    let list = getFilteredEntites(yearEntites, hierarchyFilters, currentYear.id);
     if (filterType !== "") {
       list = list.filter((e) => e.type_entite === filterType);
     }
+    const normalizedSearch = search.trim().toLowerCase();
+    if (normalizedSearch) {
+      list = list.filter(
+        (entite) =>
+          entite.nom.toLowerCase().includes(normalizedSearch) ||
+          String(entite.id_entite).includes(normalizedSearch) ||
+          entite.type_entite.toLowerCase().includes(normalizedSearch) ||
+          entite.code_composante?.toLowerCase().includes(normalizedSearch),
+      );
+    }
     return list;
-  }, [yearEntites, filterComposanteId, filterType]);
+  }, [yearEntites, hierarchyFilters, currentYear.id, filterType, search]);
 
   const loadDetail = useCallback(
     async (id: number) => {
@@ -163,10 +162,22 @@ export function ManageStructures({
 
   useEffect(() => {
     const comp = readQueryParam("ms_comp");
+    const dept = readQueryParam("ms_dept");
+    const mention = readQueryParam("ms_mention");
+    const parcours = readQueryParam("ms_parcours");
+    const niveau = readQueryParam("ms_niveau");
     const type = readQueryParam("ms_type");
+    const q = readQueryParam("ms_q");
     const sel = readQueryParam("ms_sel");
 
-    setFilterComposanteId(comp ? Number(comp) : "");
+    setSearch(q || "");
+    setHierarchyFilters({
+      composanteId: comp || "",
+      departementId: dept || "",
+      mentionId: mention || "",
+      parcoursId: parcours || "",
+      niveauId: niveau || "",
+    });
     setFilterType(type || "");
     setSelectedId(sel ? Number(sel) : null);
     setFiltersHydrated(true);
@@ -175,11 +186,16 @@ export function ManageStructures({
   useEffect(() => {
     if (!filtersHydrated) return;
     writeQueryParams({
-      ms_comp: filterComposanteId === "" ? "" : String(filterComposanteId),
+      ms_q: search,
+      ms_comp: hierarchyFilters.composanteId,
+      ms_dept: hierarchyFilters.departementId,
+      ms_mention: hierarchyFilters.mentionId,
+      ms_parcours: hierarchyFilters.parcoursId,
+      ms_niveau: hierarchyFilters.niveauId,
       ms_type: filterType,
       ms_sel: selectedId ?? "",
     });
-  }, [filterComposanteId, filterType, selectedId, filtersHydrated]);
+  }, [search, hierarchyFilters, filterType, selectedId, filtersHydrated]);
 
   const handleSave = async () => {
     if (!authLogin || !selectedId || !detail) return;
@@ -243,11 +259,14 @@ export function ManageStructures({
   };
 
   const resetFilters = () => {
-    setFilterComposanteId("");
+    setSearch("");
+    setHierarchyFilters(EMPTY_HIERARCHY_FILTERS);
     setFilterType("");
   };
 
-  const hasActiveFilters = filterComposanteId !== "" || filterType !== "";
+  const hasActiveFilters = Boolean(
+    search || filterType || Object.values(hierarchyFilters).some(Boolean),
+  );
 
   const openEditModal = () => {
     if (!detail) return;
@@ -282,16 +301,35 @@ export function ManageStructures({
               className="mt-3 border-none bg-transparent p-0 shadow-none"
               fields={[
                 {
-                  key: "composante",
-                  label: "Composante",
-                  type: "select",
-                  value: filterComposanteId === "" ? "" : String(filterComposanteId),
-                  onChange: (value) => setFilterComposanteId(value === "" ? "" : Number(value)),
-                  options: [
-                    { value: "", label: "Toutes les composantes" },
-                    ...composantes.map((c) => ({ value: String(c.id_entite), label: c.nom })),
-                  ],
+                  key: "search",
+                  label: "Recherche",
+                  type: "search",
+                  value: search,
+                  onChange: (value) => setSearch(value),
+                  placeholder: "Nom, type ou ID de structure...",
                 },
+                ...HIERARCHY_LEVELS.map((level) => {
+                  const options = hierarchyOptions[level.key];
+                  return {
+                    key: level.key,
+                    label: level.label,
+                    type: "select" as const,
+                    value: hierarchyFilters[level.key],
+                    onChange: (value: string) =>
+                      setHierarchyFilters((prev) => updateHierarchyFilters(prev, level.key, value)),
+                    disabled: options.length === 0,
+                    options: [
+                      { value: "", label: HIERARCHY_EMPTY_LABELS[level.key] },
+                      ...options.map((entite) => ({
+                        value: String(entite.id_entite),
+                        label:
+                          entite.type_entite === "COMPOSANTE" && entite.code_composante
+                            ? `${entite.nom} (${entite.code_composante})`
+                            : entite.nom,
+                      })),
+                    ],
+                  };
+                }),
                 {
                   key: "type",
                   label: "Type",
@@ -609,7 +647,7 @@ export function ManageStructures({
               </div>
 
               {canEdit && detail && (
-                <Dialog open={editModalOpen} onOpenChange={(open) => { if (!open) handleCancelEdit(); }}>
+                <Dialog open={editModalOpen} onOpenChange={(open: boolean) => { if (!open) handleCancelEdit(); }}>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Modifier la fiche structure</DialogTitle>

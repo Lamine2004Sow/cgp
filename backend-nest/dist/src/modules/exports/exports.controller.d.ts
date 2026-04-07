@@ -13,4 +13,9 @@ export declare class ExportsController {
             id_annee: number;
         }[];
     }>;
+    exportWorkbook(query: ExportsQueryDto): Promise<{
+        fileName: string;
+        mimeType: string;
+        contentBase64: string;
+    }>;
 }

@@ -769,6 +769,7 @@ export default function App() {
                 userRole={currentUser.role}
                 currentYear={currentYear}
                 authLogin={authLogin}
+                entites={entites}
               />
             )}
             {currentView === "delegations" && (

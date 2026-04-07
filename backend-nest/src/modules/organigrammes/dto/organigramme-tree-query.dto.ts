@@ -1,9 +1,12 @@
-import { IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
-export class OrganigrammeExportQueryDto {
+export class OrganigrammeTreeQueryDto {
   @IsOptional()
-  @IsString()
-  format?: 'PDF' | 'CSV' | 'JSON' | 'SVG';
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  yearId?: number;
 
   @IsOptional()
   @IsString()

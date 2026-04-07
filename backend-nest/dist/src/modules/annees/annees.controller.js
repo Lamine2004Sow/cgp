@@ -41,6 +41,9 @@ let AnneesController = class AnneesController {
         const year = await this.anneesService.updateStatus(id, payload.statut);
         return { year };
     }
+    async remove(id) {
+        return this.anneesService.deleteYear(id);
+    }
 };
 exports.AnneesController = AnneesController;
 __decorate([
@@ -77,6 +80,14 @@ __decorate([
     __metadata("design:paramtypes", [String, update_year_status_dto_1.UpdateYearStatusDto]),
     __metadata("design:returntype", Promise)
 ], AnneesController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(roles_constants_1.ROLE_IDS.SERVICES_CENTRAUX),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AnneesController.prototype, "remove", null);
 exports.AnneesController = AnneesController = __decorate([
     (0, common_1.Controller)('years'),
     __metadata("design:paramtypes", [annees_service_1.AnneesService])

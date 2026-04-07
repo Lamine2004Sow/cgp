@@ -41,6 +41,19 @@ export interface UserListItem {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private parseNumericId(value?: string): bigint | null {
+    const normalized = value?.trim();
+    if (!normalized || !/^\d+$/.test(normalized)) {
+      return null;
+    }
+
+    try {
+      return BigInt(normalized);
+    } catch {
+      return null;
+    }
+  }
+
   async findAll(
     query: UsersListQueryDto,
     currentUser: CurrentUser,
@@ -275,12 +288,14 @@ export class UsersService {
     orderBy: Prisma.utilisateurOrderByWithRelationInput;
   } {
     const filters = query.filters?.trim();
+    const numericId = this.parseNumericId(filters);
 
     const baseWhere: Prisma.utilisateurWhereInput = {
       statut: 'ACTIF',
       ...(filters
         ? {
             OR: [
+              ...(numericId ? [{ id_user: numericId }] : []),
               { login: { contains: filters, mode: 'insensitive' } },
               { nom: { contains: filters, mode: 'insensitive' } },
               { prenom: { contains: filters, mode: 'insensitive' } },

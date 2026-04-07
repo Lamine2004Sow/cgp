@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ROLE_IDS } from '../../auth/roles.constants';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AnneesService } from './annees.service';
@@ -39,5 +39,11 @@ export class AnneesController {
   ) {
     const year = await this.anneesService.updateStatus(id, payload.statut);
     return { year };
+  }
+
+  @Delete(':id')
+  @Roles(ROLE_IDS.SERVICES_CENTRAUX)
+  async remove(@Param('id') id: string) {
+    return this.anneesService.deleteYear(id);
   }
 }

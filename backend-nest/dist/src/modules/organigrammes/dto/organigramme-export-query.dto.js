@@ -13,6 +13,10 @@ exports.OrganigrammeExportQueryDto = void 0;
 const class_validator_1 = require("class-validator");
 class OrganigrammeExportQueryDto {
     format;
+    view;
+    q;
+    roleId;
+    entiteIds;
 }
 exports.OrganigrammeExportQueryDto = OrganigrammeExportQueryDto;
 __decorate([
@@ -20,4 +24,24 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], OrganigrammeExportQueryDto.prototype, "format", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], OrganigrammeExportQueryDto.prototype, "view", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], OrganigrammeExportQueryDto.prototype, "q", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], OrganigrammeExportQueryDto.prototype, "roleId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], OrganigrammeExportQueryDto.prototype, "entiteIds", void 0);
 //# sourceMappingURL=organigramme-export-query.dto.js.map

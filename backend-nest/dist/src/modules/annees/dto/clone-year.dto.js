@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CloneYearDto = void 0;
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class CloneYearDto {
     libelle;
@@ -17,6 +18,7 @@ class CloneYearDto {
     date_fin;
     statut;
     copy_affectations;
+    root_entite_ids;
 }
 exports.CloneYearDto = CloneYearDto;
 __decorate([
@@ -40,4 +42,12 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CloneYearDto.prototype, "copy_affectations", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)({ each: true }),
+    (0, class_validator_1.Min)(1, { each: true }),
+    __metadata("design:type", Array)
+], CloneYearDto.prototype, "root_entite_ids", void 0);
 //# sourceMappingURL=clone-year.dto.js.map

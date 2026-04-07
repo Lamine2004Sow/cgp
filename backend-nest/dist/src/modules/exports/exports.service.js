@@ -12,10 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExportsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
+const standard_workbook_service_1 = require("./standard-workbook.service");
 let ExportsService = class ExportsService {
     prisma;
-    constructor(prisma) {
+    standardWorkbookService;
+    constructor(prisma, standardWorkbookService) {
         this.prisma = prisma;
+        this.standardWorkbookService = standardWorkbookService;
     }
     async exportResponsables(params) {
         const where = {
@@ -40,10 +43,23 @@ let ExportsService = class ExportsService {
             id_annee: Number(affectation.id_annee),
         }));
     }
+    async exportWorkbook(params) {
+        const workbook = await this.standardWorkbookService.buildWorkbookPayload({
+            yearId: params.yearId,
+            entiteId: params.entiteId,
+            template: params.template,
+        });
+        const yearLabel = workbook.meta.source_year_label || `annee-${params.yearId}`;
+        const normalizedYearLabel = yearLabel.replace(/[^a-zA-Z0-9_-]+/g, '-');
+        const scopeSuffix = params.entiteId ? `-entite-${params.entiteId}` : '';
+        const prefix = params.template ? 'cgp-template' : 'cgp-export';
+        return this.standardWorkbookService.toDownload(`${prefix}-${normalizedYearLabel}${scopeSuffix}.xml`, workbook);
+    }
 };
 exports.ExportsService = ExportsService;
 exports.ExportsService = ExportsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        standard_workbook_service_1.StandardWorkbookService])
 ], ExportsService);
 //# sourceMappingURL=exports.service.js.map

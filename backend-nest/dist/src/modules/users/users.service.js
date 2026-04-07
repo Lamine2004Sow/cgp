@@ -24,6 +24,18 @@ let UsersService = class UsersService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    parseNumericId(value) {
+        const normalized = value?.trim();
+        if (!normalized || !/^\d+$/.test(normalized)) {
+            return null;
+        }
+        try {
+            return BigInt(normalized);
+        }
+        catch {
+            return null;
+        }
+    }
     async findAll(query, currentUser) {
         const { page, pageSize, skip } = (0, pagination_1.normalizePagination)({
             page: query.page,
@@ -204,11 +216,13 @@ let UsersService = class UsersService {
     }
     buildQuery(query, yearFilter) {
         const filters = query.filters?.trim();
+        const numericId = this.parseNumericId(filters);
         const baseWhere = {
             statut: 'ACTIF',
             ...(filters
                 ? {
                     OR: [
+                        ...(numericId ? [{ id_user: numericId }] : []),
                         { login: { contains: filters, mode: 'insensitive' } },
                         { nom: { contains: filters, mode: 'insensitive' } },
                         { prenom: { contains: filters, mode: 'insensitive' } },

@@ -2,6 +2,7 @@ import { OrganigrammesService, type ApiOrgNode } from './organigrammes.service';
 import { OrganigrammesListQueryDto } from './dto/organigrammes-list-query.dto';
 import { OrganigrammeGenerateDto } from './dto/organigramme-generate.dto';
 import { OrganigrammeExportQueryDto } from './dto/organigramme-export-query.dto';
+import { OrganigrammeTreeQueryDto } from './dto/organigramme-tree-query.dto';
 import type { CurrentUser as CurrentUserType } from '../../common/types/current-user';
 type OrganigrammeDto = {
     id_organigramme: number;
@@ -20,7 +21,7 @@ export declare class OrganigrammesController {
     list(user: CurrentUserType, query: OrganigrammesListQueryDto): Promise<{
         items: OrganigrammeDto[];
     }>;
-    latest(user: CurrentUserType, query: OrganigrammesListQueryDto): Promise<{
+    latest(user: CurrentUserType, query: OrganigrammeTreeQueryDto): Promise<{
         organigramme: OrganigrammeDto | null;
         arbre: ApiOrgNode | null;
     }>;
@@ -28,7 +29,7 @@ export declare class OrganigrammesController {
         organigramme: OrganigrammeDto;
         arbre: ApiOrgNode | null;
     }>;
-    tree(user: CurrentUserType, id: string): Promise<{
+    tree(user: CurrentUserType, id: string, query: OrganigrammeTreeQueryDto): Promise<{
         organigramme: OrganigrammeDto;
         arbre: ApiOrgNode | null;
     }>;

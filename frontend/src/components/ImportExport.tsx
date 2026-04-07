@@ -1,24 +1,46 @@
-import { useState } from "react";
-import { UserRole, AcademicYear, canImportData, canAccessFilteredQueries } from "../types";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Upload,
+  AcademicYear,
+  EntiteStructure,
+  UserRole,
+  canAccessFilteredQueries,
+  canImportData,
+} from "../types";
+import {
+  AlertCircle,
+  CheckCircle,
   Download,
   FileSpreadsheet,
   FileText,
-  AlertCircle,
-  CheckCircle,
   Filter,
-  ChevronDown,
+  FolderTree,
   RefreshCw,
+  Upload,
   XCircle,
 } from "lucide-react";
 import { apiFetch } from "../lib/api";
+import {
+  STANDARD_WORKBOOK_VERSION,
+  downloadBase64File,
+  getWorkbookSourceScopes,
+  parseStandardWorkbookXml,
+  type StandardWorkbookPayload,
+} from "../lib/standard-workbook";
 
 interface ImportExportProps {
   userRole: UserRole;
   currentYear: AcademicYear;
   authLogin: string | null;
+  entites: EntiteStructure[];
 }
+
+type ApiYear = {
+  id_annee: number;
+  libelle: string;
+  date_debut: string;
+  date_fin: string;
+  statut: "EN_COURS" | "PREPARATION" | "ARCHIVEE";
+};
 
 type ExportRow = {
   nom: string;
@@ -60,6 +82,29 @@ type PreviewItem = {
   roleLabel?: string | null;
   changes?: PreviewChange[];
   error?: string;
+};
+
+type WorkbookPreviewStatus = "create" | "update" | "reuse" | "skip" | "warning" | "error";
+
+type WorkbookPreviewItem = {
+  sheet: string;
+  sourceKey: string;
+  label: string;
+  status: WorkbookPreviewStatus;
+  detail: string;
+};
+
+type WorkbookPreviewSummary = {
+  total: number;
+  create: number;
+  update: number;
+  reuse: number;
+  skip: number;
+  warning: number;
+  error: number;
+  targetYearId: number | null;
+  targetYearLabel: string | null;
+  targetYearWillBeCreated: boolean;
 };
 
 const toCsv = (rows: ExportRow[]) => {
@@ -105,7 +150,30 @@ const statusClass: Record<PreviewStatus, string> = {
   error: "bg-red-100 text-red-700",
 };
 
-export function ImportExport({ userRole, currentYear, authLogin }: ImportExportProps) {
+const workbookStatusClass: Record<WorkbookPreviewStatus, string> = {
+  create: "bg-green-100 text-green-700",
+  update: "bg-amber-100 text-amber-700",
+  reuse: "bg-slate-100 text-slate-700",
+  skip: "bg-slate-100 text-slate-500",
+  warning: "bg-orange-100 text-orange-700",
+  error: "bg-red-100 text-red-700",
+};
+
+const workbookStatusLabel: Record<WorkbookPreviewStatus, string> = {
+  create: "Créer",
+  update: "Mettre à jour",
+  reuse: "Réutiliser",
+  skip: "Ignorer",
+  warning: "Attention",
+  error: "Erreur",
+};
+
+export function ImportExport({
+  userRole,
+  currentYear,
+  authLogin,
+  entites,
+}: ImportExportProps) {
   const [importStep, setImportStep] = useState<"upload" | "review" | "done">("upload");
   const [importStatus, setImportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [importMessage, setImportMessage] = useState("");
@@ -123,8 +191,55 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
 
+  const [years, setYears] = useState<ApiYear[]>([]);
+  const [workbookExportMode, setWorkbookExportMode] = useState<"year" | "structure">("year");
+  const [workbookExportEntiteId, setWorkbookExportEntiteId] = useState("");
+  const [workbookFileName, setWorkbookFileName] = useState("");
+  const [parsedWorkbook, setParsedWorkbook] = useState<StandardWorkbookPayload | null>(null);
+  const [workbookSourceScopeId, setWorkbookSourceScopeId] = useState("");
+  const [workbookTargetYearId, setWorkbookTargetYearId] = useState(currentYear.id);
+  const [createTargetYear, setCreateTargetYear] = useState(false);
+  const [workbookLoading, setWorkbookLoading] = useState(false);
+  const [workbookError, setWorkbookError] = useState<string | null>(null);
+  const [workbookPreviewItems, setWorkbookPreviewItems] = useState<WorkbookPreviewItem[]>([]);
+  const [workbookPreviewSummary, setWorkbookPreviewSummary] = useState<WorkbookPreviewSummary | null>(null);
+  const [workbookPreviewFilter, setWorkbookPreviewFilter] = useState<WorkbookPreviewStatus | "all">("all");
+  const [workbookStep, setWorkbookStep] = useState<"idle" | "review" | "done">("idle");
+  const [workbookMessage, setWorkbookMessage] = useState("");
+
   const canImport = canImportData(userRole);
   const canQuery = canAccessFilteredQueries(userRole);
+  const canUseStandardWorkbook = userRole === "services-centraux";
+
+  const currentYearEntites = useMemo(
+    () => entites.filter((entite) => String(entite.id_annee) === currentYear.id),
+    [currentYear.id, entites],
+  );
+  const workbookExportOptions = useMemo(
+    () =>
+      [...currentYearEntites].sort((left, right) =>
+        left.nom.localeCompare(right.nom, "fr", { sensitivity: "base" }),
+      ),
+    [currentYearEntites],
+  );
+  const workbookSourceScopes = useMemo(
+    () => (parsedWorkbook ? getWorkbookSourceScopes(parsedWorkbook) : []),
+    [parsedWorkbook],
+  );
+  const filteredWorkbookPreview = useMemo(
+    () =>
+      workbookPreviewFilter === "all"
+        ? workbookPreviewItems
+        : workbookPreviewItems.filter((item) => item.status === workbookPreviewFilter),
+    [workbookPreviewFilter, workbookPreviewItems],
+  );
+
+  useEffect(() => {
+    if (!authLogin || !canUseStandardWorkbook) return;
+    apiFetch<{ items: ApiYear[] }>("/years", { login: authLogin })
+      .then((data) => setYears(data.items || []))
+      .catch(() => setYears([]));
+  }, [authLogin, canUseStandardWorkbook]);
 
   const parseCsvLine = (line: string) => {
     const values: string[] = [];
@@ -151,6 +266,143 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
     }
     values.push(current.trim());
     return values.map((value) => value.replace(/^"(.*)"$/, "$1"));
+  };
+
+  const handleWorkbookDownload = async (template: boolean) => {
+    if (!authLogin) return;
+    setWorkbookLoading(true);
+    setWorkbookError(null);
+    try {
+      const entiteId =
+        workbookExportMode === "structure" && workbookExportEntiteId
+          ? `&entiteId=${workbookExportEntiteId}`
+          : "";
+      const data = await apiFetch<{
+        fileName: string;
+        mimeType: string;
+        contentBase64: string;
+      }>(
+        `/exports/workbook?yearId=${currentYear.id}${entiteId}&template=${template ? "true" : "false"}`,
+        { login: authLogin },
+      );
+      downloadBase64File(data.contentBase64, data.fileName, data.mimeType);
+    } catch (err) {
+      setWorkbookError(err instanceof Error ? err.message : "Erreur d'export Excel");
+    } finally {
+      setWorkbookLoading(false);
+    }
+  };
+
+  const handleWorkbookFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setWorkbookLoading(true);
+    setWorkbookError(null);
+    setWorkbookPreviewItems([]);
+    setWorkbookPreviewSummary(null);
+    setWorkbookStep("idle");
+    setWorkbookMessage("");
+
+    try {
+      const content = await file.text();
+      const workbook = parseStandardWorkbookXml(content);
+      setParsedWorkbook(workbook);
+      setWorkbookFileName(file.name);
+      setWorkbookSourceScopeId(workbook.meta.scope_source_entite_id || "");
+      setCreateTargetYear(false);
+      setWorkbookTargetYearId(currentYear.id);
+    } catch (err) {
+      setParsedWorkbook(null);
+      setWorkbookError(err instanceof Error ? err.message : "Classeur Excel invalide");
+    } finally {
+      setWorkbookLoading(false);
+    }
+  };
+
+  const handleWorkbookPreview = async () => {
+    if (!authLogin || !parsedWorkbook) return;
+
+    setWorkbookLoading(true);
+    setWorkbookError(null);
+    setWorkbookMessage("");
+    try {
+      const data = await apiFetch<{
+        items: WorkbookPreviewItem[];
+        summary: WorkbookPreviewSummary;
+      }>("/imports/workbook/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          workbook: parsedWorkbook,
+          targetYearId: createTargetYear ? undefined : Number(workbookTargetYearId),
+          createTargetYear,
+          scopeSourceEntiteId: workbookSourceScopeId
+            ? Number(workbookSourceScopeId)
+            : undefined,
+        }),
+        login: authLogin,
+      });
+
+      setWorkbookPreviewItems(data.items || []);
+      setWorkbookPreviewSummary(data.summary || null);
+      setWorkbookStep("review");
+    } catch (err) {
+      setWorkbookError(err instanceof Error ? err.message : "Erreur d'analyse du classeur");
+    } finally {
+      setWorkbookLoading(false);
+    }
+  };
+
+  const handleWorkbookConfirm = async () => {
+    if (!authLogin || !parsedWorkbook) return;
+    setWorkbookLoading(true);
+    setWorkbookError(null);
+    setWorkbookMessage("");
+    try {
+      const data = await apiFetch<{
+        items: WorkbookPreviewItem[];
+        summary: WorkbookPreviewSummary;
+        result?: { targetYearId: number | null; targetYearLabel: string | null; processed: number };
+      }>("/imports/workbook/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          workbook: parsedWorkbook,
+          targetYearId: createTargetYear ? undefined : Number(workbookTargetYearId),
+          createTargetYear,
+          scopeSourceEntiteId: workbookSourceScopeId
+            ? Number(workbookSourceScopeId)
+            : undefined,
+        }),
+        login: authLogin,
+      });
+
+      setWorkbookPreviewItems(data.items || []);
+      setWorkbookPreviewSummary(data.summary || null);
+      setWorkbookStep("done");
+      setWorkbookMessage(
+        data.result?.targetYearLabel
+          ? `Import terminé dans l'année ${data.result.targetYearLabel}.`
+          : "Import terminé.",
+      );
+    } catch (err) {
+      setWorkbookError(err instanceof Error ? err.message : "Erreur d'import Excel");
+    } finally {
+      setWorkbookLoading(false);
+    }
+  };
+
+  const resetWorkbookImport = () => {
+    setParsedWorkbook(null);
+    setWorkbookFileName("");
+    setWorkbookSourceScopeId("");
+    setWorkbookPreviewItems([]);
+    setWorkbookPreviewSummary(null);
+    setWorkbookPreviewFilter("all");
+    setWorkbookStep("idle");
+    setWorkbookMessage("");
+    setWorkbookError(null);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -313,24 +565,331 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
       <div>
         <h2 className="text-slate-900 mb-2">Import / Export de données</h2>
         <p className="text-slate-600">
-          {canImport && canQuery
-            ? "Importez des responsables (avec revue avant validation) ou exportez des listes (Services centraux)."
-            : canImport
-              ? "Importer des responsables depuis un fichier CSV avec revue des doublons et modifications."
-              : canQuery
-                ? "Exporter des listes de responsables avec filtres (Services centraux)."
-                : "Aucune action d'import ou d'export disponible pour votre rôle."}
+          Le format recommandé est désormais le classeur Excel standardisé <code>{STANDARD_WORKBOOK_VERSION}</code>, avec aperçu de fusion avant import.
         </p>
       </div>
+
+      {canUseStandardWorkbook && (
+        <>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <div className="flex items-start gap-3 mb-6">
+              <FileSpreadsheet className="w-6 h-6 text-emerald-600 mt-1" />
+              <div className="flex-1 space-y-5">
+                <div>
+                  <h3 className="text-slate-900 mb-2">Classeur Excel standardisé</h3>
+                  <p className="text-slate-600 text-sm">
+                    Exportez l’année complète ou une structure précise dans un format cohérent, réimportable plus tard avec gestion des fusions et des conflits.
+                  </p>
+                </div>
+
+                {workbookError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+                    {workbookError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Portée de l'export
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setWorkbookExportMode("year")}
+                        className={`px-4 py-2 rounded-lg text-sm ${
+                          workbookExportMode === "year"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        Toute l'année
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWorkbookExportMode("structure")}
+                        className={`px-4 py-2 rounded-lg text-sm ${
+                          workbookExportMode === "structure"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        Une structure
+                      </button>
+                    </div>
+                  </div>
+
+                  {workbookExportMode === "structure" && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Structure à exporter
+                      </label>
+                      <select
+                        value={workbookExportEntiteId}
+                        onChange={(e) => setWorkbookExportEntiteId(e.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
+                      >
+                        <option value="">Sélectionner une structure</option>
+                        {workbookExportOptions.map((entite) => (
+                          <option key={entite.id_entite} value={entite.id_entite}>
+                            #{entite.id_entite} — {entite.nom} ({entite.type_entite})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleWorkbookDownload(false)}
+                    disabled={
+                      workbookLoading ||
+                      (workbookExportMode === "structure" && !workbookExportEntiteId)
+                    }
+                    className="p-4 border-2 border-slate-200 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition-all text-left disabled:opacity-60"
+                  >
+                    <Download className="w-8 h-8 text-emerald-600 mb-2" />
+                    <h4 className="text-slate-900 mb-1">Télécharger le classeur standard</h4>
+                    <p className="text-slate-600 text-sm">
+                      Export Excel XML prêt à être rouvert et réimporté.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => handleWorkbookDownload(true)}
+                    disabled={workbookLoading}
+                    className="p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-all text-left disabled:opacity-60"
+                  >
+                    <FolderTree className="w-8 h-8 text-indigo-600 mb-2" />
+                    <h4 className="text-slate-900 mb-1">Télécharger un modèle vide</h4>
+                    <p className="text-slate-600 text-sm">
+                      Même format, sans données, pour préparer un import propre depuis Excel.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <div className="flex items-start gap-3 mb-6">
+              <Upload className="w-6 h-6 text-indigo-600 mt-1" />
+              <div className="flex-1 space-y-5">
+                <div>
+                  <h3 className="text-slate-900 mb-2">Importer un classeur Excel standardisé</h3>
+                  <p className="text-slate-600 text-sm">
+                    Chargez un fichier Excel XML standardisé, choisissez l’année cible puis lancez un aperçu de fusion avant validation.
+                  </p>
+                </div>
+
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
+                  <input
+                    type="file"
+                    accept=".xml,.xls"
+                    onChange={handleWorkbookFileUpload}
+                    className="hidden"
+                    id="workbook-upload"
+                  />
+                  <label htmlFor="workbook-upload" className="cursor-pointer">
+                    <FileSpreadsheet className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-slate-700 mb-1">
+                      {workbookFileName || "Choisir un fichier Excel standardisé"}
+                    </p>
+                    <p className="text-slate-500 text-sm">
+                      Format attendu : {STANDARD_WORKBOOK_VERSION}
+                    </p>
+                  </label>
+                </div>
+
+                {parsedWorkbook && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Année cible
+                        </label>
+                        <select
+                          value={workbookTargetYearId}
+                          onChange={(e) => setWorkbookTargetYearId(e.target.value)}
+                          disabled={createTargetYear}
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                        >
+                          {years.map((year) => (
+                            <option key={year.id_annee} value={year.id_annee}>
+                              {year.libelle}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Périmètre du fichier
+                        </label>
+                        <select
+                          value={workbookSourceScopeId}
+                          onChange={(e) => setWorkbookSourceScopeId(e.target.value)}
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
+                        >
+                          <option value="">Tout le fichier</option>
+                          {workbookSourceScopes.map((scope) => (
+                            <option key={scope.id} value={scope.id}>
+                              {scope.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={createTargetYear}
+                          onChange={(e) => setCreateTargetYear(e.target.checked)}
+                          className="h-4 w-4 text-indigo-600 rounded"
+                        />
+                        Créer l'année à partir du fichier
+                      </label>
+                    </div>
+
+                    <div className="text-sm text-slate-500">
+                      Source du fichier : {parsedWorkbook.meta.source_year_label || "non précisée"}
+                      {parsedWorkbook.meta.scope_type === "STRUCTURE" &&
+                        parsedWorkbook.meta.scope_entite_name
+                        ? ` · portée : ${parsedWorkbook.meta.scope_entite_name}`
+                        : ""}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={handleWorkbookPreview}
+                        disabled={workbookLoading}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 disabled:opacity-60"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Prévisualiser la fusion
+                      </button>
+                      <button
+                        onClick={resetWorkbookImport}
+                        className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex items-center gap-2"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Réinitialiser
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {workbookStep !== "idle" && workbookPreviewSummary && (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                      <span className="text-sm text-slate-600">
+                        <strong>{workbookPreviewSummary.total}</strong> action(s) —{" "}
+                        <span className="text-green-600">{workbookPreviewSummary.create} création(s)</span>,{" "}
+                        <span className="text-amber-600">{workbookPreviewSummary.update} mise(s) à jour</span>,{" "}
+                        <span className="text-slate-600">{workbookPreviewSummary.reuse} réutilisation(s)</span>,{" "}
+                        <span className="text-slate-500">{workbookPreviewSummary.skip} ignorée(s)</span>,{" "}
+                        <span className="text-orange-600">{workbookPreviewSummary.warning} alerte(s)</span>
+                        {workbookPreviewSummary.error > 0 && (
+                          <>, <span className="text-red-600">{workbookPreviewSummary.error} erreur(s)</span></>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-slate-500" />
+                        <select
+                          value={workbookPreviewFilter}
+                          onChange={(e) =>
+                            setWorkbookPreviewFilter(
+                              e.target.value as WorkbookPreviewStatus | "all",
+                            )
+                          }
+                          className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white"
+                        >
+                          <option value="all">Tous</option>
+                          <option value="create">Créer</option>
+                          <option value="update">Mettre à jour</option>
+                          <option value="reuse">Réutiliser</option>
+                          <option value="skip">Ignorer</option>
+                          <option value="warning">Alertes</option>
+                          <option value="error">Erreurs</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto max-h-[420px] overflow-y-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-50 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium text-slate-600">Feuille</th>
+                            <th className="px-3 py-2 text-left font-medium text-slate-600">Élément</th>
+                            <th className="px-3 py-2 text-left font-medium text-slate-600">Statut</th>
+                            <th className="px-3 py-2 text-left font-medium text-slate-600">Détail</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {filteredWorkbookPreview.map((item) => (
+                            <tr key={`${item.sheet}-${item.sourceKey}-${item.label}`} className="hover:bg-slate-50">
+                              <td className="px-3 py-2 text-slate-600 uppercase">{item.sheet}</td>
+                              <td className="px-3 py-2 text-slate-700">
+                                <div className="font-medium">{item.label}</div>
+                                {item.sourceKey && (
+                                  <div className="text-xs text-slate-500">{item.sourceKey}</div>
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className={`inline-flex px-2 py-0.5 rounded text-xs ${workbookStatusClass[item.status]}`}>
+                                  {workbookStatusLabel[item.status]}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-slate-600">{item.detail}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {workbookStep === "review" && (
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={handleWorkbookConfirm}
+                          disabled={workbookLoading || workbookPreviewSummary.error > 0}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Confirmer l'import
+                        </button>
+                        <button
+                          onClick={resetWorkbookImport}
+                          className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex items-center gap-2"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Annuler
+                        </button>
+                      </div>
+                    )}
+
+                    {workbookStep === "done" && (
+                      <div className="p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-green-900">{workbookMessage}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {canImport && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-start gap-3 mb-6">
             <Upload className="w-6 h-6 text-indigo-600 mt-1" />
             <div className="flex-1">
-              <h3 className="text-slate-900 mb-2">Importer les responsables</h3>
+              <h3 className="text-slate-900 mb-2">Import CSV hérité des responsables</h3>
               <p className="text-slate-600 mb-4">
-                Colonnes CSV : login, nom, prenom, id_role, id_entite, id_annee, date_debut
+                Ancien flux conservé pour compatibilité. Colonnes CSV : login, nom, prenom, id_role, id_entite, id_annee, date_debut
                 (optionnel : email_institutionnel, telephone, bureau, date_fin).
               </p>
 
@@ -518,8 +1077,8 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
           <div className="flex items-start gap-3 mb-6">
             <Download className="w-6 h-6 text-green-600 mt-1" />
             <div className="flex-1">
-              <h3 className="text-slate-900 mb-2">Exporter les données</h3>
-              <p className="text-slate-600 mb-4">Exportez les responsables de l'année courante</p>
+              <h3 className="text-slate-900 mb-2">Exports hérités</h3>
+              <p className="text-slate-600 mb-4">Exports rapides des responsables de l'année courante.</p>
 
               {exportError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
@@ -535,7 +1094,7 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
                 >
                   <FileSpreadsheet className="w-8 h-8 text-green-600 mb-2" />
                   <h4 className="text-slate-900 mb-1">Export CSV</h4>
-                  <p className="text-slate-600 text-sm">Format CSV</p>
+                  <p className="text-slate-600 text-sm">Format historique</p>
                 </button>
                 <button
                   onClick={() => handleExport("JSON")}
@@ -544,7 +1103,7 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
                 >
                   <FileText className="w-8 h-8 text-blue-600 mb-2" />
                   <h4 className="text-slate-900 mb-1">Export JSON</h4>
-                  <p className="text-slate-600 text-sm">Format JSON</p>
+                  <p className="text-slate-600 text-sm">Format technique</p>
                 </button>
               </div>
             </div>
@@ -552,9 +1111,15 @@ export function ImportExport({ userRole, currentYear, authLogin }: ImportExportP
         </div>
       )}
 
+      {!canUseStandardWorkbook && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
+          Le classeur Excel standardisé est réservé aux Services centraux. Les imports CSV hérités restent disponibles pour votre rôle.
+        </div>
+      )}
+
       {!canQuery && canImport && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
-          Les exports sont réservés aux Services centraux ; ils sont donc masqués pour ce rôle.
+          Les exports hérités sont réservés aux Services centraux ; ils sont donc masqués pour ce rôle.
         </div>
       )}
     </div>

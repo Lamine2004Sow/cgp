@@ -24,8 +24,14 @@ const HIDDEN_ORG_ROLE_IDS = new Set([
     roles_constants_1.ROLE_IDS.UTILISATEUR_SIMPLE,
     roles_constants_1.ROLE_IDS.LECTURE_SEULE,
 ]);
-function shouldDisplayInOrgChart(roleId, roleLabel) {
+function shouldDisplayInPeopleOrgChart(roleId) {
     if (HIDDEN_ORG_ROLE_IDS.has(roleId)) {
+        return false;
+    }
+    return true;
+}
+function shouldDisplayInOrgChart(roleId, roleLabel) {
+    if (!shouldDisplayInPeopleOrgChart(roleId)) {
         return false;
     }
     return !(0, role_support_utils_1.isSupportRole)(roleId, roleLabel);
@@ -52,14 +58,14 @@ let OrganigrammesService = class OrganigrammesService {
         }
         return filtered.map((item) => this.mapOrganigramme(item));
     }
-    async latest(user, yearId) {
+    async latest(user, yearId, options) {
         const items = await this.list(user, yearId);
         const organigramme = items[0] ?? null;
         const rootId = organigramme?.id_entite_racine ?? null;
-        const arbre = await this.buildTree(yearId, rootId ?? undefined);
+        const arbre = await this.buildTree(yearId, rootId ?? undefined, options);
         return { organigramme: organigramme ?? null, arbre };
     }
-    async getTreeById(user, id) {
+    async getTreeById(user, id, options) {
         let parsedId;
         try {
             parsedId = BigInt(id);
@@ -77,7 +83,7 @@ let OrganigrammesService = class OrganigrammesService {
         if (!canAccess) {
             throw new common_1.ForbiddenException('Out of scope organigramme');
         }
-        const arbre = await this.buildTree(Number(organigramme.id_annee), Number(organigramme.id_entite_racine));
+        const arbre = await this.buildTree(Number(organigramme.id_annee), Number(organigramme.id_entite_racine), options);
         return { organigramme: this.mapOrganigramme(organigramme), arbre };
     }
     async generate(user, yearId, rootId) {
@@ -124,13 +130,17 @@ let OrganigrammesService = class OrganigrammesService {
         });
         return { organigramme: this.mapOrganigramme(organigramme) };
     }
-    async export(user, id, format) {
-        const { organigramme, arbre } = await this.getTreeById(user, id);
+    async export(user, id, format, options) {
+        const { organigramme, arbre } = await this.getTreeById(user, id, options);
         if (!arbre) {
             throw new common_1.NotFoundException('Organigramme tree not found');
         }
         const normalizedFormat = (format || 'PDF').toUpperCase();
+        const viewMode = this.normalizeViewMode(options?.view);
         let fileName = `organigramme-${organigramme.id_annee}-${organigramme.id_organigramme}`;
+        if (viewMode === 'PERSONNES') {
+            fileName += '-personnes';
+        }
         let mimeType = 'application/pdf';
         let content;
         if (normalizedFormat === 'JSON') {
@@ -166,7 +176,143 @@ let OrganigrammesService = class OrganigrammesService {
             contentBase64: content.toString('base64'),
         };
     }
-    async buildTree(yearId, rootId) {
+    normalizeViewMode(view) {
+        return view?.trim().toUpperCase() === 'PERSONNES' ? 'PERSONNES' : 'STRUCTURES';
+    }
+    parseNumericId(raw) {
+        const value = raw?.trim();
+        if (!value || !/^\d+$/.test(value)) {
+            return null;
+        }
+        try {
+            return BigInt(value);
+        }
+        catch {
+            return null;
+        }
+    }
+    parseEntiteIds(raw) {
+        if (!raw?.trim()) {
+            return null;
+        }
+        const ids = raw
+            .split(',')
+            .map((value) => value.trim())
+            .filter((value) => /^\d+$/.test(value))
+            .map((value) => Number(value));
+        return ids.length > 0 ? new Set(ids) : null;
+    }
+    matchesPeopleFilter(affectation, options, allowedEntiteIds, affiliationLabel) {
+        const entiteId = Number(affectation.id_entite);
+        if (allowedEntiteIds && !allowedEntiteIds.has(entiteId)) {
+            return false;
+        }
+        if (options.roleId && affectation.id_role !== options.roleId) {
+            return false;
+        }
+        const q = options.q?.trim();
+        if (!q) {
+            return true;
+        }
+        const normalizedQuery = q.toLowerCase();
+        const numericId = this.parseNumericId(q);
+        if (numericId &&
+            (affectation.id_affectation === numericId ||
+                affectation.id_user === numericId ||
+                affectation.id_entite === numericId)) {
+            return true;
+        }
+        return (affectation.utilisateur.nom.toLowerCase().includes(normalizedQuery) ||
+            affectation.utilisateur.prenom.toLowerCase().includes(normalizedQuery) ||
+            affectation.utilisateur.login.toLowerCase().includes(normalizedQuery) ||
+            (affectation.utilisateur.email_institutionnel || '')
+                .toLowerCase()
+                .includes(normalizedQuery) ||
+            (affectation.role?.libelle || affectation.id_role)
+                .toLowerCase()
+                .includes(normalizedQuery) ||
+            (affectation.entite_structure?.nom || '').toLowerCase().includes(normalizedQuery) ||
+            affiliationLabel.toLowerCase().includes(normalizedQuery));
+    }
+    sortTreeChildren(node) {
+        if (!node.children?.length) {
+            return;
+        }
+        node.children.sort((left, right) => {
+            if (left.kind !== right.kind) {
+                return left.kind === 'structure' ? -1 : 1;
+            }
+            if (left.kind === 'personne' && right.kind === 'personne') {
+                const leftLevel = left.hierarchy_level ?? Number.MAX_SAFE_INTEGER;
+                const rightLevel = right.hierarchy_level ?? Number.MAX_SAFE_INTEGER;
+                if (leftLevel !== rightLevel) {
+                    return leftLevel - rightLevel;
+                }
+            }
+            return left.nom.localeCompare(right.nom, 'fr', { sensitivity: 'base' });
+        });
+        node.children.forEach((child) => this.sortTreeChildren(child));
+    }
+    prunePeopleTree(node) {
+        if (node.kind === 'personne') {
+            return node;
+        }
+        const children = (node.children ?? [])
+            .map((child) => this.prunePeopleTree(child))
+            .filter((child) => Boolean(child));
+        if (children.length === 0) {
+            return null;
+        }
+        return {
+            ...node,
+            children,
+            responsables: undefined,
+        };
+    }
+    collectDescendantEntiteIds(entites, rootId) {
+        const childrenByParent = new Map();
+        entites.forEach((entite) => {
+            const parentId = entite.id_entite_parent ? Number(entite.id_entite_parent) : null;
+            if (parentId == null) {
+                return;
+            }
+            const children = childrenByParent.get(parentId) ?? [];
+            children.push(Number(entite.id_entite));
+            childrenByParent.set(parentId, children);
+        });
+        if (!rootId) {
+            return new Set(entites.map((entite) => Number(entite.id_entite)));
+        }
+        const scope = new Set();
+        const queue = [rootId];
+        while (queue.length > 0) {
+            const currentId = queue.shift();
+            if (currentId == null || scope.has(currentId)) {
+                continue;
+            }
+            scope.add(currentId);
+            (childrenByParent.get(currentId) ?? []).forEach((childId) => queue.push(childId));
+        }
+        return scope;
+    }
+    buildAffiliationLabel(entiteId, entiteById, rootId) {
+        const chain = [];
+        let currentId = entiteId;
+        while (currentId != null) {
+            const entite = entiteById.get(currentId);
+            if (!entite) {
+                break;
+            }
+            chain.unshift(entite.nom);
+            if (rootId && currentId === rootId) {
+                break;
+            }
+            currentId = entite.id_entite_parent ? Number(entite.id_entite_parent) : null;
+        }
+        return chain.join(' / ');
+    }
+    async buildTree(yearId, rootId, options) {
+        const viewMode = this.normalizeViewMode(options?.view);
         const entites = await this.prisma.entite_structure.findMany({
             where: { id_annee: BigInt(yearId) },
             orderBy: { id_entite: 'asc' },
@@ -177,6 +323,8 @@ let OrganigrammesService = class OrganigrammesService {
         const nodes = new Map();
         entites.forEach((entite) => {
             nodes.set(Number(entite.id_entite), {
+                id_node: `entite-${entite.id_entite}`,
+                kind: 'structure',
                 id_entite: Number(entite.id_entite),
                 nom: entite.nom,
                 type_entite: entite.type_entite,
@@ -198,6 +346,14 @@ let OrganigrammesService = class OrganigrammesService {
         if (!root) {
             return null;
         }
+        const entiteById = new Map(entites.map((entite) => [
+            Number(entite.id_entite),
+            {
+                id_entite_parent: entite.id_entite_parent,
+                nom: entite.nom,
+                type_entite: entite.type_entite,
+            },
+        ]));
         const entiteIds = Array.from(nodes.keys());
         const affectations = await this.prisma.affectation.findMany({
             where: {
@@ -206,9 +362,109 @@ let OrganigrammesService = class OrganigrammesService {
             },
             include: {
                 utilisateur: true,
-                role: { select: { libelle: true } },
+                role: { select: { libelle: true, niveau_hierarchique: true } },
+                entite_structure: { select: { nom: true } },
             },
         });
+        if (viewMode === 'PERSONNES') {
+            const rootScopeEntiteIds = this.collectDescendantEntiteIds(entites, rootId);
+            const requestedEntiteIds = this.parseEntiteIds(options?.entiteIds);
+            const directMatchEntiteIds = requestedEntiteIds
+                ? new Set(Array.from(rootScopeEntiteIds).filter((entiteId) => requestedEntiteIds.has(entiteId)))
+                : rootScopeEntiteIds;
+            const visibleAffectations = affectations.filter((affectation) => {
+                if (!shouldDisplayInPeopleOrgChart(affectation.id_role)) {
+                    return false;
+                }
+                return rootScopeEntiteIds.has(Number(affectation.id_entite));
+            });
+            const affectationById = new Map(visibleAffectations.map((affectation) => [
+                Number(affectation.id_affectation),
+                affectation,
+            ]));
+            const affiliationByAffectationId = new Map();
+            const directMatchIds = new Set();
+            visibleAffectations.forEach((affectation) => {
+                const affiliationLabel = this.buildAffiliationLabel(Number(affectation.id_entite), entiteById, rootId);
+                const affectationId = Number(affectation.id_affectation);
+                affiliationByAffectationId.set(affectationId, affiliationLabel);
+                if (!this.matchesPeopleFilter(affectation, options ?? {}, directMatchEntiteIds, affiliationLabel)) {
+                    return;
+                }
+                directMatchIds.add(affectationId);
+            });
+            if (directMatchIds.size === 0) {
+                return null;
+            }
+            const includedAffectationIds = new Set();
+            directMatchIds.forEach((affectationId) => {
+                let currentId = affectationId;
+                while (currentId != null && !includedAffectationIds.has(currentId)) {
+                    const currentAffectation = affectationById.get(currentId);
+                    if (!currentAffectation) {
+                        break;
+                    }
+                    includedAffectationIds.add(currentId);
+                    currentId = currentAffectation.id_affectation_n_plus_1
+                        ? Number(currentAffectation.id_affectation_n_plus_1)
+                        : null;
+                }
+            });
+            const personNodes = new Map();
+            includedAffectationIds.forEach((affectationId) => {
+                const affectation = affectationById.get(affectationId);
+                if (!affectation) {
+                    return;
+                }
+                personNodes.set(affectationId, {
+                    id_node: `affectation-${affectation.id_affectation}`,
+                    kind: 'personne',
+                    id_entite: Number(affectation.id_entite),
+                    id_user: Number(affectation.id_user),
+                    nom: `${affectation.utilisateur.prenom} ${affectation.utilisateur.nom}`.trim(),
+                    type_entite: 'PERSONNE',
+                    role_label: affectation.role?.libelle ?? affectation.id_role,
+                    structure_nom: affiliationByAffectationId.get(affectationId) ??
+                        this.buildAffiliationLabel(Number(affectation.id_entite), entiteById, rootId),
+                    email_institutionnel: affectation.utilisateur.email_institutionnel,
+                    hierarchy_level: affectation.role?.niveau_hierarchique ?? null,
+                    children: [],
+                });
+            });
+            const personRoots = [];
+            includedAffectationIds.forEach((affectationId) => {
+                const affectation = affectationById.get(affectationId);
+                const node = personNodes.get(affectationId);
+                if (!affectation || !node) {
+                    return;
+                }
+                const supervisorId = affectation.id_affectation_n_plus_1
+                    ? Number(affectation.id_affectation_n_plus_1)
+                    : null;
+                const supervisorNode = supervisorId ? personNodes.get(supervisorId) : undefined;
+                if (supervisorNode) {
+                    supervisorNode.children?.push(node);
+                }
+                else {
+                    personRoots.push(node);
+                }
+            });
+            personRoots.forEach((personRoot) => this.sortTreeChildren(personRoot));
+            if (personRoots.length === 0) {
+                return null;
+            }
+            if (personRoots.length === 1) {
+                return personRoots[0];
+            }
+            return {
+                id_node: `people-root-${root.id_entite ?? 'year'}`,
+                kind: 'structure',
+                id_entite: root.id_entite,
+                nom: `Hiérarchie des personnes - ${root.nom}`,
+                type_entite: 'PERSONNES',
+                children: personRoots,
+            };
+        }
         const responsablesMap = new Map();
         affectations.forEach((affectation) => {
             if (!shouldDisplayInOrgChart(affectation.id_role, affectation.role?.libelle)) {
@@ -217,10 +473,15 @@ let OrganigrammesService = class OrganigrammesService {
             const key = Number(affectation.id_entite);
             const list = responsablesMap.get(key) ?? [];
             list.push({
+                id_user: Number(affectation.id_user),
+                id_affectation: Number(affectation.id_affectation),
                 nom: affectation.utilisateur.nom,
                 prenom: affectation.utilisateur.prenom,
                 email_institutionnel: affectation.utilisateur.email_institutionnel,
                 id_role: affectation.id_role,
+                role_label: affectation.role?.libelle ?? affectation.id_role,
+                id_entite: Number(affectation.id_entite),
+                entite_nom: affectation.entite_structure?.nom ?? null,
             });
             responsablesMap.set(key, list);
         });
@@ -230,6 +491,7 @@ let OrganigrammesService = class OrganigrammesService {
                 node.responsables = responsables;
             }
         });
+        this.sortTreeChildren(root);
         return root;
     }
     mapOrganigramme(item) {
@@ -246,23 +508,41 @@ let OrganigrammesService = class OrganigrammesService {
         };
     }
     toCsv(root) {
-        const header = ['id_entite', 'nom', 'type_entite', 'parent_entite', 'responsables'].join(',');
+        const header = [
+            'id_node',
+            'kind',
+            'id_entite',
+            'id_user',
+            'nom',
+            'type_entite',
+            'role_label',
+            'structure_nom',
+            'parent_id',
+            'responsables',
+            'email',
+        ].join(',');
         const rows = [];
         const walk = (node, parentId) => {
             const responsables = (node.responsables || [])
-                .map((responsable) => `${responsable.prenom} ${responsable.nom} (${responsable.id_role})`)
+                .map((responsable) => `${responsable.prenom} ${responsable.nom} (${responsable.role_label ?? responsable.id_role})`)
                 .join(' | ');
             rows.push([
-                node.id_entite,
+                node.id_node,
+                node.kind,
+                node.id_entite ?? '',
+                node.id_user ?? '',
                 node.nom,
-                node.type_entite,
+                node.type_entite ?? '',
+                node.role_label ?? '',
+                node.structure_nom ?? '',
                 parentId ?? '',
                 responsables,
+                node.email_institutionnel ?? '',
             ]
                 .map((value) => `"${String(value).replace(/"/g, '""')}"`)
                 .join(','));
             for (const child of node.children || []) {
-                walk(child, node.id_entite);
+                walk(child, node.id_node);
             }
         };
         walk(root, null);
@@ -328,6 +608,41 @@ let OrganigrammesService = class OrganigrammesService {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&apos;');
     }
+    getNodeFill(layoutNode, fills) {
+        if (layoutNode.node.kind === 'personne') {
+            return '#334155';
+        }
+        const [r, g, b] = fills[Math.min(layoutNode.level, fills.length - 1)];
+        return `#${r.toString(16).padStart(2, '0')}${g
+            .toString(16)
+            .padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+    getNodeText(node) {
+        const title = node.nom.length > 28 ? `${node.nom.slice(0, 26)}...` : node.nom;
+        if (node.kind === 'personne') {
+            const roleLabel = node.role_label ?? 'Personne';
+            const secondary = roleLabel.length > 34 ? `${roleLabel.slice(0, 32)}...` : roleLabel;
+            const structureLabel = node.structure_nom ?? node.email_institutionnel ?? '';
+            const tertiary = structureLabel.length > 34
+                ? `${structureLabel.slice(0, 32)}...`
+                : structureLabel;
+            return {
+                title,
+                secondary,
+                tertiary,
+            };
+        }
+        const responsables = (node.responsables ?? [])
+            .slice(0, 2)
+            .map((resp) => `${resp.prenom} ${resp.nom}`)
+            .join(', ');
+        const tertiary = responsables.length > 34 ? `${responsables.slice(0, 32)}...` : responsables;
+        return {
+            title,
+            secondary: node.type_entite ?? '',
+            tertiary,
+        };
+    }
     toSvg(root, year) {
         const { layoutNodes, canvasW, canvasH, boxW, boxH, headerH, vGap, pageMargin, fills, } = this.buildLayout(root);
         const parts = [
@@ -347,22 +662,14 @@ let OrganigrammesService = class OrganigrammesService {
             }
         }
         for (const layoutNode of layoutNodes) {
-            const [r, g, b] = fills[Math.min(layoutNode.level, fills.length - 1)];
             const boxX = layoutNode.x - boxW / 2;
-            const label = layoutNode.node.nom.length > 28
-                ? `${layoutNode.node.nom.slice(0, 26)}...`
-                : layoutNode.node.nom;
-            const responsables = (layoutNode.node.responsables ?? [])
-                .slice(0, 2)
-                .map((resp) => `${resp.prenom} ${resp.nom}`)
-                .join(', ');
-            const respLabel = responsables.length > 34 ? `${responsables.slice(0, 32)}...` : responsables;
+            const { title, secondary, tertiary } = this.getNodeText(layoutNode.node);
             parts.push(`<rect x="${boxX + 2}" y="${layoutNode.y + 2}" width="${boxW}" height="${boxH}" rx="6" fill="#0f172a" fill-opacity="0.12"/>`);
-            parts.push(`<rect x="${boxX}" y="${layoutNode.y}" width="${boxW}" height="${boxH}" rx="6" fill="rgb(${r}, ${g}, ${b})"/>`);
-            parts.push(`<text x="${boxX + 8}" y="${layoutNode.y + 18}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">${this.escapeXml(label)}</text>`);
-            parts.push(`<text x="${boxX + 8}" y="${layoutNode.y + 30}" fill="#ffffff" fill-opacity="0.8" font-family="Arial, Helvetica, sans-serif" font-size="7">${this.escapeXml(layoutNode.node.type_entite)}</text>`);
-            if (respLabel) {
-                parts.push(`<text x="${boxX + 8}" y="${layoutNode.y + 44}" fill="#e0e7ff" font-family="Arial, Helvetica, sans-serif" font-size="6.5">${this.escapeXml(respLabel)}</text>`);
+            parts.push(`<rect x="${boxX}" y="${layoutNode.y}" width="${boxW}" height="${boxH}" rx="6" fill="${this.getNodeFill(layoutNode, fills)}"/>`);
+            parts.push(`<text x="${boxX + 8}" y="${layoutNode.y + 18}" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">${this.escapeXml(title)}</text>`);
+            parts.push(`<text x="${boxX + 8}" y="${layoutNode.y + 30}" fill="#ffffff" fill-opacity="0.8" font-family="Arial, Helvetica, sans-serif" font-size="7">${this.escapeXml(secondary)}</text>`);
+            if (tertiary) {
+                parts.push(`<text x="${boxX + 8}" y="${layoutNode.y + 44}" fill="#e0e7ff" font-family="Arial, Helvetica, sans-serif" font-size="6.5">${this.escapeXml(tertiary)}</text>`);
             }
         }
         parts.push('</svg>');
@@ -444,34 +751,26 @@ let OrganigrammesService = class OrganigrammesService {
             }
         }
         for (const ln of layoutNodes) {
-            const [r, g, b] = FILLS[Math.min(ln.level, FILLS.length - 1)];
-            const fill = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
             const boxX = ln.x - BOX_W / 2;
+            const { title, secondary, tertiary } = this.getNodeText(ln.node);
             doc.roundedRect(boxX + 2, ln.y + 2, BOX_W, BOX_H, 6).fill('#00000015');
-            doc.roundedRect(boxX, ln.y, BOX_W, BOX_H, 6).fill(fill);
-            const label = ln.node.nom.length > 28 ? `${ln.node.nom.slice(0, 26)}…` : ln.node.nom;
+            doc.roundedRect(boxX, ln.y, BOX_W, BOX_H, 6).fill(this.getNodeFill(ln, FILLS));
             doc
                 .fillColor('#ffffff')
                 .font('Helvetica-Bold')
                 .fontSize(9)
-                .text(label, boxX + 8, ln.y + 8, { width: BOX_W - 16, lineBreak: false });
+                .text(title, boxX + 8, ln.y + 8, { width: BOX_W - 16, lineBreak: false });
             doc
                 .fillColor('#ffffffcc')
                 .font('Helvetica')
                 .fontSize(7)
-                .text(ln.node.type_entite, boxX + 8, ln.y + 23, { width: BOX_W - 16, lineBreak: false });
-            const resps = ln.node.responsables ?? [];
-            if (resps.length > 0) {
-                const respLine = resps
-                    .slice(0, 2)
-                    .map((r) => `${r.prenom} ${r.nom}`)
-                    .join(', ');
-                const truncated = respLine.length > 34 ? `${respLine.slice(0, 32)}…` : respLine;
+                .text(secondary, boxX + 8, ln.y + 23, { width: BOX_W - 16, lineBreak: false });
+            if (tertiary) {
                 doc
                     .fillColor('#e0e7ff')
                     .font('Helvetica')
                     .fontSize(6.5)
-                    .text(truncated, boxX + 8, ln.y + 37, { width: BOX_W - 16, lineBreak: false });
+                    .text(tertiary, boxX + 8, ln.y + 37, { width: BOX_W - 16, lineBreak: false });
             }
         }
         doc.end();

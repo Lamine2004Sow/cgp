@@ -16,6 +16,7 @@ class ExportsQueryDto {
     yearId;
     entiteId;
     roleId;
+    template;
 }
 exports.ExportsQueryDto = ExportsQueryDto;
 __decorate([
@@ -37,4 +38,10 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ExportsQueryDto.prototype, "roleId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ExportsQueryDto.prototype, "template", void 0);
 //# sourceMappingURL=exports-query.dto.js.map

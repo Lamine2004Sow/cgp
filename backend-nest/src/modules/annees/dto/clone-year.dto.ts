@@ -1,4 +1,13 @@
-import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CloneYearDto {
   @IsString()
@@ -16,4 +25,11 @@ export class CloneYearDto {
   @IsOptional()
   @IsBoolean()
   copy_affectations?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  root_entite_ids?: number[];
 }

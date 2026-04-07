@@ -28,6 +28,7 @@ export interface UserListItem {
 export declare class UsersService {
     private readonly prisma;
     constructor(prisma: PrismaService);
+    private parseNumericId;
     findAll(query: UsersListQueryDto, currentUser: CurrentUser): Promise<PageResult<UserListItem>>;
     findOne(id: string, currentUser?: CurrentUser): Promise<UserListItem | null>;
     create(payload: CreateUserDto): Promise<UserListItem>;

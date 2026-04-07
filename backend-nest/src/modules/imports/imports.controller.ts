@@ -1,6 +1,8 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ROLE_IDS } from '../../auth/roles.constants';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { CurrentUser as CurrentUserType } from '../../common/types/current-user';
 import { ImportsService } from './imports.service';
 import { ImportResponsablesDto } from './dto/import-responsables.dto';
 import { ImportConfirmDto } from './dto/import-confirm.dto';
@@ -45,5 +47,23 @@ export class ImportsController {
   async importResponsables(@Body() payload: ImportResponsablesDto) {
     const result = await this.importsService.importResponsables(payload);
     return { result };
+  }
+
+  @Post('workbook/preview')
+  @Roles(ROLE_IDS.SERVICES_CENTRAUX)
+  async previewWorkbook(
+    @CurrentUser() user: CurrentUserType,
+    @Body() payload: any,
+  ) {
+    return this.importsService.previewWorkbook(user, payload);
+  }
+
+  @Post('workbook/confirm')
+  @Roles(ROLE_IDS.SERVICES_CENTRAUX)
+  async confirmWorkbook(
+    @CurrentUser() user: CurrentUserType,
+    @Body() payload: any,
+  ) {
+    return this.importsService.importWorkbook(user, payload);
   }
 }

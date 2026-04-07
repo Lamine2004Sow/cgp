@@ -4,6 +4,14 @@ import { AcademicYear, EntiteStructure } from "../types";
 import { apiFetch } from "../lib/api";
 import { FilterBar } from "./ui/filter-bar";
 import { readQueryParam, writeQueryParams } from "../lib/url-state";
+import {
+  EMPTY_HIERARCHY_FILTERS,
+  HIERARCHY_LEVELS,
+  type HierarchyFilters,
+  getDeepestSelectedEntiteId,
+  getDescendantEntiteIds,
+  getHierarchyOptions,
+} from "../lib/entite-hierarchy";
 
 interface DirectorySearchProps {
   currentYear: AcademicYear;
@@ -66,11 +74,19 @@ const PAGE_SIZE = 20;
 
 type ApiRole = { id: string; libelle: string };
 
+const HIERARCHY_EMPTY_LABELS: Record<keyof HierarchyFilters, string> = {
+  composanteId: "Toutes les composantes",
+  departementId: "Tous les départements",
+  mentionId: "Toutes les mentions",
+  parcoursId: "Tous les parcours",
+  niveauId: "Tous les niveaux",
+};
+
 export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySearchProps) {
   const [activeTab, setActiveTab] = useState<SearchTab>("responsables");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [composanteFilter, setComposanteFilter] = useState("");
+  const [hierarchyFilters, setHierarchyFilters] = useState<HierarchyFilters>(EMPTY_HIERARCHY_FILTERS);
   const [typeEntiteFilter, setTypeEntiteFilter] = useState("");
   const [typeDiplomeFilter, setTypeDiplomeFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -84,37 +100,31 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
   const [allRoles, setAllRoles] = useState<ApiRole[]>([]);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
-  // Composantes disponibles pour le filtre
-  const composantes = useMemo(
-    () => entites.filter((e) => e.type_entite === "COMPOSANTE"),
-    [entites],
+  const hierarchyOptions = useMemo(
+    () => getHierarchyOptions(entites, hierarchyFilters, currentYear.id),
+    [entites, hierarchyFilters, currentYear.id],
   );
 
-  // Calcul des IDs enfants d'une composante sélectionnée (BFS sur l'arbre local)
   const entiteIds = useMemo((): string | undefined => {
-    if (!composanteFilter) return undefined;
-    const byParent = new Map<number, number[]>();
-    entites.forEach((e) => {
-      if (e.id_entite_parent) {
-        if (!byParent.has(e.id_entite_parent)) byParent.set(e.id_entite_parent, []);
-        byParent.get(e.id_entite_parent)!.push(e.id_entite);
-      }
-    });
-    const result = new Set<number>();
-    const queue = [Number(composanteFilter)];
-    while (queue.length) {
-      const id = queue.shift()!;
-      result.add(id);
-      (byParent.get(id) ?? []).forEach((c) => queue.push(c));
+    const selectedEntiteId = getDeepestSelectedEntiteId(hierarchyFilters);
+    if (!selectedEntiteId) {
+      return undefined;
     }
-    return Array.from(result).join(",");
-  }, [composanteFilter, entites]);
+
+    return Array.from(
+      getDescendantEntiteIds(entites, selectedEntiteId, { yearId: currentYear.id }),
+    ).join(",");
+  }, [currentYear.id, entites, hierarchyFilters]);
 
   useEffect(() => {
     const tab = readQueryParam("ds_tab");
     const q = readQueryParam("ds_q");
     const role = readQueryParam("ds_role");
     const comp = readQueryParam("ds_comp");
+    const dept = readQueryParam("ds_dept");
+    const mention = readQueryParam("ds_mention");
+    const parcours = readQueryParam("ds_parcours");
+    const niveau = readQueryParam("ds_niveau");
     const type = readQueryParam("ds_type");
     const diplome = readQueryParam("ds_diplome");
     const p = readQueryParam("ds_page");
@@ -124,7 +134,13 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
     }
     setQuery(q || "");
     setRoleFilter(role || "");
-    setComposanteFilter(comp || "");
+    setHierarchyFilters({
+      composanteId: comp || "",
+      departementId: dept || "",
+      mentionId: mention || "",
+      parcoursId: parcours || "",
+      niveauId: niveau || "",
+    });
     setTypeEntiteFilter(type || "");
     setTypeDiplomeFilter(diplome || "");
     setPage(p ? Number(p) : 1);
@@ -133,7 +149,7 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, query, roleFilter, composanteFilter, typeEntiteFilter, typeDiplomeFilter, currentYear.id]);
+  }, [activeTab, query, roleFilter, hierarchyFilters, typeEntiteFilter, typeDiplomeFilter, currentYear.id]);
 
   useEffect(() => {
     // Réinitialiser les filtres spécifiques à chaque onglet au changement d'onglet
@@ -210,13 +226,17 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const hasActiveFilters = Boolean(
-    query.trim() || roleFilter || composanteFilter || typeEntiteFilter || typeDiplomeFilter,
+    query.trim() ||
+      roleFilter ||
+      Object.values(hierarchyFilters).some(Boolean) ||
+      typeEntiteFilter ||
+      typeDiplomeFilter,
   );
 
   const resetFilters = () => {
     setQuery("");
     setRoleFilter("");
-    setComposanteFilter("");
+    setHierarchyFilters(EMPTY_HIERARCHY_FILTERS);
     setTypeEntiteFilter("");
     setTypeDiplomeFilter("");
   };
@@ -227,12 +247,16 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
       ds_tab: activeTab,
       ds_q: query,
       ds_role: roleFilter,
-      ds_comp: composanteFilter,
+      ds_comp: hierarchyFilters.composanteId,
+      ds_dept: hierarchyFilters.departementId,
+      ds_mention: hierarchyFilters.mentionId,
+      ds_parcours: hierarchyFilters.parcoursId,
+      ds_niveau: hierarchyFilters.niveauId,
       ds_type: typeEntiteFilter,
       ds_diplome: typeDiplomeFilter,
       ds_page: page === 1 ? "" : page,
     });
-  }, [activeTab, query, roleFilter, composanteFilter, typeEntiteFilter, typeDiplomeFilter, page, filtersHydrated]);
+  }, [activeTab, query, roleFilter, hierarchyFilters, typeEntiteFilter, typeDiplomeFilter, page, filtersHydrated]);
 
   return (
     <div className="space-y-6">
@@ -278,26 +302,37 @@ export function DirectorySearch({ currentYear, authLogin, entites }: DirectorySe
               type: "search",
               value: query,
               onChange: (value) => setQuery(value),
-              placeholder: "Nom, prénom, login, email, code composante…",
+              placeholder: "Nom, prénom, login, email, ID, code composante…",
             },
-            ...(composantes.length > 0
-              ? [
-                  {
-                    key: "composante",
-                    label: "Composante",
-                    type: "select" as const,
-                    value: composanteFilter,
-                    onChange: (value: string) => setComposanteFilter(value),
-                    options: [
-                      { value: "", label: "Toutes les composantes" },
-                      ...composantes.map((c) => ({
-                        value: String(c.id_entite),
-                        label: c.code_composante ? `${c.nom} (${c.code_composante})` : c.nom,
-                      })),
-                    ],
-                  },
-                ]
-              : []),
+            ...HIERARCHY_LEVELS.map((level, index) => {
+              const options = hierarchyOptions[level.key];
+              return {
+                key: level.key,
+                label: level.label,
+                type: "select" as const,
+                value: hierarchyFilters[level.key],
+                onChange: (value: string) =>
+                  setHierarchyFilters((prev) => {
+                    const next = { ...prev };
+                    for (let currentIndex = index; currentIndex < HIERARCHY_LEVELS.length; currentIndex += 1) {
+                      const currentLevel = HIERARCHY_LEVELS[currentIndex];
+                      next[currentLevel.key] = currentLevel.key === level.key ? value : "";
+                    }
+                    return next;
+                  }),
+                disabled: options.length === 0,
+                options: [
+                  { value: "", label: HIERARCHY_EMPTY_LABELS[level.key] },
+                  ...options.map((entite) => ({
+                    value: String(entite.id_entite),
+                    label:
+                      entite.type_entite === "COMPOSANTE" && entite.code_composante
+                        ? `${entite.nom} (${entite.code_composante})`
+                        : entite.nom,
+                  })),
+                ],
+              };
+            }),
             ...(activeTab === "responsables"
               ? [
                   {
