@@ -25,6 +25,7 @@ La documentation détaillée se trouve dans [documentation/README.md](./document
 
 Points d'entrée principaux:
 
+- [documentation/MANUEL_UTILISATEUR.md](./documentation/MANUEL_UTILISATEUR.md)
 - [documentation/MANUEL_TECHNIQUE.md](./documentation/MANUEL_TECHNIQUE.md)
 - [documentation/API_BACKEND.md](./documentation/API_BACKEND.md)
 - [documentation/EXPLOITATION_MAINTENANCE.md](./documentation/EXPLOITATION_MAINTENANCE.md)

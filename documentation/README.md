@@ -1,12 +1,16 @@
-# Documentation Technique
+# Documentation Projet
 
-Cette documentation sert de base de travail pour trois profils:
+Cette documentation sert de base de travail pour quatre profils:
 
+- utilisateurs métier qui doivent utiliser l'application au quotidien
 - développeurs qui doivent comprendre l'architecture et modifier le code
 - testeurs qui doivent valider les parcours clés et les droits
 - mainteneurs qui doivent démarrer, diagnostiquer, sauvegarder et faire évoluer la plateforme
 
 ## Sommaire
+
+- [MANUEL_UTILISATEUR.md](./MANUEL_UTILISATEUR.md)
+  Guide d'utilisation orienté métier, avec liste précise des captures d'écran à produire.
 
 - [MANUEL_TECHNIQUE.md](./MANUEL_TECHNIQUE.md)
   Vue d'ensemble du produit, architecture, modules, modèle de données et conventions.
