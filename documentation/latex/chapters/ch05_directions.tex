@@ -1,0 +1,182 @@
+\chapter{Manuel --- Directions et Responsables P\'edagogiques}
+\label{chap:directions}
+
+\begin{rolebox}{directeur-departement, vice-president-departement, directeur-adjoint-licence, responsable-service-pedagogique, responsable-adjoint-service-pedagogique, directeur-mention, directeur-specialite, responsable-formation, responsable-annee, directeur-etudes, responsable-qualite, responsable-international, referent-commun, directeur-adjoint-ecole}
+  Ce chapitre couvre l'ensemble des r\^oles de direction au niveau d\'epartement, mention, parcours, niveau ou service. Ces r\^oles ont des droits d'\'ecriture limit\'es \`a leur p\'erim\`etre et ne peuvent pas g\'erer les utilisateurs.
+\end{rolebox}
+
+\section{Vue d'ensemble du profil}
+
+Les r\^oles de direction et de responsabilit\'e p\'edagogique disposent des fonctionnalit\'es suivantes\,:
+
+\begin{itemize}
+  \item \textbf{Consultation de l'annuaire} (responsables, formations, structures, secr\'etariats).
+  \item \textbf{Gestion des affectations} dans leur p\'erim\`etre (cr\'eation et modification de contacts de r\^ole).
+  \item \textbf{G\'en\'eration d'organigrammes} pour leur structure et ses descendants.
+  \item \textbf{Consultation de la biblioth\`eque} d'organigrammes.
+  \item \textbf{Gestion des d\'el\'egations}.
+  \item \textbf{Demandes de r\^oles} personnalis\'es.
+  \item \textbf{Signalements}.
+\end{itemize}
+
+\begin{notebox}[Ce qui n'est PAS disponible]
+  Ces r\^oles \textbf{ne peuvent pas}\,:
+  \begin{itemize}
+    \item Cr\'eer, modifier ou supprimer des comptes utilisateurs.
+    \item Importer ou exporter des donn\'ees (sauf si la d\'el\'egation le pr\'evoit).
+    \item G\'erer les ann\'ees acad\'emiques.
+    \item Modifier les structures.
+    \item Consulter le journal d'audit.
+  \end{itemize}
+\end{notebox}
+
+\section{Tableau de bord}
+
+\screenshot{img_dashboard_direction}{Tableau de bord -- Directions et Responsables}{Capturer le tableau de bord avec un compte de type direction (ex. directeur-departement ou directeur-mention). Montrer les tuiles disponibles pour ce profil, l'ann\'ee courante (non modifiable) et les notifications.}
+
+\section{Annuaire -- Recherche}
+
+L'annuaire est la fonctionnalit\'e principale pour les r\^oles de direction. Il permet de retrouver rapidement les responsables, formations, structures et secr\'etariats.
+
+\begin{steps}
+  \item Naviguer vers \textbf{Rechercher} dans le menu.
+  \item S\'electionner l'onglet souhait\'e\,: \textbf{Responsables}, \textbf{Formations}, \textbf{Structures} ou \textbf{Secr\'etariats}.
+  \item Saisir un texte dans la barre de recherche et/ou utiliser les filtres.
+  \item Les r\'esultats s'affichent en dessous.
+\end{steps}
+
+\screenshot{img_annuaire_direction}{Annuaire -- Vue Directions}{Capturer la page Recherche avec l'onglet Responsables actif, une recherche effectu\'ee et les r\'esultats visibles. Montrer les filtres (composante, d\'epartement, mention) et le tableau de r\'esultats.}
+
+Pour les d\'etails complets de l'annuaire, voir le chapitre~\ref{chap:commun}.
+
+\section{Gestion des affectations dans le p\'erim\`etre}
+
+Les r\^oles de direction peuvent g\'erer les affectations au sein de leur structure.
+
+\subsection{Cr\'eer ou modifier une affectation}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Responsables}.
+  \item Rechercher la personne concern\'ee.
+  \item Cliquer sur \textbf{Ajouter un r\^ole} (dans la fiche de la personne).
+  \item S\'electionner le \textit{R\^ole}, la \textit{Structure} (limit\'ee au p\'erim\`etre autoris\'e).
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\begin{notebox}[P\'erim\`etre des affectations]
+  Un directeur de d\'epartement ne peut cr\'eer des affectations que pour son d\'epartement et ses sous-structures (mentions, parcours, niveaux). Il ne peut pas affecter des r\^oles dans d'autres d\'epartements.
+\end{notebox}
+
+\screenshot{img_affectation_direction}{Cr\'eation d'affectation -- Direction}{Capturer le formulaire d'affectation pour un r\^ole de direction. Montrer que les menus d\'eroulants de structure sont limit\'es au p\'erim\`etre du r\^ole (ex. d\'epartements disponibles = uniquement le d\'epartement de l'utilisateur).}
+
+\subsection{Mettre \`a jour un contact de r\^ole}
+
+\begin{steps}
+  \item Localiser l'affectation dans la liste \textbf{Responsables}.
+  \item Cliquer sur \textbf{Contact de r\^ole}.
+  \item Renseigner ou mettre \`a jour\,: \textit{Courriel fonctionnel}, \textit{T\'el\'ephone}, \textit{Bureau}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\begin{tipbox}
+  La mise \`a jour des contacts de r\^ole est particuli\`erement importante pour les secr\'etariats et les responsables de formation, car ces informations sont visibles dans l'annuaire par tous les utilisateurs.
+\end{tipbox}
+
+\section{Fiches Structures}
+
+Les directions peuvent consulter les fiches de structure dans leur p\'erim\`etre.
+
+\begin{steps}
+  \item Naviguer vers \textbf{Structures} ou rechercher dans l'annuaire.
+  \item Cliquer sur la structure souhait\'ee.
+  \item La fiche d\'etaill\'ee affiche\,: hi\'erarchie, responsables, secr\'etariat, sous-structures, statistiques.
+\end{steps}
+
+\screenshot{img_fiche_structure_direction}{Fiche structure -- vue Direction}{Capturer la fiche d\'etaill\'ee d'une structure (d\'epartement ou mention). Montrer les sections\,: titre, hi\'erarchie parente, liste des responsables avec leurs r\^oles, liste du secr\'etariat, sous-structures, et statistiques chiffr\'ees.}
+
+\section{Organigrammes}
+
+\subsection{G\'en\'erer un organigramme pour son p\'erim\`etre}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Organigramme}.
+  \item Choisir la vue (\textbf{Structures} ou \textbf{Personnes}).
+  \item S\'electionner la structure racine parmi celles de son p\'erim\`etre.
+  \item Appliquer les filtres (r\^ole, niveau, etc.).
+  \item Cliquer sur \textbf{G\'en\'erer}.
+\end{steps}
+
+\screenshot{img_organigramme_direction}{Organigramme -- G\'en\'eration pour une Direction}{Capturer la page organigramme avec la vue Personnes, le s\'electeur de structure racine (montrant le d\'epartement ou la mention de l'utilisateur) et les filtres. Montrer le r\'esultat g\'en\'er\'e si possible.}
+
+\subsection{Consulter la biblioth\`eque}
+
+\begin{steps}
+  \item Dans la page \textbf{Organigramme}, acc\'eder \`a la section \og Biblioth\`eque \fg{}.
+  \item Filtrer par structure ou type de vue.
+  \item Cliquer sur \textbf{Voir en structures} ou \textbf{Voir en personnes} pour consulter un organigramme.
+\end{steps}
+
+\begin{notebox}[Consultation \'etendue]
+  Les r\^oles de direction peuvent consulter les organigrammes d\'ej\`a g\'en\'er\'es par d'autres utilisateurs, m\^eme pour des structures hors de leur p\'erim\`etre. En revanche, ils ne peuvent g\'en\'erer des organigrammes que pour leur p\'erim\`etre.
+\end{notebox}
+
+\section{D\'el\'egations}
+
+Les directions peuvent d\'el\'eguer leurs droits \`a un autre utilisateur dans leur p\'erim\`etre.
+
+\subsection{Cr\'eer une d\'el\'egation}
+
+\begin{steps}
+  \item Naviguer vers \textbf{D\'el\'egations}.
+  \item Cliquer sur \textbf{Cr\'eer une d\'el\'egation}.
+  \item S\'electionner le \textit{D\'el\'egu\'e} (utilisateur existant).
+  \item S\'electionner la \textit{Structure concern\'ee} (dans votre p\'erim\`etre).
+  \item Indiquer les \textit{dates de d\'ebut et de fin}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_delegations_direction}{D\'el\'egations -- Directions}{Capturer la page D\'el\'egations avec la liste des d\'el\'egations actives et le formulaire de cr\'eation visible (ou le bouton Cr\'eer).}
+
+\subsection{R\'evoquer une d\'el\'egation}
+
+\begin{steps}
+  \item Dans la liste, cliquer sur la d\'el\'egation.
+  \item Cliquer sur \textbf{R\'evoquer}.
+  \item Confirmer.
+\end{steps}
+
+\section{Demandes de r\^oles}
+
+Les directions peuvent soumettre des demandes de r\^oles personnalis\'es pour des personnes de leur p\'erim\`etre.
+
+\subsection{Soumettre une demande}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Demandes de r\^oles}.
+  \item Cliquer sur \textbf{Nouvelle demande}.
+  \item Renseigner\,: \textit{Utilisateur}, \textit{R\^ole demand\'e}, \textit{Structure}, \textit{Justification}.
+  \item Cliquer sur \textbf{Envoyer}.
+\end{steps}
+
+\screenshot{img_demandes_roles_direction}{Demandes de r\^oles -- Directions}{Capturer la page demandes de r\^oles avec la liste des demandes (en attente, approuv\'ees, refus\'ees) et le formulaire ou bouton de nouvelle demande.}
+
+\subsection{Suivre ses demandes}
+
+Les statuts possibles sont\,:
+\begin{itemize}
+  \item \textbf{En attente} : examen par les Services Centraux en cours.
+  \item \textbf{Approuv\'ee} : r\^ole attribu\'e, affectation cr\'e\'ee.
+  \item \textbf{Refus\'ee} : demande rejet\'ee (consulter le commentaire de justification).
+\end{itemize}
+
+\section{Signalements}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Signalements}.
+  \item Cliquer sur \textbf{Cr\'eer un signalement}.
+  \item S\'electionner le \textit{type d'erreur} et la \textit{personne ou structure concern\'ee}.
+  \item D\'ecrire le probl\`eme.
+  \item Cliquer sur \textbf{Envoyer}.
+\end{steps}
+
+\screenshot{img_signalements_direction}{Signalements -- Directions}{Capturer la page Signalements. Montrer le formulaire de cr\'eation et la liste des signalements de l'utilisateur avec les statuts.}

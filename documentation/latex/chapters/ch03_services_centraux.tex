@@ -1,0 +1,507 @@
+\chapter{Manuel --- Services Centraux}
+\label{chap:sc}
+
+\begin{rolebox}{services-centraux}
+  Ce chapitre d\'ecrit \textbf{l'ensemble} des fonctionnalit\'es accessibles au r\^ole \texttt{services-centraux}, qui dispose d'un acc\`es complet et non restreint \`a l'application.
+\end{rolebox}
+
+\section{Tableau de bord}
+
+Le tableau de bord est la page d'accueil apr\`es connexion. Pour les Services Centraux, il affiche\,:
+
+\begin{itemize}
+  \item Le \textbf{s\'electeur d'ann\'ee acad\'emique} permettant de basculer entre toutes les ann\'ees disponibles.
+  \item Des \textbf{statistiques globales} (nombre de structures, utilisateurs, affectations, signalements en attente).
+  \item Des \textbf{raccourcis} vers toutes les rubriques du menu.
+  \item Les \textbf{notifications} non lues.
+\end{itemize}
+
+\screenshot{img_dashboard_sc}{Tableau de bord -- Services Centraux}{Capturer la page tableau de bord avec un compte services-centraux. Montrer\,: le s\'electeur d'ann\'ee ouvert (menu d\'eroulant visible), les statistiques chiffr\'ees, les raccourcis de navigation et la cloche de notification avec un badge.}
+
+\section{Gestion des ann\'ees acad\'emiques}
+
+La rubrique \textbf{Ann\'ees} (accessible via le menu) permet de g\'erer le cycle de vie des ann\'ees acad\'emiques.
+
+\screenshot{img_annees_liste}{Liste des ann\'ees acad\'emiques}{Capturer la page de gestion des ann\'ees. Montrer la liste des ann\'ees existantes avec leurs statuts (EN\_COURS, PREPARATION, ARCHIVEE) repr\'esent\'es par des badges de couleur, et les boutons d'action disponibles pour chaque ann\'ee.}
+
+\subsection{Statuts des ann\'ees}
+
+Chaque ann\'ee poss\`ede un statut\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{L{3cm}C{2.5cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Statut} & \textbf{Couleur} & \textbf{Signification} \\
+  \midrule
+  \texttt{EN\_COURS}   & \cellcolor{cgplightgreen}Vert  & Ann\'ee active visible par tous les utilisateurs. Une seule ann\'ee peut avoir ce statut. \\
+  \rowcolor{cgplightgray}
+  \texttt{PREPARATION} & \cellcolor{cgplightorange}Orange & Ann\'ee en pr\'eparation, non encore active. Visible uniquement pour les SC. \\
+  \texttt{ARCHIVEE}    & \cellcolor{cgplightgray}Gris  & Ann\'ee cl\^otur\'ee. Donn\'ees consultables mais non modifiables (sauf par SC). \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Cr\'eer une nouvelle ann\'ee}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Ann\'ees} dans le menu.
+  \item Cliquer sur le bouton \textbf{Cr\'eer une ann\'ee}.
+  \item Remplir le formulaire\,:
+    \begin{itemize}
+      \item \textit{Libell\'e} : intitul\'e de l'ann\'ee (ex. : \og 2025-2026 \fg).
+      \item \textit{Statut initial} : PREPARATION (recommand\'e) ou EN\_COURS.
+    \end{itemize}
+  \item Cliquer sur \textbf{Cr\'eer}.
+\end{steps}
+
+\screenshot{img_annee_creer}{Formulaire de cr\'eation d'ann\'ee}{Capturer le formulaire de cr\'eation d'une nouvelle ann\'ee acad\'emique avec tous les champs visibles. Le formulaire peut \^etre une modale ou un panneau lat\'eral selon l'interface.}
+
+\subsection{Cloner une ann\'ee existante}
+
+Le clonage permet de cr\'eer une nouvelle ann\'ee en copiant tout ou partie des donn\'ees d'une ann\'ee source (structures, affectations).
+
+\begin{steps}
+  \item Sur la liste des ann\'ees, cliquer sur \textbf{Cloner} (ou l'ic\^one correspondante) \`a c\^ot\'e de l'ann\'ee source.
+  \item Configurer le clonage\,:
+    \begin{itemize}
+      \item \textit{Libell\'e} de la nouvelle ann\'ee.
+      \item \textit{Structures \`a cloner} : toutes ou s\'election partielle.
+      \item \textit{Copier les affectations} : oui ou non (si non, seules les structures sont copi\'ees).
+    \end{itemize}
+  \item Cliquer sur \textbf{Confirmer le clonage}.
+  \item L'application cr\'ee la nouvelle ann\'ee et affiche une confirmation.
+\end{steps}
+
+\screenshot{img_annee_cloner}{Formulaire de clonage d'ann\'ee}{Capturer le formulaire de clonage d'ann\'ee, montrant\,: le champ libell\'e, la liste de s\'election des structures \`a inclure (cases \`a cocher), et l'option de copie des affectations. Si c'est une modale, capturer la modale enti\`ere.}
+
+\begin{tipbox}[Cloner sans les affectations]
+  Le clonage sans les affectations est utile en d\'ebut d'ann\'ee lorsque les r\'eorganisations sont fr\'equentes. Les structures seront en place, mais les responsables devront \^etre affect\'es manuellement.
+\end{tipbox}
+
+\subsection{Changer le statut d'une ann\'ee}
+
+\begin{steps}
+  \item Sur la liste des ann\'ees, localiser l'ann\'ee souhait\'ee.
+  \item Cliquer sur le bouton \textbf{Activer} (pour passer en EN\_COURS) ou \textbf{Archiver} selon la transition souhait\'ee.
+  \item Confirmer le changement dans la bo\^ite de dialogue.
+\end{steps}
+
+\begin{warnbox}[Passage en EN\_COURS]
+  Activer une ann\'ee en EN\_COURS archive automatiquement l'ann\'ee pr\'ec\'edemment active. Cette action affecte tous les utilisateurs\,: ils basculeront sur la nouvelle ann\'ee courante.
+\end{warnbox}
+
+\subsection{Supprimer une ann\'ee}
+
+\begin{steps}
+  \item Sur la liste des ann\'ees, cliquer sur \textbf{Supprimer} pour l'ann\'ee concern\'ee.
+  \item L'application g\'en\`ere \textbf{automatiquement une sauvegarde} (export Excel) avant suppression.
+  \item T\'el\'echarger la sauvegarde propos\'ee.
+  \item Confirmer la suppression en saisissant le libell\'e de l'ann\'ee si demand\'e.
+\end{steps}
+
+\begin{warnbox}[Suppression irr\'eversible]
+  La suppression d'une ann\'ee est \textbf{d\'efinitive}. Assurez-vous d'avoir t\'el\'echarg\'e et archiv\'e la sauvegarde avant de confirmer.
+\end{warnbox}
+
+%% ============================================================
+\section{Gestion des utilisateurs}
+%% ============================================================
+
+La rubrique \textbf{Responsables} (ou via la gestion des utilisateurs dans les param\`etres) permet de cr\'eer, modifier et supprimer des comptes utilisateurs.
+
+\screenshot{img_users_liste}{Liste des utilisateurs}{Capturer la page de gestion des utilisateurs/responsables avec la barre de recherche, les filtres hi\'erarchiques (composante, d\'epartement, etc.) et le tableau ou la liste de r\'esultats. Montrer au moins 5 utilisateurs diff\'erents.}
+
+\subsection{Cr\'eer un utilisateur}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Responsables} dans le menu.
+  \item Cliquer sur \textbf{Cr\'eer un utilisateur}.
+  \item Remplir le formulaire\,:
+    \begin{itemize}
+      \item \textit{Nom} (obligatoire)
+      \item \textit{Pr\'enom} (obligatoire)
+      \item \textit{Identifiant / Login} (obligatoire, unique dans le syst\`eme)
+      \item \textit{Courriel institutionnel}
+      \item \textit{T\'el\'ephone}
+      \item \textit{Bureau}
+    \end{itemize}
+  \item Cliquer sur \textbf{Enregistrer}.
+  \item L'utilisateur est cr\'e\'e. Il faut ensuite lui attribuer une ou plusieurs affectations.
+\end{steps}
+
+\screenshot{img_user_creer}{Formulaire de cr\'eation d'utilisateur}{Capturer le formulaire de cr\'eation d'un utilisateur avec tous les champs visibles. Le formulaire peut \^etre une page d\'edi\'ee, une modale ou un panneau lat\'eral.}
+
+\subsection{Modifier un utilisateur}
+
+\begin{steps}
+  \item Rechercher l'utilisateur via la barre de recherche (nom, pr\'enom, identifiant).
+  \item Cliquer sur l'utilisateur dans la liste des r\'esultats.
+  \item Cliquer sur \textbf{Modifier}.
+  \item Mettre \`a jour les champs souhait\'es.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\begin{notebox}
+  Un utilisateur ne peut pas modifier lui-m\^eme son propre nom, pr\'enom ou identifiant. Ces champs sont r\'eserv\'es aux Services Centraux et aux directeurs de composante.
+\end{notebox}
+
+\subsection{Supprimer un utilisateur}
+
+\begin{steps}
+  \item Rechercher l'utilisateur.
+  \item Cliquer sur l'utilisateur puis sur \textbf{Supprimer}.
+  \item Confirmer la suppression.
+\end{steps}
+
+\begin{warnbox}
+  La suppression d'un utilisateur entra\^ine la suppression de toutes ses affectations. Cette action est \textbf{irr\'eversible}.
+\end{warnbox}
+
+%% ============================================================
+\section{Gestion des structures}
+%% ============================================================
+
+\begin{rolebox}{services-centraux}
+  Seuls les Services Centraux peuvent \textbf{modifier} les informations d'une structure. Tous les utilisateurs peuvent les consulter.
+\end{rolebox}
+
+\screenshot{img_structures_liste}{Liste des structures}{Capturer la page de gestion des structures avec la barre de recherche et le tableau listant les structures (nom, type, parent, ann\'ee). Montrer plusieurs types de structures diff\'erentes.}
+
+\subsection{Consulter une fiche structure}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Structures} dans le menu.
+  \item Rechercher la structure par son nom ou son code.
+  \item Cliquer sur la structure pour ouvrir sa fiche d\'etaill\'ee.
+\end{steps}
+
+La fiche structure affiche\,:
+\begin{itemize}
+  \item \textbf{Identification} : nom, type, code, ann\'ee.
+  \item \textbf{Hi\'erarchie} : structure parente et sous-structures directes.
+  \item \textbf{Coordonn\'ees} : adresse, t\'el\'ephone, courriel fonctionnel.
+  \item \textbf{Responsables} : liste des personnes affect\'ees avec leurs r\^oles.
+  \item \textbf{Secr\'etariat} : contacts du secr\'etariat p\'edagogique.
+  \item \textbf{Statistiques} : nombre d'affectations, de sous-structures, etc.
+\end{itemize}
+
+\screenshot{img_structure_detail}{Fiche d\'etaill\'ee d'une structure}{Capturer la fiche compl\`ete d'une structure (composante ou d\'epartement). Montrer toutes les sections\,: identification, hi\'erarchie, responsables, secr\'etariat. Faire d\'efiler si n\'ecessaire et capturer l'ensemble ou faire plusieurs captures pour chaque section.}
+
+\subsection{Modifier une structure}
+
+\begin{steps}
+  \item Ouvrir la fiche de la structure \`a modifier.
+  \item Cliquer sur \textbf{Modifier} (ou l'ic\^one crayon).
+  \item Mettre \`a jour les champs autoris\'es\,: nom, coordonn\'ees, etc.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_structure_modifier}{Formulaire de modification d'une structure}{Capturer le formulaire d'\'edition d'une structure en mode modification. Tous les champs \'editables doivent \^etre visibles (nom, coordonn\'ees, adresse, courriel fonctionnel).}
+
+%% ============================================================
+\section{Gestion des affectations}
+%% ============================================================
+
+Les affectations lient un \textbf{utilisateur} \`a un \textbf{r\^ole} dans une \textbf{structure} pour une \textbf{ann\'ee} donn\'ee.
+
+\screenshot{img_affectations_liste}{Interface de gestion des affectations}{Capturer la page de gestion des responsables/affectations avec les filtres hi\'erarchiques (composante, d\'epartement, mention, parcours, niveau) et les r\'esultats de recherche. Montrer une liste d'affectations avec nom, r\^ole et structure.}
+
+\subsection{Cr\'eer une affectation}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Responsables} dans le menu.
+  \item Rechercher l'utilisateur concern\'e.
+  \item Dans la fiche de l'utilisateur, cliquer sur \textbf{Ajouter un r\^ole} (ou \textbf{Nouvelle affectation}).
+  \item S\'electionner\,:
+    \begin{itemize}
+      \item \textit{R\^ole} dans la liste des r\^oles disponibles.
+      \item \textit{Composante} (obligatoire).
+      \item \textit{D\'epartement}, \textit{Mention}, \textit{Parcours}, \textit{Niveau} (selon le r\^ole et la granularit\'e souhait\'ee).
+      \item \textit{N+1} : le superviseur hi\'erarchique direct (optionnel).
+    \end{itemize}
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_affectation_creer}{Formulaire de cr\'eation d'affectation}{Capturer le formulaire de cr\'eation d'affectation avec tous les menus d\'eroulants visibles\,: r\^ole, composante, d\'epartement, mention, parcours, niveau, et superviseur N+1. Si certains champs sont conditionnels, montrer un \'etat avec plusieurs niveaux s\'electionn\'es.}
+
+\subsection{Modifier ou supprimer une affectation}
+
+\begin{steps}
+  \item Localiser l'affectation dans la liste (rechercher par nom, r\^ole ou structure).
+  \item Cliquer sur l'affectation.
+  \item Pour modifier : cliquer sur \textbf{Modifier}, apporter les changements, puis \textbf{Enregistrer}.
+  \item Pour supprimer : cliquer sur \textbf{Supprimer} et confirmer.
+\end{steps}
+
+\subsection{G\'erer les contacts de r\^ole}
+
+Un contact de r\^ole est une information de contact fonctionnelle associ\'ee \`a une affectation\,: courriel fonctionnel, t\'el\'ephone de service, bureau.
+
+\begin{steps}
+  \item Localiser l'affectation concern\'ee.
+  \item Cliquer sur \textbf{Contact de r\^ole} (ou \textbf{\'Editer le contact}).
+  \item Renseigner\,:
+    \begin{itemize}
+      \item \textit{Courriel fonctionnel} (ex. : \texttt{dir.composante@univ.fr})
+      \item \textit{T\'el\'ephone de service}
+      \item \textit{Bureau fonctionnel}
+    \end{itemize}
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_affectation_contact}{Formulaire de contact de r\^ole}{Capturer le formulaire d'\'edition du contact de r\^ole d'une affectation (courriel fonctionnel, t\'el\'ephone, bureau). Ce formulaire appara\^it g\'en\'eralement dans un panneau lat\'eral ou une modale.}
+
+%% ============================================================
+\section{Import et Export de donn\'ees}
+%% ============================================================
+
+La rubrique \textbf{Import / Export} permet d'\'echanger des donn\'ees via des classeurs Excel standardis\'es (format \texttt{CGP\_STANDARD\_V1}).
+
+\screenshot{img_import_export}{Page Import / Export}{Capturer la page Import/Export enti\`ere. Montrer les deux zones principales\,: la zone Export (avec les options de s\'election d'ann\'ee et de structure) et la zone Import (avec la zone de d\'ep\^ot de fichier).}
+
+\subsection{Exporter un classeur}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Import / Export}.
+  \item Dans la section \textbf{Export}\,:
+    \begin{itemize}
+      \item S\'electionner l'\textit{Ann\'ee} \`a exporter.
+      \item Optionnel : s\'electionner une \textit{Structure} sp\'ecifique (laisser vide pour exporter toute l'ann\'ee).
+      \item Choisir le \textit{Format} (Excel recommand\'e).
+    \end{itemize}
+  \item Cliquer sur \textbf{T\'el\'echarger}.
+  \item Le fichier Excel est t\'el\'echarg\'e dans le dossier de t\'el\'echargements du navigateur.
+\end{steps}
+
+\subsection{Exporter un mod\`ele vierge}
+
+Pour obtenir un mod\`ele de classeur vide (pour saisie manuelle) :
+
+\begin{steps}
+  \item Dans la section Export, cliquer sur \textbf{T\'el\'echarger le mod\`ele vierge}.
+  \item Remplir le mod\`ele selon les instructions contenues dans les onglets du classeur.
+\end{steps}
+
+\subsection{Importer un classeur}
+
+\begin{steps}
+  \item Dans la section \textbf{Import}, cliquer sur \textbf{S\'electionner un fichier} ou faire glisser le fichier \texttt{.xlsx} dans la zone de d\'ep\^ot.
+  \item Optionnel : s\'electionner une \textit{Structure cible} pour limiter l'import \`a un p\'erim\`etre.
+  \item Cliquer sur \textbf{Pr\'evisualiser}.
+  \item L'application analyse le fichier et affiche un r\'esum\'e des op\'erations pr\'evues\,:
+    \begin{itemize}
+      \item \textbf{Cr\'eations} : nouvelles entr\'ees \`a ins\'erer.
+      \item \textbf{Mises \`a jour} : entr\'ees existantes modifi\'ees.
+      \item \textbf{Conflits} : entr\'ees n\'ecessitant une d\'ecision.
+    \end{itemize}
+  \item Examiner la pr\'evisualisation. R\'esoudre les conflits si n\'ecessaire.
+  \item Cliquer sur \textbf{Confirmer l'import}.
+\end{steps}
+
+\screenshot{img_import_preview}{Pr\'evisualisation d'import}{Capturer la zone de pr\'evisualisation d'import affich\'ee apr\`es analyse du fichier. Montrer un tableau avec des lignes colori\'ees selon leur statut (vert = cr\'eation, orange = mise \`a jour, rouge = conflit). Montrer au moins un exemple de chaque statut si possible.}
+
+\begin{warnbox}[V\'erifier avant de confirmer]
+  Une fois l'import confirm\'e, les donn\'ees sont \'ecrites en base. Lisez attentivement la pr\'evisualisation, en particulier les conflits, avant de cliquer sur \textbf{Confirmer}.
+\end{warnbox}
+
+\begin{tipbox}[Importation par p\'erim\`etre]
+  Pour ne mettre \`a jour qu'une composante sp\'ecifique, utilisez le filtre \og Structure cible \fg{}. Les donn\'ees hors de ce p\'erim\`etre ne seront pas modifi\'ees.
+\end{tipbox}
+
+%% ============================================================
+\section{Organigrammes}
+%% ============================================================
+
+La rubrique \textbf{Organigramme} permet de g\'en\'erer, consulter, geler et exporter des organigrammes hi\'erarchiques.
+
+\subsection{G\'en\'erer un organigramme}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Organigramme}.
+  \item S\'electionner le \textbf{type de vue}\,:
+    \begin{itemize}
+      \item \textbf{Vue Structures} : repr\'esentation hi\'erarchique des entit\'es (composantes, d\'epartements, mentions...).
+      \item \textbf{Vue Personnes} : repr\'esentation hi\'erarchique des personnes (N+1).
+    \end{itemize}
+  \item Choisir la \textbf{structure racine} (point de d\'epart de l'organigramme).
+  \item Appliquer les filtres souhaait\'es (r\^ole, composante, d\'epartement, mention, parcours, niveau).
+  \item Cliquer sur \textbf{G\'en\'erer}.
+  \item L'organigramme s'affiche. S'il existait d\'ej\`a un organigramme identique non gel\'e, il est r\'eutilis\'e.
+\end{steps}
+
+\screenshot{img_organigramme_structures}{Vue Structures de l'organigramme}{Capturer l'organigramme en vue Structures avec plusieurs niveaux de hi\'erarchie visibles (composante, d\'epartements, mentions). Le panneau de contr\^ole avec les filtres doit \^etre visible.}
+
+\screenshot{img_organigramme_personnes}{Vue Personnes de l'organigramme}{Capturer l'organigramme en vue Personnes avec des n\oe uds repr\'esentant des personnes. Les filtres (r\^ole, composante, etc.) doivent \^etre visibles. Montrer un arbre avec au moins 3 niveaux hi\'erarchiques N+1.}
+
+\subsection{Geler et d\'egeler un organigramme}
+
+\begin{rolebox}{services-centraux}
+  Le gel et le d\'egel sont r\'eserv\'es aux Services Centraux.
+\end{rolebox}
+
+Geler un organigramme le fige dans son \'etat actuel. Il ne sera plus remplac\'e lors des prochaines g\'en\'erations.
+
+\begin{steps}
+  \item Consulter l'organigramme concern\'e.
+  \item Cliquer sur le bouton \textbf{Geler} dans la barre d'actions.
+  \item Confirmer. L'organigramme affiche le badge \og Gel\'e \fg.
+\end{steps}
+
+Pour d\'egeler\,:
+\begin{steps}
+  \item Ouvrir l'organigramme gel\'e.
+  \item Cliquer sur \textbf{D\'egeler}.
+  \item L'organigramme redevient disponible pour remplacement automatique.
+\end{steps}
+
+\subsection{Biblioth\`eque des organigrammes}
+
+La biblioth\`eque liste tous les organigrammes g\'en\'er\'es, avec des filtres par structure, type de vue et statut (gel\'e / disponible).
+
+\begin{steps}
+  \item Dans la page \textbf{Organigramme}, faire d\'efiler vers la section \og Biblioth\`eque \fg{} ou cliquer sur l'onglet correspondant.
+  \item Utiliser les filtres pour retrouver l'organigramme souhait\'e.
+  \item Cliquer sur \textbf{Voir en structures} ou \textbf{Voir en personnes} pour l'afficher.
+\end{steps}
+
+\screenshot{img_organigramme_biblio}{Biblioth\`eque des organigrammes g\'en\'er\'es}{Capturer la section biblioth\`eque avec les filtres et la liste des organigrammes. Montrer des badges de statut (Gel\'e / Disponible) et les boutons d'action \og Voir en structures \fg{} et \og Voir en personnes \fg{}.}
+
+\subsection{Exporter un organigramme}
+
+\begin{steps}
+  \item Afficher l'organigramme souhait\'e.
+  \item Cliquer sur le bouton \textbf{Exporter}.
+  \item Choisir le format\,: \textbf{PDF}, \textbf{CSV}, \textbf{SVG} ou \textbf{JSON}.
+  \item Le fichier est t\'el\'echarg\'e automatiquement.
+\end{steps}
+
+\screenshot{img_organigramme_export}{Options d'export de l'organigramme}{Capturer le menu ou la modale d'export de l'organigramme avec les diff\'erents formats disponibles (PDF, CSV, SVG, JSON).}
+
+%% ============================================================
+\section{Demandes de r\^oles}
+%% ============================================================
+
+La rubrique \textbf{Demandes de r\^oles} permet aux Services Centraux d'examiner et de traiter les demandes soumises par les directions.
+
+\screenshot{img_demandes_roles_sc}{Liste des demandes de r\^oles (Services Centraux)}{Capturer la page de gestion des demandes de r\^oles avec la liste des demandes (en attente, approuv\'ees, refus\'ees). Montrer les informations visibles par les SC\,: demandeur, r\^ole demand\'e, structure, statut, date.}
+
+\subsection{Examiner une demande}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Demandes de r\^oles}.
+  \item Filtrer par statut \og En attente \fg{} pour voir les demandes \`a traiter.
+  \item Cliquer sur une demande pour afficher ses d\'etails.
+  \item Lire le motif de la demande et les informations du demandeur.
+\end{steps}
+
+\subsection{Approuver ou refuser une demande}
+
+\begin{steps}
+  \item Dans le d\'etail de la demande, cliquer sur \textbf{Approuver} ou \textbf{Refuser}.
+  \item Si refus, renseigner un \textit{commentaire de justification} (recommand\'e).
+  \item Confirmer. Le demandeur re\c{c}oit une notification du r\'esultat.
+\end{steps}
+
+\screenshot{img_demande_role_traitement}{Interface de traitement d'une demande de r\^ole}{Capturer le d\'etail d'une demande de r\^ole avec les boutons Approuver/Refuser visibles, le champ commentaire et les informations de la demande (demandeur, r\^ole, structure, motif).}
+
+%% ============================================================
+\section{D\'el\'egations}
+%% ============================================================
+
+La rubrique \textbf{D\'el\'egations} permet de transf\'erer temporairement des droits d'un utilisateur \`a un autre.
+
+\screenshot{img_delegations_liste}{Liste des d\'el\'egations}{Capturer la page de gestion des d\'el\'egations avec la liste des d\'el\'egations actives (d\'el\'eguant, d\'el\'egu\'e, p\'erim\`etre, dates). Montrer les boutons d'action (Cr\'eer, R\'evoquer).}
+
+\subsection{Cr\'eer une d\'el\'egation}
+
+\begin{steps}
+  \item Naviguer vers \textbf{D\'el\'egations}.
+  \item Cliquer sur \textbf{Cr\'eer une d\'el\'egation}.
+  \item Remplir le formulaire\,:
+    \begin{itemize}
+      \item \textit{D\'el\'egu\'e} : utilisateur qui re\c{c}oit les droits.
+      \item \textit{Structure concern\'ee} : p\'erim\`etre de la d\'el\'egation.
+      \item \textit{Date de d\'ebut} et \textit{date de fin}.
+    \end{itemize}
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_delegation_creer}{Formulaire de cr\'eation de d\'el\'egation}{Capturer le formulaire de cr\'eation d'une d\'el\'egation avec les champs d\'el\'egu\'e (recherche d'utilisateur), structure concern\'ee, dates de d\'ebut et de fin.}
+
+\subsection{R\'evoquer une d\'el\'egation}
+
+\begin{steps}
+  \item Dans la liste des d\'el\'egations, cliquer sur la d\'el\'egation \`a r\'evoquer.
+  \item Cliquer sur \textbf{R\'evoquer}.
+  \item Confirmer. La d\'el\'egation est imm\'ediatement annul\'ee.
+\end{steps}
+
+\subsection{Exporter la liste des d\'el\'egations}
+
+\begin{steps}
+  \item Sur la page D\'el\'egations, cliquer sur \textbf{Exporter (CSV)}.
+  \item Le fichier CSV est t\'el\'echarg\'e avec la liste compl\`ete des d\'el\'egations.
+\end{steps}
+
+%% ============================================================
+\section{Signalements}
+%% ============================================================
+
+La rubrique \textbf{Signalements} permet de consulter et de traiter les erreurs signal\'ees par les utilisateurs.
+
+\screenshot{img_signalements_sc}{Liste des signalements (Services Centraux)}{Capturer la page des signalements avec les filtres de statut (En attente, En cours, Cl\^otur\'e), les filtres de type d'erreur (nom, pr\'enom, t\'el\'ephone, bureau, courriel, r\^ole, autre) et la liste des signalements.}
+
+\subsection{Traiter un signalement}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Signalements}.
+  \item Filtrer par statut \og En attente \fg{}.
+  \item Cliquer sur un signalement pour afficher ses d\'etails.
+  \item Corriger les donn\'ees dans l'application (aller vers la fiche concern\'ee).
+  \item Revenir sur le signalement et cliquer sur \textbf{Cl\^oturer}.
+  \item Optionnel : ajouter un commentaire de r\'esolution.
+\end{steps}
+
+\subsection{Escalader un signalement}
+
+Si un signalement ne peut pas \^etre trait\'e localement, il peut \^etre escalad\'e\,:
+
+\begin{steps}
+  \item Ouvrir le signalement.
+  \item Cliquer sur \textbf{Escalader vers les Services Centraux}.
+  \item Le signalement est marqu\'e comme escalad\'e et remonte dans la liste des SC.
+\end{steps}
+
+%% ============================================================
+\section{Journal d'audit}
+%% ============================================================
+
+\begin{rolebox}{services-centraux}
+  Le journal d'audit est exclusivement accessible aux Services Centraux.
+\end{rolebox}
+
+Le journal d'audit enregistre toutes les actions effectu\'ees dans l'application (cr\'eation, modification, suppression d'utilisateurs, affectations, structures, etc.).
+
+\screenshot{img_audit}{Journal d'audit}{Capturer la page du journal d'audit avec les filtres (type d'action, p\'eriode de dates, structure, utilisateur) et le tableau des entr\'ees d'audit (date/heure, action, utilisateur, donn\'ee concern\'ee, ancien/nouveau valeur).}
+
+\subsection{Consulter le journal}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Audit}.
+  \item Appliquer les filtres souhaait\'es\,:
+    \begin{itemize}
+      \item \textit{Type d'action} : cr\'eation, modification, suppression.
+      \item \textit{P\'eriode} : plage de dates.
+      \item \textit{Structure} : limiter \`a une composante ou sous-structure.
+      \item \textit{Utilisateur} : actions d'un utilisateur sp\'ecifique.
+    \end{itemize}
+  \item Parcourir les entr\'ees du journal.
+\end{steps}
+
+\subsection{Exporter le journal}
+
+\begin{steps}
+  \item Appliquer les filtres souhaait\'es pour r\'eduire le volume.
+  \item Cliquer sur \textbf{Exporter (CSV)}.
+  \item Le fichier CSV est t\'el\'echarg\'e avec les entr\'ees filtr\'ees.
+\end{steps}

@@ -1,0 +1,103 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+\section{Pr\'esentation de l'application}
+
+\textbf{CGP -- Annuaire Formation} est une application web de gestion de l'annuaire universitaire. Elle centralise les informations sur les structures acad\'emiques, les responsables p\'edagogiques, les formations et le personnel de secr\'etariat de l'\'etablissement.
+
+Ses principales fonctionnalit\'es sont\,:
+
+\begin{itemize}
+  \item \textbf{Annuaire et recherche} : consultation multi-crit\`eres des responsables, formations, structures et secr\'etariats.
+  \item \textbf{Gestion des affectations} : association de personnes \`a des r\^oles au sein des structures.
+  \item \textbf{Organigrammes} : g\'en\'eration et consultation d'organigrammes hi\'erarchiques (vue structures ou vue personnes).
+  \item \textbf{Gestion multi-ann\'ees} : cr\'eation, clonage, archivage et suppression d'ann\'ees acad\'emiques.
+  \item \textbf{Import et export} : \'echanges de donn\'ees via des classeurs Excel standardis\'es.
+  \item \textbf{D\'el\'egations} : transfert temporaire de droits entre utilisateurs.
+  \item \textbf{Signalements} : d\'eclaration et suivi d'erreurs sur les donn\'ees.
+  \item \textbf{Journal d'audit} : tra\c{c}abilit\'e compl\`ete des actions effectu\'ees dans l'application.
+\end{itemize}
+
+\screenshot{img_accueil}{Page d'accueil de l'application CGP}{Capturer la page d'accueil ou de connexion de l'application telle qu'elle appara\^it dans le navigateur web (Google Chrome ou Firefox recommand\'e). L'URL de l'application doit \^etre visible dans la barre d'adresse. Utiliser une fen\^etre en plein \'ecran, r\'esolution 1920$\times$1080.}
+
+\section{Architecture g\'en\'erale}
+
+L'application est organis\'ee autour de concepts fondamentaux\,:
+
+\begin{description}[style=nextline, leftmargin=3cm, font=\bfseries]
+  \item[Ann\'ee acad\'emique] Unit\'e de temps principale. Toutes les donn\'ees (structures, affectations, organigrammes) sont rattach\'ees \`a une ann\'ee. Une seule ann\'ee peut \^etre \og{} EN\_COURS \fg{} \`a la fois.
+  \item[Structure (entit\'e)] Unit\'e organisationnelle : Composante, D\'epartement, Mention, Parcours, Niveau, Service, etc.
+  \item[Utilisateur] Toute personne ayant un acc\`es \`a l'application.
+  \item[Affectation] Lien entre un utilisateur, un r\^ole et une structure pour une ann\'ee donn\'ee.
+  \item[R\^ole] Fonction occupée par un utilisateur dans une structure (ex. : Directeur de composante, Responsable de formation).
+  \item[Organigramme] Repr\'esentation graphique hi\'erarchique g\'en\'er\'ee \`a partir des affectations.
+  \item[D\'el\'egation] Transfert temporaire de droits d'un utilisateur vers un autre.
+  \item[Signalement] Rapport d'erreur soumis par n'importe quel utilisateur.
+\end{description}
+
+\section{Acc\`es \`a l'application}
+
+L'application CGP est accessible via un navigateur web \`a l'adresse communiqu\'ee par votre administrateur syst\`eme.
+
+\begin{notebox}[Navigateurs compatibles]
+L'application est optimis\'ee pour\,: \textbf{Google Chrome} (recommand\'e), \textbf{Mozilla Firefox} et \textbf{Microsoft Edge}. \\
+Internet Explorer et les navigateurs anciens ne sont \textbf{pas} support\'es.
+\end{notebox}
+
+\begin{notebox}[Pr\'erequis r\'eseau]
+  Une connexion au r\'eseau de l'universit\'e est n\'ecessaire (connexion filaire, Wi-Fi universit\'e ou VPN selon la configuration de votre \'etablissement).
+\end{notebox}
+
+\section{Organisation du manuel}
+
+Ce manuel est structur\'e comme suit\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{C{2.5cm}L{4cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Chapitre} & \textbf{Titre} & \textbf{Contenu} \\
+  \midrule
+  Chapitre~1 & Introduction & Ce chapitre -- pr\'esentation g\'en\'erale \\
+  \rowcolor{cgplightgray}
+  Chapitre~2 & Connexion et profil & Authentification, profil utilisateur, notifications \\
+  Chapitre~3 & R\^oles et droits & Pr\'esentation de tous les r\^oles, matrice des droits \\
+  \rowcolor{cgplightgray}
+  Chapitre~4 & Services Centraux & Manuel complet pour le r\^ole \texttt{services-centraux} \\
+  Chapitre~5 & Directeur de Composante & Manuel pour le r\^ole \texttt{directeur-composante} \\
+  \rowcolor{cgplightgray}
+  Chapitre~6 & Directions et Responsables & Manuel pour les r\^oles de direction (d\'epartement, mention, etc.) \\
+  Chapitre~7 & Secr\'etariat P\'edagogique & Manuel pour \texttt{secretariat-pedagogique} \\
+  \rowcolor{cgplightgray}
+  Chapitre~8 & Utilisateur Standard & Manuel pour \texttt{utilisateur-simple} et \texttt{lecture-seule} \\
+  Chapitre~9 & Fonctionnalit\'es communes & Annuaire, profil, signalements, organigrammes (lecture) \\
+  \bottomrule
+\end{tabularx}
+
+\medskip
+\begin{tipbox}[Comment utiliser ce manuel ?]
+  Si vous cherchez la proc\'edure pour une fonctionnalit\'e sp\'ecifique, consultez d'abord le chapitre correspondant \`a votre r\^ole. Si la fonctionnalit\'e n'y est pas d\'etaill\'ee, reportez-vous au chapitre~\ref{chap:commun} (Fonctionnalit\'es communes).
+\end{tipbox}
+
+\section{Conventions typographiques}
+
+Les conventions utilis\'ees dans ce manuel sont les suivantes\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{C{3cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Convention} & \textbf{Signification} \\
+  \midrule
+  \textbf{Gras} & \'El\'ement d'interface : bouton, menu, onglet (ex. : \textbf{Cr\'eer}, \textbf{Valider}) \\
+  \rowcolor{cgplightgray}
+  \textit{Italique} & Nom de champ de formulaire (ex. : \textit{Nom}, \textit{Courriel institutionnel}) \\
+  \texttt{monospace} & Valeur technique, code, nom de r\^ole (ex. : \texttt{services-centraux}) \\
+  \rowcolor{cgplightgray}
+  \faInfoCircle & Note informative compl\'ementaire \\
+  \faExclamationTriangle & Avertissement -- point important \`a ne pas n\'egliger \\
+  \rowcolor{cgplightgray}
+  \faLightbulb & Conseil -- bonne pratique recommand\'ee \\
+  \faUserShield & Indication du ou des r\^oles concern\'es par la section \\
+  \bottomrule
+\end{tabularx}

@@ -1,0 +1,228 @@
+\chapter{Manuel --- Directeur de Composante et Directions Administratives}
+\label{chap:dircomp}
+
+\begin{rolebox}{directeur-composante, administrateur, directeur-administratif, directeur-administratif-adjoint}
+  Ce chapitre d\'ecrit les fonctionnalit\'es des r\^oles de direction au niveau composante. Ces r\^oles disposent d'un large p\'erim\`etre de gestion, limit\'e cependant \`a leur \textbf{composante et ses sous-structures}.
+\end{rolebox}
+
+\section{Vue d'ensemble du profil}
+
+Le directeur de composante (et les r\^oles assimil\'es) dispose des fonctionnalit\'es suivantes\,:
+
+\begin{itemize}
+  \item \textbf{Gestion des utilisateurs} dans son p\'erim\`etre (cr\'eation, modification, suppression).
+  \item \textbf{Gestion des affectations} au sein de sa composante et de ses sous-structures.
+  \item \textbf{Import et export} de donn\'ees pour sa composante.
+  \item \textbf{G\'en\'eration d'organigrammes} pour sa composante et ses descendants.
+  \item \textbf{Gestion des d\'el\'egations}.
+  \item \textbf{Demande de r\^oles} personnalis\'es.
+  \item \textbf{Signalements}.
+\end{itemize}
+
+\begin{notebox}[Diff\'erences entre les r\^oles]
+  \begin{itemize}
+    \item \texttt{directeur-composante} : acc\`es complet au niveau composante, y compris suppression d'utilisateurs et import/export.
+    \item \texttt{administrateur} : droits administratifs g\'en\'eraux, similaires au directeur composante.
+    \item \texttt{directeur-administratif} : gestion administrative, sans droit de suppression d'utilisateurs.
+    \item \texttt{directeur-administratif-adjoint} : droits r\'eduits (pas de suppression, modification limit\'ee).
+  \end{itemize}
+\end{notebox}
+
+\section{Tableau de bord}
+
+\screenshot{img_dashboard_dircomp}{Tableau de bord -- Directeur de Composante}{Capturer le tableau de bord avec un compte directeur-composante. Montrer\,: l'ann\'ee courante (non modifiable), les tuiles de raccourcis disponibles pour ce profil, et la cloche de notifications.}
+
+Le tableau de bord affiche\,:
+\begin{itemize}
+  \item L'\textbf{ann\'ee acad\'emique courante} (non modifiable par ce profil).
+  \item Les \textbf{raccourcis} vers les fonctionnalit\'es accessibles.
+  \item Les \textbf{notifications} en attente.
+\end{itemize}
+
+\section{Gestion des utilisateurs de la composante}
+
+\begin{rolebox}{directeur-composante, administrateur, directeur-administratif}
+  La gestion des utilisateurs est limit\'ee aux utilisateurs rattach\'es \`a la composante de l'utilisateur connect\'e.
+\end{rolebox}
+
+\subsection{Rechercher un utilisateur}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Responsables}.
+  \item Utiliser la barre de recherche (nom, pr\'enom, identifiant ou courriel).
+  \item Les filtres hi\'erarchiques permettent de pr\'eciser\,: \textit{Composante}, \textit{D\'epartement}, \textit{Mention}, \textit{Parcours}, \textit{Niveau}.
+  \item Les r\'esultats n'affichent que les utilisateurs du p\'erim\`etre autoris\'e.
+\end{steps}
+
+\screenshot{img_responsables_dircomp}{Page Responsables -- vue Directeur Composante}{Capturer la page Responsables avec les filtres hi\'erarchiques et la liste de r\'esultats. Montrer que la recherche est filtr\'ee au p\'erim\`etre de la composante.}
+
+\subsection{Cr\'eer un utilisateur}
+
+\begin{steps}
+  \item Cliquer sur \textbf{Cr\'eer un utilisateur}.
+  \item Remplir les champs obligatoires\,: \textit{Nom}, \textit{Pr\'enom}, \textit{Identifiant}.
+  \item Remplir les champs optionnels\,: \textit{Courriel}, \textit{T\'el\'ephone}, \textit{Bureau}.
+  \item Cliquer sur \textbf{Enregistrer}.
+  \item Cr\'eer ensuite une affectation pour lier l'utilisateur \`a un r\^ole dans la composante (voir section~\ref{sec:dircomp_affectations}).
+\end{steps}
+
+\subsection{Modifier un utilisateur}
+
+\begin{steps}
+  \item Rechercher et ouvrir la fiche de l'utilisateur.
+  \item Cliquer sur \textbf{Modifier}.
+  \item Mettre \`a jour les informations autoris\'ees.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\begin{warnbox}[Auto-modification interdite]
+  Un directeur ne peut pas modifier sa propre fiche par ce biais. Pour modifier ses propres coordonn\'ees, utiliser la rubrique \textbf{Mon Profil}.
+\end{warnbox}
+
+\subsection{Supprimer un utilisateur}
+
+\begin{rolebox}{directeur-composante, administrateur}
+  La suppression d'utilisateurs est r\'eserv\'ee au directeur de composante et \`a l'administrateur.
+\end{rolebox}
+
+\begin{steps}
+  \item Rechercher et ouvrir la fiche de l'utilisateur.
+  \item Cliquer sur \textbf{Supprimer}.
+  \item Confirmer la suppression.
+\end{steps}
+
+\begin{warnbox}
+  La suppression d'un utilisateur entra\^ine la suppression de toutes ses affectations. Action irr\'eversible.
+\end{warnbox}
+
+\section{Gestion des affectations}
+\label{sec:dircomp_affectations}
+
+\subsection{Cr\'eer une affectation}
+
+\begin{steps}
+  \item Rechercher l'utilisateur concern\'e.
+  \item Cliquer sur \textbf{Ajouter un r\^ole} dans sa fiche.
+  \item S\'electionner le \textit{R\^ole}, la \textit{Composante}, et optionnellement les niveaux inf\'erieurs (\textit{D\'epartement}, \textit{Mention}, etc.).
+  \item S\'electionner \'eventuellement un \textit{superviseur N+1}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\begin{notebox}
+  Le directeur de composante ne peut cr\'eer des affectations que pour sa propre composante et ses sous-structures. Il ne peut pas affecter un utilisateur \`a une autre composante.
+\end{notebox}
+
+\screenshot{img_affectation_creer_dircomp}{Cr\'eation d'affectation -- Directeur Composante}{Capturer le formulaire de cr\'eation d'affectation avec les menus d\'eroulants (r\^ole, composante pr\'e-remplie, d\'epartement, mention, parcours, niveau, N+1).}
+
+\subsection{G\'erer les contacts de r\^ole}
+
+\begin{steps}
+  \item Localiser l'affectation dans la liste.
+  \item Cliquer sur \textbf{Contact de r\^ole}.
+  \item Renseigner \textit{Courriel fonctionnel}, \textit{T\'el\'ephone de service}, \textit{Bureau fonctionnel}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\section{Import et Export}
+
+\begin{rolebox}{directeur-composante, directeur-administratif, directeur-administratif-adjoint}
+  L'import et l'export sont disponibles pour les r\^oles de direction de composante, limit\'es \`a leur p\'erim\`etre.
+\end{rolebox}
+
+\subsection{Exporter les donn\'ees de la composante}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Import / Export}.
+  \item Dans la section Export, s\'electionner\,:
+    \begin{itemize}
+      \item L'\textit{Ann\'ee} (toujours l'ann\'ee EN\_COURS pour ce profil).
+      \item La \textit{Structure} (votre composante ou une sous-structure).
+    \end{itemize}
+  \item Cliquer sur \textbf{T\'el\'echarger}.
+\end{steps}
+
+\subsection{Importer des donn\'ees}
+
+\begin{steps}
+  \item Dans la section Import, d\'eposer le fichier \texttt{.xlsx}.
+  \item S\'electionner la \textit{Structure cible} (votre composante).
+  \item Cliquer sur \textbf{Pr\'evisualiser}.
+  \item V\'erifier les op\'erations pr\'evues.
+  \item Cliquer sur \textbf{Confirmer l'import}.
+\end{steps}
+
+\begin{warnbox}[P\'erim\`etre d'import]
+  L'import ne peut modifier que les donn\'ees de la composante s\'electionn\'ee. Les donn\'ees d'autres composantes pr\'esentes dans le fichier sont ignor\'ees.
+\end{warnbox}
+
+\section{Organigrammes}
+
+\subsection{G\'en\'erer un organigramme de la composante}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Organigramme}.
+  \item S\'electionner la vue (\textbf{Structures} ou \textbf{Personnes}).
+  \item Choisir la \textit{structure racine} (votre composante ou une sous-structure).
+  \item Appliquer les filtres souhait\'es.
+  \item Cliquer sur \textbf{G\'en\'erer}.
+\end{steps}
+
+\screenshot{img_organigramme_dircomp}{G\'en\'eration d'organigramme -- Directeur Composante}{Capturer la page Organigramme avec les contr\^oles de g\'en\'eration\,: s\'electeur de vue (Structures/Personnes), s\'electeur de structure racine, filtres, et le bouton G\'en\'erer. Si un organigramme est d\'ej\`a affich\'e, montrer-le.}
+
+\begin{notebox}[Consultation hors p\'erim\`etre]
+  Un directeur de composante peut \textbf{consulter} des organigrammes d\'ej\`a g\'en\'er\'es pour d'autres structures (via la biblioth\`eque), mais il ne peut en g\'en\'erer que pour sa propre composante.
+\end{notebox}
+
+\section{D\'el\'egations}
+
+\subsection{Cr\'eer une d\'el\'egation}
+
+\begin{steps}
+  \item Naviguer vers \textbf{D\'el\'egations}.
+  \item Cliquer sur \textbf{Cr\'eer une d\'el\'egation}.
+  \item S\'electionner le \textit{D\'el\'egu\'e}, la \textit{Structure concern\'ee} et les \textit{dates}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_delegations_dircomp}{Gestion des d\'el\'egations -- Directeur Composante}{Capturer la page D\'el\'egations avec la liste des d\'el\'egations en cours et le bouton de cr\'eation.}
+
+\section{Demandes de r\^oles}
+
+Le directeur de composante peut soumettre des demandes de r\^oles personnalis\'es pour des membres de sa composante.
+
+\subsection{Soumettre une demande}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Demandes de r\^oles}.
+  \item Cliquer sur \textbf{Nouvelle demande}.
+  \item Remplir\,: \textit{Utilisateur concern\'e}, \textit{R\^ole demand\'e}, \textit{Structure}, \textit{Justification}.
+  \item Cliquer sur \textbf{Envoyer}.
+  \item La demande est transmise aux Services Centraux pour examen.
+\end{steps}
+
+\screenshot{img_demandes_roles_dircomp}{Demandes de r\^oles -- Directeur Composante}{Capturer la page demandes de r\^oles avec le formulaire de soumission et la liste des demandes existantes (en attente, approuv\'ees, refus\'ees).}
+
+\subsection{Suivre l'\'etat d'une demande}
+
+\begin{itemize}
+  \item \textbf{En attente} : la demande est chez les Services Centraux.
+  \item \textbf{Approuv\'ee} : le r\^ole a \'et\'e attribu\'e \`a l'utilisateur.
+  \item \textbf{Refus\'ee} : la demande a \'et\'e rejet\'ee (un commentaire de justification peut \^etre pr\'esent).
+\end{itemize}
+
+\begin{notebox}
+  Une notification est envoy\'ee automatiquement lorsque la demande est trait\'ee par les Services Centraux.
+\end{notebox}
+
+\section{Signalements}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Signalements}.
+  \item Cliquer sur \textbf{Cr\'eer un signalement}.
+  \item S\'electionner le \textit{type d'erreur} (nom, pr\'enom, t\'el\'ephone, bureau, courriel, r\^ole, autre).
+  \item Identifier la \textit{personne} ou la \textit{structure} concern\'ee.
+  \item D\'ecrire le probl\`eme dans le champ \textit{Description}.
+  \item Cliquer sur \textbf{Envoyer}.
+\end{steps}
+
+\screenshot{img_signalements_dircomp}{Signalements -- Directeur Composante}{Capturer la page Signalements avec le formulaire de cr\'eation et la liste des signalements existants. Montrer les filtres de statut.}

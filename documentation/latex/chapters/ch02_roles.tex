@@ -1,0 +1,325 @@
+\chapter{R\^oles et Droits}
+\label{chap:roles}
+
+\section{Pr\'esentation des r\^oles}
+
+L'application CGP met en \oe uvre un contr\^ole d'acc\`es bas\'e sur les r\^oles (\textit{Role-Based Access Control}). Chaque utilisateur se voit attribuer un ou plusieurs r\^oles via des \textbf{affectations}. Un r\^ole est toujours li\'e \`a une \textbf{structure} et \`a une \textbf{ann\'ee acad\'emique}.
+
+\medskip
+\begin{notebox}
+  Un m\^eme utilisateur peut poss\'eder plusieurs r\^oles dans des structures diff\'erentes, voire dans la m\^eme structure. Les droits dont il dispose correspondent \`a l'union de tous ses r\^oles actifs.
+\end{notebox}
+
+\section{Catalogue des r\^oles}
+
+Le tableau suivant pr\'esente l'ensemble des r\^oles disponibles dans l'application, class\'es par niveau d'acc\`es d\'ecroissant.
+
+\medskip
+\begin{longtable}{L{4.5cm}L{3cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Identifiant technique} & \textbf{Niveau} & \textbf{Description} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Identifiant technique} & \textbf{Niveau} & \textbf{Description} \\
+  \midrule
+  \endhead
+  \midrule
+  \multicolumn{3}{r}{\small\textit{(suite page suivante)}}\\
+  \endfoot
+  \bottomrule
+  \endlastfoot
+
+  \texttt{services-centraux} & \cellcolor{cgplightred}Maximal
+    & Acc\`es complet sans restriction. G\`ere les ann\'ees, les structures, les imports/exports, l'audit, et tous les param\'etrages. \\
+  \rowcolor{cgplightgray}
+  \texttt{administrateur} & Administratif
+    & Administration du syst\`eme\,: gestion des utilisateurs, imports/exports, d\'el\'egations, organigrammes. \\
+  \texttt{directeur-composante} & Direction composante
+    & Gestion des utilisateurs et affectations dans sa composante. Import/export, organigrammes, d\'el\'egations dans son p\'erim\`etre. \\
+  \rowcolor{cgplightgray}
+  \texttt{directeur-administratif} & Direction admin.
+    & Gestion administrative\,: utilisateurs, affectations, organigrammes, d\'el\'egations dans son p\'erim\`etre. \\
+  \texttt{directeur-administratif-adjoint} & Direction admin. adj.
+    & Similaire \`a \texttt{directeur-administratif} avec des droits l\'eg\`erement r\'eduits. \\
+  \rowcolor{cgplightgray}
+  \texttt{directeur-departement} & Direction d\'ept.
+    & Gestion des affectations et d\'el\'egations dans son d\'epartement. G\'en\`ere des organigrammes. \\
+  \texttt{vice-president-departement} & VP d\'ept.
+    & Similaire au directeur de d\'epartement, avec acc\`es aux organigrammes et d\'el\'egations. \\
+  \rowcolor{cgplightgray}
+  \texttt{directeur-adjoint-licence} & Direction adj. licence
+    & Gestion du p\'erim\`etre licence. Affectations et organigrammes. \\
+  \texttt{responsable-service-pedagogique} & Resp. p\'edagogique
+    & Gestion des affectations dans le service p\'edagogique. Organigrammes. \\
+  \rowcolor{cgplightgray}
+  \texttt{responsable-adjoint-service-pedagogique} & Resp. adj. p\'edagogique
+    & Droits r\'eduits par rapport au responsable du service p\'edagogique. \\
+  \texttt{directeur-mention} & Direction mention
+    & Gestion de la mention. Affectations, organigrammes, d\'el\'egations. \\
+  \rowcolor{cgplightgray}
+  \texttt{directeur-specialite} & Direction sp\'ecialit\'e
+    & Gestion de la sp\'ecialit\'e (mention). Affectations, organigrammes. \\
+  \texttt{responsable-formation} & Resp. formation
+    & Responsable d'une formation. Affectations li\'ees \`a sa formation, organigrammes. \\
+  \rowcolor{cgplightgray}
+  \texttt{responsable-annee} & Resp. ann\'ee
+    & Responsable d'une ann\'ee d'\'etude. Affectations li\'ees, organigrammes. \\
+  \texttt{directeur-etudes} & Directeur \'etudes
+    & G\`ere les affectations li\'ees aux \'etudes. Organigrammes. \\
+  \rowcolor{cgplightgray}
+  \texttt{responsable-qualite} & Resp. qualit\'e
+    & Acc\`es \`a l'annuaire et aux organigrammes dans son p\'erim\`etre. \\
+  \texttt{responsable-international} & Resp. international
+    & Acc\`es \`a l'annuaire et aux organigrammes li\'es aux programmes internationaux. \\
+  \rowcolor{cgplightgray}
+  \texttt{referent-commun} & R\'ef\'erent commun
+    & Acc\`es g\'en\'eral \`a l'annuaire et aux organigrammes. \\
+  \texttt{directeur-adjoint-ecole} & Directeur adj. \'ecole
+    & Gestion du p\'erim\`etre \'ecole. Affectations et organigrammes. \\
+  \rowcolor{cgplightgray}
+  \texttt{secretariat-pedagogique} & Secr\'etariat
+    & Consultation de l'annuaire. Cr\'eation et mise \`a jour des contacts de r\^ole. Signalements. \\
+  \texttt{utilisateur-simple} & Utilisateur
+    & Consultation de l'annuaire et des organigrammes. Signalements. \\
+  \rowcolor{cgplightgray}
+  \texttt{lecture-seule} & Lecture seule
+    & Consultation uniquement. Aucune modification. Signalements. \\
+
+\end{longtable}
+
+\section{Regroupement fonctionnel des r\^oles}
+
+Pour faciliter la lecture de ce manuel, les r\^oles sont regroup\'es en \textbf{profils fonctionnels} correspondant aux chapitres d\'edi\'es\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{L{3.5cm}XC{2.5cm}}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Profil fonctionnel} & \textbf{R\^oles inclus} & \textbf{Chapitre} \\
+  \midrule
+  Services Centraux
+    & \texttt{services-centraux}
+    & Chap.~\ref{chap:sc} \\
+  \rowcolor{cgplightgray}
+  Direction composante / admin.
+    & \texttt{directeur-composante}, \texttt{administrateur}, \texttt{directeur-administratif}, \texttt{directeur-administratif-adjoint}
+    & Chap.~\ref{chap:dircomp} \\
+  Directions et responsables
+    & \texttt{directeur-departement}, \texttt{vice-president-departement}, \texttt{directeur-adjoint-licence}, \texttt{responsable-service-pedagogique}, \texttt{responsable-adjoint-service-pedagogique}, \texttt{directeur-mention}, \texttt{directeur-specialite}, \texttt{responsable-formation}, \texttt{responsable-annee}, \texttt{directeur-etudes}, \texttt{responsable-qualite}, \texttt{responsable-international}, \texttt{referent-commun}, \texttt{directeur-adjoint-ecole}
+    & Chap.~\ref{chap:directions} \\
+  \rowcolor{cgplightgray}
+  Secr\'etariat p\'edagogique
+    & \texttt{secretariat-pedagogique}
+    & Chap.~\ref{chap:secretariat} \\
+  Utilisateur standard
+    & \texttt{utilisateur-simple}, \texttt{lecture-seule}
+    & Chap.~\ref{chap:utilisateur} \\
+  \bottomrule
+\end{tabularx}
+
+\section{Matrice des droits}
+
+Le tableau suivant synth\'etise les droits par fonctionnalit\'e et par profil. \\
+L\'egende\,: \textbf{\textcolor{cgpgreen}{\checkmark}} = autoris\'e, \textbf{\textcolor{cgpred}{$\times$}} = refus\'e, \textbf{\textcolor{cgporange}{\textasciitilde}} = partiel (p\'erim\`etre limit\'e).
+
+\medskip
+\begin{longtable}{L{4.5cm}C{1.6cm}C{1.9cm}C{2cm}C{1.8cm}C{1.5cm}}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Fonctionnalit\'e}
+    & \textbf{SC}
+    & \textbf{Dir. comp.}
+    & \textbf{Directions}
+    & \textbf{Secr\'et.}
+    & \textbf{Util.} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Fonctionnalit\'e}
+    & \textbf{SC}
+    & \textbf{Dir. comp.}
+    & \textbf{Directions}
+    & \textbf{Secr\'et.}
+    & \textbf{Util.} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endlastfoot
+
+  Consulter l'annuaire
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark} \\
+  \rowcolor{cgplightgray}
+  Voir les organigrammes
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark} \\
+  G\'en\'erer des organigrammes
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Geler/d\'egeler un organigramme
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  Cr\'eer des utilisateurs
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Modifier des utilisateurs
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  Supprimer des utilisateurs
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  G\'erer les affectations
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  G\'erer les contacts de r\^ole
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Modifier les structures
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  Importer des donn\'ees
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Exporter des donn\'ees
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  G\'erer les ann\'ees acad\'emiques
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Changer l'ann\'ee active
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  G\'erer les d\'el\'egations
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Soumettre demande de r\^ole
+    & {\color{cgpred}$\times$}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  Traiter demandes de r\^oles
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Cr\'eer un signalement
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark} \\
+  Traiter les signalements
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgporange}\textasciitilde}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  Consulter le journal d'audit
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$}
+    & {\color{cgpred}$\times$} \\
+  Modifier son propre profil
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark}
+    & {\color{cgpgreen}\checkmark} \\
+
+\end{longtable}
+
+\medskip
+\begin{notebox}[Droits partiels (\textasciitilde)]
+  La mention \og partiel \fg{} signifie que le droit existe mais est limit\'e au \textbf{p\'erim\`etre de la structure} rattach\'ee \`a l'affectation de l'utilisateur. Par exemple, un directeur de composante ne peut g\'erer les utilisateurs que dans sa composante et ses sous-structures.
+\end{notebox}
+
+\section{P\'erim\`etre et hi\'erarchie des structures}
+
+La hi\'erarchie des structures acad\'emiques dans CGP est la suivante (du plus g\'en\'eral au plus sp\'ecifique)\,:
+
+\medskip
+\begin{center}
+\begin{tikzpicture}[
+  node distance=0.5cm,
+  box/.style={rectangle, rounded corners=4pt, draw=cgpblue, fill=cgplightblue,
+              text width=3.5cm, align=center, font=\small\bfseries, minimum height=0.8cm}
+]
+  \node[box] (comp) {Composante};
+  \node[box, below=of comp] (dept) {D\'epartement};
+  \node[box, below=of dept] (mention) {Mention};
+  \node[box, below=of mention] (parcours) {Parcours};
+  \node[box, below=of parcours] (niveau) {Niveau};
+  \draw[->, thick, cgpblue] (comp) -- (dept);
+  \draw[->, thick, cgpblue] (dept) -- (mention);
+  \draw[->, thick, cgpblue] (mention) -- (parcours);
+  \draw[->, thick, cgpblue] (parcours) -- (niveau);
+\end{tikzpicture}
+\end{center}
+
+\medskip
+Un utilisateur ayant un r\^ole dans une structure donn\'ee acc\`ede g\'en\'eralement \`a cette structure \textbf{et \`a l'ensemble de ses descendants} dans la hi\'erarchie. Les Services Centraux n'ont pas de restriction de p\'erim\`etre.
+
+\begin{tipbox}[P\'erim\`etre de consultation versus de g\'en\'eration]
+  Pour les organigrammes, la \textbf{consultation} est plus large que la \textbf{g\'en\'eration}\,: un utilisateur peut consulter des organigrammes d\'ej\`a g\'en\'er\'es pour des structures hors de son p\'erim\`etre, mais il ne peut en g\'en\'erer que pour son p\'erim\`etre propre.
+\end{tipbox}

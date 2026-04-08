@@ -1,0 +1,159 @@
+\chapter{Connexion et Profil Utilisateur}
+\label{chap:connexion}
+
+\begin{rolebox}{Tous les utilisateurs}
+  Ce chapitre s'applique \`a l'ensemble des profils. Chaque utilisateur doit se connecter avant d'acc\'eder \`a l'application.
+\end{rolebox}
+
+\section{Page de connexion}
+
+\`A l'ouverture de l'application, l'utilisateur arrive sur la page de connexion. Aucun acc\`es aux donn\'ees n'est possible sans authentification.
+
+\screenshot{img_login}{Page de connexion}{Capturer la page de connexion de l'application dans son int\'egralit\'e. Le formulaire avec le champ identifiant et le bouton de validation doit \^etre clairement visible. Fen\^etre en plein \'ecran, fond de page visible.}
+
+\section{Proc\'edure de connexion}
+
+\begin{steps}
+  \item Ouvrir le navigateur web et saisir l'adresse de l'application fournie par l'administrateur.
+  \item Sur la page de connexion, saisir votre \textbf{identifiant} (login) dans le champ pr\'evu.
+  \item Cliquer sur le bouton \textbf{Se connecter} (ou appuyer sur la touche \textsf{Entr\'ee}).
+  \item L'application v\'erifie votre identit\'e et charge votre profil, vos affectations et l'ann\'ee acad\'emique courante.
+  \item Vous \^etes redirig\'e automatiquement vers le \textbf{Tableau de bord}.
+\end{steps}
+
+\begin{notebox}[Syst\`eme d'authentification]
+  L'application utilise un syst\`eme de connexion par \textbf{identifiant unique} (login). Selon la configuration de votre \'etablissement, cet identifiant peut correspondre \`a votre identifiant institutionnel (num\'ero de personnel, alias de messagerie, etc.). Rapprochez-vous de votre administrateur en cas de probl\`eme de connexion.
+\end{notebox}
+
+\begin{warnbox}[Identifiant incorrect]
+  Si votre identifiant n'est pas reconnu, l'application affiche un message d'erreur. V\'erifiez que\,: (1) vous avez saisi l'identifiant correct, (2) votre compte a bien \'et\'e cr\'e\'e par un administrateur, (3) votre compte poss\`ede au moins une affectation active dans l'ann\'ee EN\_COURS.
+\end{warnbox}
+
+\section{Tableau de bord apr\`es connexion}
+
+\`A la connexion, l'application affiche le tableau de bord. Celui-ci pr\'esente\,:
+
+\begin{itemize}
+  \item \textbf{L'ann\'ee acad\'emique active} visible dans l'en-t\^ete (ex. : \og 2024-2025 \fg).
+  \item Les \textbf{raccourcis} vers les principales fonctionnalit\'es accessibles selon votre r\^ole.
+  \item Un \textbf{indicateur de notifications} (cloche) signalant les \'ev\`enements en attente.
+  \item Pour les \textbf{Services Centraux uniquement} : un s\'electeur d'ann\'ee permettant de changer de contexte.
+\end{itemize}
+
+\screenshot{img_dashboard_general}{Tableau de bord apr\`es connexion}{Capturer la page du tableau de bord telle qu'elle appara\^it apr\`es connexion avec un compte de test. Montrer l'en-t\^ete (ann\'ee courante, cloche de notifications), le menu de navigation lat\'eral et les cartes/tuiles du tableau de bord. Plein \'ecran.}
+
+\section{S\'electeur d'ann\'ee acad\'emique}
+
+\begin{rolebox}{services-centraux uniquement}
+  Le changement d'ann\'ee est r\'eserv\'e au r\^ole \texttt{services-centraux}.
+\end{rolebox}
+
+Pour les utilisateurs ayant le r\^ole \texttt{services-centraux}, un menu d\'eroulant dans l'en-t\^ete permet de s\'electionner n'importe quelle ann\'ee (EN\_COURS, PREPARATION, ARCHIVEE).
+
+\begin{steps}
+  \item Localiser le s\'electeur d'ann\'ee dans l'en-t\^ete de l'application (g\'en\'eralement en haut \`a droite).
+  \item Cliquer sur l'ann\'ee actuellement affich\'ee pour d\'eplier la liste des ann\'ees disponibles.
+  \item Cliquer sur l'ann\'ee souhait\'ee.
+  \item L'application recharge automatiquement toutes les donn\'ees dans le contexte de l'ann\'ee s\'electionn\'ee.
+\end{steps}
+
+\screenshot{img_selecteur_annee}{S\'electeur d'ann\'ee (Services Centraux)}{Capturer l'en-t\^ete de l'application avec le menu d\'eroulant du s\'electeur d'ann\'ee ouvert, montrant plusieurs ann\'ees disponibles. Utiliser un compte services-centraux.}
+
+\begin{notebox}
+  Pour tous les autres r\^oles, l'ann\'ee affich\'ee est l'ann\'ee \textbf{EN\_COURS} et ne peut pas \^etre modifi\'ee. Elle est visible mais non interactive.
+\end{notebox}
+
+\section{Navigation dans l'application}
+
+L'application dispose d'un menu de navigation (lat\'eral ou en haut de page) dont le contenu varie selon le r\^ole de l'utilisateur.
+
+Les rubriques possibles sont\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{L{4cm}L{5cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Rubrique} & \textbf{Ic\^one / Label} & \textbf{Accessible par} \\
+  \midrule
+  Tableau de bord   & \faHome\ Tableau de bord  & Tous \\
+  \rowcolor{cgplightgray}
+  Rechercher        & \faSearch\ Rechercher      & Tous \\
+  Organigramme      & \faProjectDiagram\ Organigramme & Tous \\
+  \rowcolor{cgplightgray}
+  Import / Export   & \faFileExcel\ Import/Export & SC, Directeurs composante/admin \\
+  Responsables      & \faUsers\ Responsables    & SC, Directeurs, Admins \\
+  \rowcolor{cgplightgray}
+  Structures        & \faBuilding\ Structures   & SC, Directeurs composante \\
+  D\'emandes de r\^oles & \faClipboardList\ D\'emandes & SC, Directions \\
+  \rowcolor{cgplightgray}
+  D\'el\'egations   & \faUserCheck\ D\'el\'egations & SC, Directeurs \\
+  Ann\'ees          & \faCalendar\ Ann\'ees     & SC uniquement \\
+  \rowcolor{cgplightgray}
+  Audit             & \faHistory\ Audit         & SC uniquement \\
+  Signalements      & \faFlag\ Signalements     & Tous \\
+  \rowcolor{cgplightgray}
+  Mon profil        & \faUser\ Profil           & Tous \\
+  \bottomrule
+\end{tabularx}
+
+\medskip
+\begin{notebox}
+  Les rubriques non accessibles pour un r\^ole donn\'e ne s'affichent pas dans le menu. Le menu est donc adapt\'e automatiquement.
+\end{notebox}
+
+\screenshot{img_menu_navigation}{Menu de navigation (exemple Services Centraux)}{Capturer le menu de navigation complet avec toutes les rubriques visibles pour un compte services-centraux (c'est le menu le plus complet). Montrer le menu lat\'eral enti\`erement d\'eploy\'e.}
+
+\section{D\'econnexion}
+
+Pour quitter l'application, cliquer sur l'ic\^one de profil ou le menu utilisateur (g\'en\'eralement en haut \`a droite de l'\'ecran), puis s\'electionner \textbf{D\'econnecter} ou \textbf{Se d\'econnecter}.
+
+\begin{warnbox}[Session navigateur]
+  L'application conserve votre identifiant de session dans le navigateur (\texttt{localStorage}). Si vous partagez votre poste de travail, pensez \`a vous d\'econnecter explicitement apr\`es chaque utilisation.
+\end{warnbox}
+
+\section{Gestion du profil}
+
+La rubrique \textbf{Mon Profil} (accessible depuis le menu de navigation ou l'ic\^one utilisateur) vous permet de consulter et de modifier une partie de vos informations personnelles.
+
+\subsection{Consultation du profil}
+
+La fiche profil affiche\,:
+\begin{itemize}
+  \item \textbf{Informations d'identit\'e} : nom, pr\'enom (non modifiables par l'utilisateur).
+  \item \textbf{Identifiant de connexion} (non modifiable).
+  \item \textbf{R\^oles et affectations} : liste des r\^oles actifs pour l'ann\'ee courante.
+  \item \textbf{Coordonn\'ees modifiables} : courriel, t\'el\'ephone, bureau.
+\end{itemize}
+
+\screenshot{img_profil}{Page Mon Profil}{Capturer la page profil utilisateur enti\`ere. Montrer les sections informations d'identit\'e, les affectations actives et les champs modifiables (courriel, t\'el\'ephone, bureau). Utiliser des donn\'ees de test non confidentielles.}
+
+\subsection{Modification du profil}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Mon Profil} dans le menu.
+  \item Dans la section \og Mes coordonn\'ees \fg, cliquer sur \textbf{Modifier}.
+  \item Mettre \`a jour les champs souhait\'es\,: \textit{Courriel secondaire}, \textit{T\'el\'ephone}, \textit{Bureau}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\begin{warnbox}[Champs non modifiables]
+  Certains champs ne peuvent \^etre modifi\'es que par un administrateur ou les Services Centraux\,: \textit{Nom}, \textit{Pr\'enom}, \textit{Identifiant}, \textit{R\^oles/Affectations}. Si une de ces informations est erron\'ee, cr\'eez un signalement (voir chapitre~\ref{chap:commun}).
+\end{warnbox}
+
+\section{Notifications}
+
+La cloche \faBell\ en haut de page indique le nombre de notifications non lues. Les notifications informent l'utilisateur des \'ev\`enements le concernant\,:
+
+\begin{itemize}
+  \item R\'eponse \`a une demande de r\^ole (approuv\'ee ou refus\'ee).
+  \item Signalement cl\^otur\'e ou trait\'e.
+  \item D\'el\'egation reu ou r\'evoqu\'ee.
+\end{itemize}
+
+\begin{steps}
+  \item Cliquer sur la cloche \faBell\ pour afficher la liste des notifications.
+  \item Cliquer sur une notification pour la marquer comme lue.
+  \item Naviguer vers la fonctionnalit\'e concern\'ee via le lien dans la notification.
+\end{steps}
+
+\screenshot{img_notifications}{Panneau de notifications}{Capturer le panneau de notifications ouvert, montrant plusieurs notifications (certaines lues, certaines non lues). La cloche avec un badge num\'erique doit \^etre visible.}

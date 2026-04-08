@@ -1,0 +1,330 @@
+\documentclass[12pt,a4paper,openany]{report}
+
+%% ============================================================
+%% ENCODAGE ET LANGUE
+%% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+
+%% ============================================================
+%% MISE EN PAGE
+%% ============================================================
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm,
+            headheight=15pt]{geometry}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+%% ============================================================
+%% COULEURS
+%% ============================================================
+\usepackage{xcolor}
+\definecolor{cgpblue}{RGB}{0,71,133}
+\definecolor{cgplightblue}{RGB}{219,234,254}
+\definecolor{cgpgray}{RGB}{107,114,128}
+\definecolor{cgplightgray}{RGB}{243,244,246}
+\definecolor{cgpgreen}{RGB}{5,150,105}
+\definecolor{cgplightgreen}{RGB}{209,250,229}
+\definecolor{cgporange}{RGB}{200,80,10}
+\definecolor{cgplightorange}{RGB}{255,237,213}
+\definecolor{cgpred}{RGB}{180,30,30}
+\definecolor{cgplightred}{RGB}{254,226,226}
+\definecolor{cgppurple}{RGB}{109,40,217}
+\definecolor{cgplightpurple}{RGB}{237,233,254}
+\definecolor{cgpplaceholder}{RGB}{200,210,225}
+\definecolor{rolebg}{RGB}{245,247,255}
+
+%% ============================================================
+%% GRAPHIQUES
+%% ============================================================
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,backgrounds}
+
+%% ============================================================
+%% BOITES TCOLORBOX
+%% ============================================================
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{breakable,skins}
+
+%% --- Commande screenshot : placeholder figure ---
+%% Usage: \screenshot{nom_fichier}{Légende}{Instructions de capture}
+\newcommand{\screenshot}[3]{%
+  \begin{figure}[htbp]
+    \centering
+    \begin{tcolorbox}[
+      enhanced, width=0.93\textwidth,
+      colback=white, colframe=cgpplaceholder,
+      title={\small\textbf{[\,Capture d'\'ecran\,] ---}~\texttt{images/#1.png}},
+      coltitle=cgpblue, colbacktitle=cgplightblue,
+      fonttitle=\small\sffamily, boxrule=1pt,
+      left=8pt, right=8pt, top=6pt, bottom=6pt
+    ]
+      {\small\textbf{Que capturer :}~#3}\\[8pt]
+      \begin{center}
+        \begin{tikzpicture}
+          \fill[cgplightgray, rounded corners=4pt] (0,0) rectangle (13,4.5);
+          \draw[cgpplaceholder, thick, dashed, rounded corners=4pt]
+                (0,0) rectangle (13,4.5);
+          \node[font=\large\itshape, text=cgpgray] at (6.5,2.25) {%
+            \textit{[~#2~]}%
+          };
+          \node[font=\tiny\sffamily, text=cgpplaceholder] at (6.5,0.4)
+                {Remplacer par la capture r\'eelle};
+        \end{tikzpicture}
+      \end{center}
+    \end{tcolorbox}
+    \caption{#2}
+    \label{fig:#1}
+  \end{figure}
+}
+
+%% --- Note informative (bleue) ---
+\newtcolorbox{notebox}[1][Note]{
+  enhanced, breakable,
+  title={\small\textbf{\faInfoCircle\enskip #1}},
+  colback=cgplightblue, colframe=cgpblue,
+  fonttitle=\small\sffamily, coltitle=cgpblue,
+  colbacktitle=cgplightblue, boxrule=1pt,
+  left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+%% --- Attention (orange) ---
+\newtcolorbox{warnbox}[1][Attention]{
+  enhanced, breakable,
+  title={\small\textbf{\faExclamationTriangle\enskip #1}},
+  colback=cgplightorange, colframe=cgporange,
+  fonttitle=\small\sffamily, coltitle=white,
+  colbacktitle=cgporange, boxrule=1pt,
+  left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+%% --- Conseil (vert) ---
+\newtcolorbox{tipbox}[1][Conseil]{
+  enhanced, breakable,
+  title={\small\textbf{\faLightbulb\enskip #1}},
+  colback=cgplightgreen, colframe=cgpgreen,
+  fonttitle=\small\sffamily, coltitle=white,
+  colbacktitle=cgpgreen, boxrule=1pt,
+  left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+%% --- Rôle(s) concerné(s) ---
+\newtcolorbox{rolebox}[1]{
+  enhanced, breakable,
+  title={\small\textbf{\faUserShield\enskip R\^ole(s) concern\'e(s) :~#1}},
+  colback=rolebg, colframe=cgpblue!50,
+  fonttitle=\small\sffamily, coltitle=cgpblue,
+  colbacktitle=rolebg, boxrule=0.8pt,
+  left=8pt, right=8pt, top=4pt, bottom=4pt
+}
+
+%% --- Étapes numérotées ---
+\newcounter{stepnum}
+\newenvironment{steps}{%
+  \setcounter{stepnum}{0}%
+  \begin{list}{%
+    \refstepcounter{stepnum}%
+    \textbf{\color{cgpblue}\'{E}tape~\thestepnum.}%
+  }{%
+    \setlength{\leftmargin}{2.5cm}%
+    \setlength{\labelwidth}{2.2cm}%
+    \setlength{\labelsep}{0.3cm}%
+    \setlength{\itemsep}{5pt}%
+    \setlength{\parsep}{0pt}%
+  }%
+}{%
+  \end{list}%
+}
+
+%% ============================================================
+%% TABLEAUX
+%% ============================================================
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{colortbl}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+%% ============================================================
+%% LISTES
+%% ============================================================
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, topsep=3pt, leftmargin=1.5em}
+\setlist[enumerate]{noitemsep, topsep=3pt, leftmargin=2em}
+
+%% ============================================================
+%% ICÔNES
+%% ============================================================
+\usepackage{fontawesome5}
+
+%% ============================================================
+%% LIENS
+%% ============================================================
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true, linkcolor=cgpblue,
+  urlcolor=cgpblue, citecolor=cgpblue,
+  bookmarksopen=true,
+  pdftitle={Manuel Utilisateur -- CGP Annuaire Formation},
+  pdfauthor={\'Equipe CGP},
+  pdfsubject={Documentation utilisateur},
+}
+
+%% ============================================================
+%% FORMATAGE DES TITRES
+%% ============================================================
+\usepackage{titlesec}
+\titleformat{\chapter}[display]{%
+  \normalfont\huge\bfseries\color{cgpblue}%
+}{\chaptertitlename~\thechapter}{16pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{18pt}
+
+\titleformat{\section}{%
+  \normalfont\Large\bfseries\color{cgpblue}%
+}{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+
+\titleformat{\subsection}{%
+  \normalfont\large\bfseries\color{cgpblue!80}%
+}{\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+
+\titleformat{\subsubsection}{%
+  \normalfont\normalsize\bfseries\color{cgpblue!60}%
+}{\thesubsubsection}{1em}{}
+\titlespacing*{\subsubsection}{0pt}{8pt}{3pt}
+
+%% ============================================================
+%% EN-TETES ET PIEDS DE PAGE
+%% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{cgpgray}{\nouppercase{\leftmark}}}
+\fancyhead[R]{\small\textcolor{cgpgray}{CGP -- Manuel Utilisateur}}
+\fancyfoot[C]{\small\textcolor{cgpgray}{\thepage}}
+\fancyfoot[R]{\small\textcolor{cgpgray}{v1.0 -- Avril 2025}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\textcolor{cgpgray}{\thepage}}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0.3pt}%
+}
+
+%% ============================================================
+%% DOCUMENT
+%% ============================================================
+\begin{document}
+
+%%--------------------------------------------------------------
+%% PAGE DE TITRE
+%%--------------------------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+
+{\color{cgpblue}\rule{\linewidth}{3pt}}
+\vspace{0.6cm}
+
+\begin{tcolorbox}[
+  enhanced, width=0.8\textwidth,
+  colback=cgplightblue, colframe=cgpblue,
+  boxrule=2pt, arc=8pt,
+  left=12pt, right=12pt, top=14pt, bottom=14pt
+]
+  \centering
+  {\color{cgpblue}\fontsize{48}{52}\selectfont\bfseries CGP}\\[0.4cm]
+  {\color{cgpgray}\Large Annuaire Formation}\\[0.2cm]
+  {\color{cgpgray}\normalsize Syst\`eme de Gestion de l'Annuaire Universitaire}
+\end{tcolorbox}
+
+\vspace{0.8cm}
+{\color{cgpblue}\rule{0.5\linewidth}{1.5pt}}
+\vspace{0.7cm}
+
+{\fontsize{32}{36}\selectfont\bfseries\color{cgpblue} Manuel Utilisateur}\\[0.4cm]
+{\Large\color{cgpgray} Guide complet d'utilisation --- Tous profils}
+
+\vspace{1cm}
+
+\begin{tcolorbox}[
+  enhanced, width=0.55\textwidth,
+  colback=cgplightgray, colframe=cgpgray!40,
+  boxrule=0.5pt, arc=4pt,
+  left=10pt, right=10pt, top=8pt, bottom=8pt
+]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+  \textbf{Version :}        & 1.0 \\[4pt]
+  \textbf{Date :}           & Avril 2025 \\[4pt]
+  \textbf{Audience :}       & Tous les utilisateurs \\[4pt]
+  \textbf{Classification :} & Usage interne \\[4pt]
+\end{tabular}
+\end{tcolorbox}
+
+\vfill
+{\color{cgpblue}\rule{\linewidth}{3pt}}
+\end{titlepage}
+
+%%--------------------------------------------------------------
+%% AVANT-PROPOS
+%%--------------------------------------------------------------
+\chapter*{Avant-propos}
+\addcontentsline{toc}{chapter}{Avant-propos}
+
+Ce manuel d'utilisation d\'ecrit l'ensemble des fonctionnalit\'es de l'application \textbf{CGP -- Annuaire Formation}, un syst\`eme de gestion de l'annuaire universitaire destin\'e \`a l'ensemble des personnels de l'\'etablissement.
+
+\medskip
+L'application permet de g\'erer les structures acad\'emiques, les responsables p\'edagogiques, les affectations de r\^oles, les organigrammes et les \'echanges de donn\'ees dans un environnement multi-ann\'ees acad\'emiques.
+
+\medskip
+\textbf{\`A qui s'adresse ce manuel ?}
+
+Ce document s'adresse \`a l'ensemble des utilisateurs de la plateforme, quels que soient leurs r\^oles. Un chapitre d\'edi\'e \`a chaque profil principal d\'etaille les fonctionnalit\'es accessibles et les proc\'edures \`a suivre. Les fonctionnalit\'es communes \`a tous les profils sont regroup\'ees dans le chapitre~\ref{chap:commun}.
+
+\begin{warnbox}[Images \`a ins\'erer]
+Les encadr\'es gris\'es portant la mention \textbf{[Capture d'\'ecran]} sont des emplacements r\'eserv\'es aux captures d'\'ecran de l'application r\'eelle. Chaque bloc pr\'ecise le nom du fichier image attendu (dans le r\'epertoire \texttt{images/}) ainsi que des instructions d\'etaill\'ees pour r\'ealiser la capture correspondante. Une fois les captures disponibles, remplacer la commande \verb|\screenshot{...}{...}{...}| par une commande \verb|\includegraphics| standard dans un environnement \texttt{figure}.
+\end{warnbox}
+
+\begin{tipbox}[Convention de remplacement d'image]
+Pour remplacer un placeholder par une vraie image\,:
+\begin{verbatim}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/nom_fichier.png}
+  \caption{Légende}
+  \label{fig:nom_fichier}
+\end{figure}
+\end{verbatim}
+\end{tipbox}
+
+%%--------------------------------------------------------------
+%% TABLE DES MATIÈRES
+%%--------------------------------------------------------------
+\tableofcontents
+\clearpage
+
+%%--------------------------------------------------------------
+%% CHAPITRES
+%%--------------------------------------------------------------
+\include{chapters/ch00_introduction}
+\include{chapters/ch01_connexion}
+\include{chapters/ch02_roles}
+\include{chapters/ch03_services_centraux}
+\include{chapters/ch04_direction_composante}
+\include{chapters/ch05_directions}
+\include{chapters/ch06_secretariat}
+\include{chapters/ch07_utilisateur}
+\include{chapters/ch08_commun}
+
+\end{document}

@@ -1,0 +1,155 @@
+\chapter{Manuel --- Utilisateur Standard et Lecture Seule}
+\label{chap:utilisateur}
+
+\begin{rolebox}{utilisateur-simple, lecture-seule}
+  Ce chapitre s'adresse aux utilisateurs avec un acc\`es minimal. Ces profils sont orient\'es \textbf{consultation} et ne permettent aucune modification des donn\'ees (sauf les signalements et la mise \`a jour du profil personnel pour \texttt{utilisateur-simple}).
+\end{rolebox}
+
+\section{Diff\'erence entre les deux profils}
+
+\medskip
+\begin{tabularx}{\textwidth}{L{5cm}C{3cm}C{3cm}}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Fonctionnalit\'e} & \textbf{utilisateur-simple} & \textbf{lecture-seule} \\
+  \midrule
+  Consulter l'annuaire                     & {\color{cgpgreen}\checkmark} & {\color{cgpgreen}\checkmark} \\
+  \rowcolor{cgplightgray}
+  Consulter les organigrammes              & {\color{cgpgreen}\checkmark} & {\color{cgpgreen}\checkmark} \\
+  Consulter les fiches structures          & {\color{cgpgreen}\checkmark} & {\color{cgpgreen}\checkmark} \\
+  \rowcolor{cgplightgray}
+  Cr\'eer des signalements                 & {\color{cgpgreen}\checkmark} & {\color{cgpgreen}\checkmark} \\
+  Modifier son profil (coordonn\'ees)      & {\color{cgpgreen}\checkmark} & {\color{cgpred}$\times$} \\
+  \rowcolor{cgplightgray}
+  G\'en\'erer des organigrammes            & {\color{cgpred}$\times$}    & {\color{cgpred}$\times$} \\
+  G\'erer des affectations / utilisateurs  & {\color{cgpred}$\times$}    & {\color{cgpred}$\times$} \\
+  \bottomrule
+\end{tabularx}
+
+\section{Tableau de bord}
+
+\screenshot{img_dashboard_utilisateur}{Tableau de bord -- Utilisateur Standard}{Capturer le tableau de bord avec un compte utilisateur-simple ou lecture-seule. Montrer les tuiles de raccourcis limit\'ees \`a ce profil (Rechercher, Organigramme, Signalements, Profil). L'absence de tuiles de gestion (Responsables, Ann\'ees, Import/Export) doit \^etre apparente.}
+
+\section{Consultation de l'annuaire}
+
+L'annuaire est la fonctionnalit\'e principale des utilisateurs standard. Il permet de retrouver rapidement n'importe quelle personne, formation ou structure de l'\'etablissement.
+
+\subsection{Acc\`eder \`a l'annuaire}
+
+\begin{steps}
+  \item Cliquer sur \textbf{Rechercher} dans le menu de navigation.
+  \item La page s'ouvre sur l'onglet \textbf{Responsables} par d\'efaut.
+  \item Quatre onglets sont disponibles\,: \textbf{Responsables}, \textbf{Formations}, \textbf{Structures}, \textbf{Secr\'etariats}.
+\end{steps}
+
+\screenshot{img_annuaire_utilisateur}{Annuaire -- Vue Utilisateur Standard}{Capturer la page de recherche avec les quatre onglets visibles en haut. Montrer l'onglet Responsables actif avec une recherche effectu\'ee et des r\'esultats affich\'es. La barre de recherche et les filtres principaux doivent \^etre visibles.}
+
+\subsection{Rechercher un responsable}
+
+\begin{steps}
+  \item S\'electionner l'onglet \textbf{Responsables}.
+  \item Saisir un nom, pr\'enom ou intitul\'e dans la barre de recherche.
+  \item Affiner avec les filtres\,: \textit{Composante}, \textit{D\'epartement}, \textit{Mention}, \textit{Parcours}, \textit{Niveau}, \textit{R\^ole}.
+  \item Les r\'esultats s'affichent sous forme de cartes ou de tableau avec\,: nom, pr\'enom, r\^ole, structure, courriel institutionnel.
+\end{steps}
+
+\begin{tipbox}[Conseils de recherche]
+  \begin{itemize}
+    \item Pour une recherche rapide, saisissez le nom de famille dans la barre de recherche.
+    \item Pour trouver tous les responsables d'un d\'epartement, utilisez uniquement le filtre \textit{D\'epartement} sans texte de recherche.
+    \item Pour trouver tous les directeurs de mention, utilisez le filtre \textit{R\^ole} = \og Directeur de mention \fg{}.
+  \end{itemize}
+\end{tipbox}
+
+\subsection{Rechercher une formation}
+
+\begin{steps}
+  \item S\'electionner l'onglet \textbf{Formations}.
+  \item Saisir le nom de la formation ou utiliser les filtres\,: \textit{Type de dipl\^ome}, \textit{Composante}, \textit{D\'epartement}.
+  \item Les r\'esultats affichent\,: intitul\'e de la formation, type de dipl\^ome, composante, directeur de mention, directeur d'\'etudes.
+\end{steps}
+
+\screenshot{img_annuaire_formations_utilisateur}{Annuaire Formations -- Utilisateur Standard}{Capturer l'onglet Formations avec des r\'esultats. Montrer les filtres disponibles et les cartes de r\'esultats avec l'intitul\'e de la formation, le type de dipl\^ome (Licence, Master, etc.) et les responsables associ\'es.}
+
+\subsection{Rechercher une structure}
+
+\begin{steps}
+  \item S\'electionner l'onglet \textbf{Structures}.
+  \item Saisir le nom de la structure ou utiliser les filtres hi\'erarchiques.
+  \item Cliquer sur une structure dans les r\'esultats pour afficher sa fiche d\'etaill\'ee.
+\end{steps}
+
+\subsection{Rechercher un secr\'etariat}
+
+\begin{steps}
+  \item S\'electionner l'onglet \textbf{Secr\'etariats}.
+  \item Filtrer par \textit{Composante} ou \textit{D\'epartement}.
+  \item Les r\'esultats affichent les contacts du secr\'etariat\,: nom, courriel fonctionnel, t\'el\'ephone, bureau.
+\end{steps}
+
+\section{Consultation des fiches structures}
+
+\begin{steps}
+  \item Rechercher la structure souhait\'ee dans l'onglet \textbf{Structures} de l'annuaire.
+  \item Cliquer sur la structure pour ouvrir sa fiche.
+  \item La fiche affiche\,: identification, hi\'erarchie, coordonn\'ees, liste des responsables, secr\'etariat, sous-structures.
+\end{steps}
+
+\screenshot{img_fiche_structure_utilisateur}{Fiche structure -- Vue Utilisateur}{Capturer une fiche structure compl\`ete (composante ou d\'epartement). Toutes les sections doivent \^etre visibles. Montrer que les boutons de modification ne sont pas accessibles pour cet utilisateur.}
+
+\section{Consultation des organigrammes}
+
+L'utilisateur standard peut consulter les organigrammes existants mais ne peut pas en g\'en\'erer de nouveaux.
+
+\begin{steps}
+  \item Naviguer vers \textbf{Organigramme}.
+  \item Dans la section \og Biblioth\`eque \fg{}, utiliser les filtres pour retrouver un organigramme.
+  \item Cliquer sur \textbf{Voir en structures} ou \textbf{Voir en personnes}.
+\end{steps}
+
+\screenshot{img_organigramme_utilisateur}{Organigramme -- Consultation Utilisateur}{Capturer la page organigramme telle que vue par un utilisateur standard. Montrer la biblioth\`eque avec les organigrammes disponibles, et un organigramme ouvert en vue structures ou personnes. Les boutons de g\'en\'eration et de gel doivent \^etre absents.}
+
+\begin{notebox}
+  Si aucun organigramme n'a encore \'et\'e g\'en\'er\'e par un utilisateur autoris\'e, la biblioth\`eque sera vide. Dans ce cas, contactez votre directeur de composante ou les Services Centraux.
+\end{notebox}
+
+\section{Signalements}
+
+\begin{rolebox}{utilisateur-simple, lecture-seule}
+  Les deux profils peuvent soumettre des signalements.
+\end{rolebox}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Signalements}.
+  \item Cliquer sur \textbf{Cr\'eer un signalement}.
+  \item S\'electionner le type d'erreur (nom, pr\'enom, t\'el\'ephone, bureau, courriel, r\^ole, autre).
+  \item Identifier la personne ou la structure concern\'ee.
+  \item D\'ecrire clairement l'erreur constat\'ee.
+  \item Cliquer sur \textbf{Envoyer}.
+\end{steps}
+
+\screenshot{img_signalements_utilisateur}{Signalements -- Utilisateur Standard}{Capturer la page Signalements avec le formulaire de cr\'eation (type d'erreur, personne concern\'ee, description) et la liste des signalements pr\'ec\'edemment soumis. Montrer les badges de statut (En attente, Trait\'e, Cl\^otur\'e).}
+
+\begin{tipbox}[Bon usage des signalements]
+  \begin{itemize}
+    \item Soyez pr\'ecis dans la description\,: indiquez l'erreur constat\'ee et la valeur correcte si vous la connaissez.
+    \item Ne soumettez pas plusieurs signalements pour la m\^eme erreur.
+    \item Vous serez notifi\'e lorsque votre signalement sera trait\'e.
+  \end{itemize}
+\end{tipbox}
+
+\section{Mon Profil}
+
+\begin{rolebox}{utilisateur-simple}
+  L'utilisateur simple peut modifier ses coordonn\'ees. L'utilisateur lecture-seule peut uniquement consulter son profil.
+\end{rolebox}
+
+\begin{steps}
+  \item Cliquer sur \textbf{Mon Profil} dans le menu.
+  \item Consulter les informations affich\'ees\,: nom, pr\'enom, identifiant, r\^oles, courriel, t\'el\'ephone, bureau.
+  \item Pour \texttt{utilisateur-simple}\,: cliquer sur \textbf{Modifier} pour mettre \`a jour les coordonn\'ees.
+  \item Modifier \textit{Courriel secondaire}, \textit{T\'el\'ephone} et/ou \textit{Bureau}.
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_profil_utilisateur}{Mon Profil -- Utilisateur Standard}{Capturer la page Mon Profil d'un utilisateur simple. Montrer toutes les informations affich\'ees (identit\'e, r\^ole(s), coordonn\'ees). Le bouton Modifier doit \^etre visible. Utiliser des donn\'ees de test non confidentielles.}

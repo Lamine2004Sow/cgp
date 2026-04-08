@@ -1,0 +1,376 @@
+\chapter{Fonctionnalit\'es Communes \`a Tous les Profils}
+\label{chap:commun}
+
+\begin{rolebox}{Tous les r\^oles}
+  Ce chapitre d\'ecrit les fonctionnalit\'es accessibles \`a tous les utilisateurs, quel que soit leur r\^ole. Il compl\`ete les chapitres d\'edi\'es \`a chaque profil.
+\end{rolebox}
+
+\section{Annuaire -- Guide d\'etaill\'e}
+\label{sec:annuaire}
+
+L'annuaire est la fonctionnalit\'e de consultation centrale de CGP. Il est accessible depuis la rubrique \textbf{Rechercher} du menu.
+
+\subsection{Pr\'esentation g\'en\'erale}
+
+L'annuaire est organis\'e en quatre onglets\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{L{3cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Onglet} & \textbf{Contenu} \\
+  \midrule
+  \textbf{Responsables} & Liste des personnes affect\'ees \`a un r\^ole dans une structure. \\
+  \rowcolor{cgplightgray}
+  \textbf{Formations} & Liste des formations (Licence, Master, etc.) avec leurs responsables. \\
+  \textbf{Structures} & Liste des structures de l'\'etablissement (composantes, d\'epartements, mentions...). \\
+  \rowcolor{cgplightgray}
+  \textbf{Secr\'etariats} & Contacts fonctionnels du secr\'etariat p\'edagogique. \\
+  \bottomrule
+\end{tabularx}
+
+\screenshot{img_annuaire_onglets}{Annuaire -- Vue g\'en\'erale avec les quatre onglets}{Capturer la page Recherche avec les quatre onglets visibles en haut (Responsables, Formations, Structures, Secr\'etariats). Montrer l'onglet Responsables actif avec une recherche et des r\'esultats. La barre de recherche et les filtres doivent \^etre visibles.}
+
+\subsection{Onglet Responsables}
+
+Cet onglet permet de rechercher toute personne ayant une affectation active dans l'ann\'ee courante.
+
+\subsubsection{Filtres disponibles}
+
+\begin{itemize}
+  \item \textbf{Recherche libre} : saisie de texte (nom, pr\'enom, courriel, identifiant).
+  \item \textbf{Composante} : filtre par composante (niveau 1 de la hi\'erarchie).
+  \item \textbf{D\'epartement} : se d\'eroule apr\`es s\'election d'une composante.
+  \item \textbf{Mention} : se d\'eroule apr\`es s\'election d'un d\'epartement.
+  \item \textbf{Parcours} : se d\'eroule apr\`es s\'election d'une mention.
+  \item \textbf{Niveau} : se d\'eroule apr\`es s\'election d'un parcours.
+  \item \textbf{R\^ole} : filtre par type de r\^ole.
+\end{itemize}
+
+\begin{notebox}[Filtres en cascade]
+  Les filtres hi\'erarchiques fonctionnent en cascade\,: la s\'election d'une composante filtre automatiquement les d\'epartements disponibles, la s\'election d'un d\'epartement filtre les mentions, etc. Pour r\'einitialiser, effacer le filtre au niveau sup\'erieur.
+\end{notebox}
+
+\subsubsection{Informations affich\'ees dans les r\'esultats}
+
+Pour chaque r\'esultat (responsable trouv\'e), les informations suivantes sont g\'en\'eralement disponibles\,:
+\begin{itemize}
+  \item Nom et pr\'enom.
+  \item R\^ole dans la structure.
+  \item Structure d'appartenance (composante, d\'epartement, mention).
+  \item Courriel institutionnel.
+  \item Courriel fonctionnel (si renseign\'e).
+  \item T\'el\'ephone (si renseign\'e).
+  \item Bureau (si renseign\'e).
+\end{itemize}
+
+\screenshot{img_annuaire_responsables_detail}{Annuaire Responsables -- R\'esultats d\'etaill\'es}{Capturer l'onglet Responsables avec des r\'esultats affich\'es sous forme de cartes ou de tableau. Montrer pour au moins 3 r\'esultats\,: nom/pr\'enom, r\^ole, structure, courriel. Si des informations de t\'el\'ephone ou bureau sont renseign\'ees, les montrer \'egalement.}
+
+\subsection{Onglet Formations}
+
+Cet onglet permet de retrouver les formations et leurs responsables.
+
+\subsubsection{Filtres disponibles}
+
+\begin{itemize}
+  \item \textbf{Recherche libre} : nom de la formation.
+  \item \textbf{Type de dipl\^ome} : Licence, Master, Doctorat, DUT, BTS, etc.
+  \item \textbf{Composante} et \textbf{D\'epartement}.
+\end{itemize}
+
+\subsubsection{Informations affich\'ees}
+
+Pour chaque formation\,:
+\begin{itemize}
+  \item Intitul\'e de la formation.
+  \item Type de dipl\^ome.
+  \item Composante et d\'epartement.
+  \item Directeur de mention / Responsable de formation.
+  \item Directeur d'\'etudes (si affect\'e).
+\end{itemize}
+
+\screenshot{img_annuaire_formations_detail}{Annuaire Formations -- R\'esultats}{Capturer l'onglet Formations avec des r\'esultats. Montrer les filtres (type de dipl\^ome, composante) et les cartes de r\'esultats avec l'intitul\'e de la formation et les responsables associ\'es.}
+
+\subsection{Onglet Structures}
+
+Cet onglet liste les entit\'es organisationnelles de l'\'etablissement.
+
+\subsubsection{Filtres disponibles}
+
+\begin{itemize}
+  \item \textbf{Recherche libre} : nom de la structure.
+  \item \textbf{Type de structure} : Composante, D\'epartement, Mention, Parcours, Niveau, Service.
+  \item \textbf{Parent} (hi\'erarchie).
+\end{itemize}
+
+\subsubsection{Naviguer dans la hi\'erarchie}
+
+\begin{steps}
+  \item Dans les r\'esultats, cliquer sur une structure pour ouvrir sa fiche d\'etaill\'ee.
+  \item La fiche montre les sous-structures directes (liens cliquables).
+  \item Cliquer sur une sous-structure pour naviguer vers elle.
+\end{steps}
+
+\screenshot{img_annuaire_structures_detail}{Annuaire Structures -- Navigation hi\'erarchique}{Capturer l'onglet Structures avec des r\'esultats. Montrer plusieurs types de structures (composante, d\'epartement, mention) et une fiche ouverte en p\'eriph\'erie si possible (ou en mode pleine page).}
+
+\subsection{Onglet Secr\'etariats}
+
+Cet onglet affiche les contacts du secr\'etariat p\'edagogique.
+
+\subsubsection{Informations affich\'ees}
+
+Pour chaque agent de secr\'etariat\,:
+\begin{itemize}
+  \item Nom et pr\'enom.
+  \item Structure de rattachement.
+  \item Courriel fonctionnel du service.
+  \item T\'el\'ephone du secr\'etariat.
+  \item Bureau / localisation.
+\end{itemize}
+
+\screenshot{img_annuaire_secretariats_detail}{Annuaire Secr\'etariats -- R\'esultats}{Capturer l'onglet Secr\'etariats avec des r\'esultats. Montrer les contacts avec leur structure de rattachement, courriel fonctionnel, t\'el\'ephone et bureau.}
+
+\section{Fiche Structure -- Guide d\'etaill\'e}
+\label{sec:fiche_structure}
+
+La fiche structure est accessible en cliquant sur une structure dans les r\'esultats de l'annuaire ou via la rubrique \textbf{Structures}.
+
+\subsection{Sections de la fiche}
+
+\begin{description}[style=nextline, font=\bfseries]
+  \item[Identification] Nom, type de structure (Composante, D\'epartement, Mention...), code, ann\'ee acad\'emique.
+  \item[Hi\'erarchie] Structure parente (lien cliquable) et niveau dans la hi\'erarchie.
+  \item[Coordonn\'ees] Adresse physique, t\'el\'ephone principal, courriel institutionnel.
+  \item[Responsables] Liste des personnes affect\'ees avec leur r\^ole, courriel et coordonn\'ees.
+  \item[Secr\'etariat] Liste des agents de secr\'etariat avec leurs contacts fonctionnels.
+  \item[Sous-structures] Liens vers les entit\'es filles directes (d\'epartements, mentions...).
+  \item[Statistiques] Nombre de responsables, d'affectations, de sous-structures.
+\end{description}
+
+\screenshot{img_fiche_structure_complete}{Fiche structure compl\`ete -- Toutes sections}{Capturer une fiche structure enti\`ere (plusieurs d\'efilements si n\'ecessaire). Montrer successivement toutes les sections\,: identification, hi\'erarchie, coordonn\'ees, responsables, secr\'etariat, sous-structures. Utiliser une composante pour avoir le maximum de contenu.}
+
+\section{Organigrammes -- Guide de consultation}
+\label{sec:organigrammes_consultation}
+
+\subsection{Vue Structures}
+
+La vue Structures repr\'esente l'organisation hi\'erarchique des entit\'es.
+
+\begin{itemize}
+  \item Chaque n\oe ud affiche\,: nom de la structure, type, responsable(s) principal(aux).
+  \item Les li\`egnes repr\'esentent les relations parent-enfant dans la hi\'erarchie.
+  \item Il est possible de d\'eplier/replier les branches.
+  \item Un clic sur un n\oe ud peut afficher les d\'etails de la structure.
+\end{itemize}
+
+\screenshot{img_organigramme_vue_structures}{Organigramme -- Vue Structures d\'etaill\'ee}{Capturer l'organigramme en vue Structures avec plusieurs niveaux d\'epli\'es (composante $\to$ d\'epartements $\to$ mentions si possible). Montrer quelques n\oe uds avec leurs informations visibles (nom structure, type, responsable).}
+
+\subsection{Vue Personnes}
+
+La vue Personnes repr\'esente les liens hi\'erarchiques N+1 entre personnes.
+
+\begin{itemize}
+  \item Chaque n\oe ud affiche\,: nom, pr\'enom, r\^ole, structure d'affiliation, courriel.
+  \item Les liens repr\'esentent la relation de supervision (N+1).
+  \item Les filtres permettent de pr\'eciser\,: r\^ole, composante, d\'epartement, mention, parcours, niveau.
+\end{itemize}
+
+\screenshot{img_organigramme_vue_personnes}{Organigramme -- Vue Personnes d\'etaill\'ee}{Capturer l'organigramme en vue Personnes avec les filtres visibles et plusieurs n\oe uds personnes affich\'es. Un n\oe ud doit \^etre survol\'e ou ouvert pour montrer les informations disponibles (r\^ole, structure, courriel).}
+
+\subsection{Filtres de l'organigramme}
+
+Les filtres disponibles dans la vue Personnes\,:
+
+\medskip
+\begin{tabularx}{\textwidth}{L{4cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Filtre} & \textbf{Effet} \\
+  \midrule
+  Recherche libre  & Filtre les n\oe uds par nom de personne ou de structure. \\
+  \rowcolor{cgplightgray}
+  R\^ole           & N'affiche que les personnes ayant ce r\^ole. \\
+  Composante       & Limite l'arbre \`a une composante. \\
+  \rowcolor{cgplightgray}
+  D\'epartement    & Limite l'arbre \`a un d\'epartement. \\
+  Mention          & Limite l'arbre \`a une mention. \\
+  \rowcolor{cgplightgray}
+  Parcours         & Limite \`a un parcours. \\
+  Niveau           & Limite \`a un niveau d'ann\'ee. \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Exporter un organigramme}
+
+Les utilisateurs autoris\'es (voir chapitre~\ref{chap:roles}) peuvent exporter les organigrammes affich\'es\,:
+
+\begin{steps}
+  \item Afficher l'organigramme souhait\'e.
+  \item Cliquer sur le bouton \textbf{Exporter}.
+  \item S\'electionner le format\,: \textbf{PDF} (pour impression), \textbf{SVG} (vectoriel), \textbf{CSV} (tabulaire), \textbf{JSON} (donn\'ees brutes).
+\end{steps}
+
+\screenshot{img_organigramme_export_formats}{Export d'organigramme -- S\'election du format}{Capturer le menu ou la modale d'export affichant les formats disponibles (PDF, SVG, CSV, JSON).}
+
+\section{Signalements -- Guide d\'etaill\'e}
+\label{sec:signalements_detail}
+
+\subsection{Types de signalements}
+
+\medskip
+\begin{tabularx}{\textwidth}{L{3cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{Type} & \textbf{Utilisation} \\
+  \midrule
+  Nom            & Erreur sur le nom de famille d'une personne. \\
+  \rowcolor{cgplightgray}
+  Pr\'enom       & Erreur sur le pr\'enom. \\
+  T\'el\'ephone  & Num\'ero de t\'el\'ephone incorrect ou manquant. \\
+  \rowcolor{cgplightgray}
+  Bureau         & Localisation (bureau, b\^atiment) incorrecte. \\
+  Courriel       & Adresse \'electronique incorrecte ou manquante. \\
+  \rowcolor{cgplightgray}
+  R\^ole         & Affectation manquante, incorrecte ou obsol\`ete. \\
+  Autre          & Tout autre type de probl\`eme sur les donn\'ees. \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Cycle de vie d'un signalement}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.5cm,
+  state/.style={rectangle, rounded corners=6pt, draw=cgpblue, fill=cgplightblue,
+                text width=3cm, align=center, font=\small\bfseries, minimum height=0.9cm}
+]
+  \node[state] (soumis) {Soumis\\(En attente)};
+  \node[state, right=2.5cm of soumis] (encours) {En cours\\de traitement};
+  \node[state, right=2.5cm of encours] (clos) {Cl\^otur\'e};
+  \node[state, below=1.2cm of encours] (escalade) {Escalad\'e\\(SC)};
+
+  \draw[->, thick, cgpblue] (soumis) -- (encours)
+    node[midway, above, font=\tiny] {Pris en charge};
+  \draw[->, thick, cgpblue] (encours) -- (clos)
+    node[midway, above, font=\tiny] {R\'esolu};
+  \draw[->, thick, cgpblue] (encours) -- (escalade)
+    node[midway, right, font=\tiny] {Escalade};
+  \draw[->, thick, cgpblue] (escalade) -- (clos)
+    node[midway, below right, font=\tiny] {R\'esolu par SC};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Soumettre un signalement}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Signalements}.
+  \item Cliquer sur \textbf{Cr\'eer un signalement}.
+  \item S\'electionner le \textit{type d'erreur}.
+  \item Rechercher et s\'electionner la \textit{personne} ou la \textit{structure} concern\'ee.
+  \item Saisir une \textit{description} pr\'ecise\,: d\'ecrire l'erreur constat\'ee et si possible indiquer la valeur correcte.
+  \item Cliquer sur \textbf{Envoyer}.
+\end{steps}
+
+\screenshot{img_signalement_formulaire}{Formulaire de signalement}{Capturer le formulaire de cr\'eation d'un signalement avec tous les champs remplis\,: menu d\'eroulant du type d'erreur (montrer les options), champ de recherche de la personne/structure concern\'ee avec un exemple de r\'esultat s\'electionn\'e, et le champ description avec un texte exemple.}
+
+\subsection{Suivre ses signalements}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Signalements}.
+  \item La liste affiche les signalements soumis avec leur statut.
+  \item Cliquer sur un signalement pour voir ses d\'etails et les \'eventuels commentaires de traitement.
+\end{steps}
+
+\screenshot{img_signalements_liste}{Liste des signalements avec statuts}{Capturer la liste des signalements avec les badges de statut color\'es (En attente = orange, En cours = bleu, Cl\^otur\'e = vert). Montrer plusieurs signalements avec des statuts diff\'erents.}
+
+\section{Mon Profil -- Guide d\'etaill\'e}
+\label{sec:profil_detail}
+
+La page \textbf{Mon Profil} est accessible depuis le menu ou l'ic\^one utilisateur.
+
+\subsection{Informations consultables}
+
+\begin{itemize}
+  \item \textbf{Identit\'e} : nom, pr\'enom (informations de r\'ef\'erence, non modifiables par l'utilisateur).
+  \item \textbf{Identifiant de connexion} (non modifiable).
+  \item \textbf{Ann\'ee courante} et \textbf{r\^oles actifs} : liste de toutes les affectations pour l'ann\'ee en cours, avec la structure et le r\^ole correspondants.
+  \item \textbf{Coordonn\'ees personnelles} : courriel secondaire, t\'el\'ephone, bureau.
+\end{itemize}
+
+\subsection{Informations modifiables}
+
+\begin{warnbox}[R\`egle de modification du profil]
+  L'utilisateur peut uniquement modifier ses \textbf{coordonn\'ees personnelles} (courriel secondaire, t\'el\'ephone, bureau). \\
+  Les informations d'identit\'e (nom, pr\'enom) et les affectations ne peuvent \^etre modifi\'ees que par un administrateur ou les Services Centraux. En cas d'erreur, cr\'eer un signalement.
+\end{warnbox}
+
+\begin{steps}
+  \item Naviguer vers \textbf{Mon Profil}.
+  \item Cliquer sur \textbf{Modifier} dans la section \og Mes coordonn\'ees \fg{}.
+  \item Mettre \`a jour les champs souhait\'es\,:
+    \begin{itemize}
+      \item \textit{Courriel secondaire} : adresse \'electronique personnelle ou alternative.
+      \item \textit{T\'el\'ephone} : num\'ero de t\'el\'ephone direct.
+      \item \textit{Bureau} : num\'ero de bureau, b\^atiment, campus.
+    \end{itemize}
+  \item Cliquer sur \textbf{Enregistrer}.
+\end{steps}
+
+\screenshot{img_profil_modification}{Profil -- Mode modification}{Capturer la page Mon Profil en mode modification (apr\`es clic sur Modifier). Montrer les champs \'editables (courriel secondaire, t\'el\'ephone, bureau) avec leurs valeurs actuelles, et les boutons Enregistrer et Annuler.}
+
+\section{Notifications -- Guide d\'etaill\'e}
+\label{sec:notifications_detail}
+
+Le syst\`eme de notifications informe les utilisateurs des \'ev\'enements les concernant.
+
+\subsection{Types de notifications}
+
+\medskip
+\begin{tabularx}{\textwidth}{L{5cm}X}
+  \toprule
+  \rowcolor{cgplightblue}
+  \textbf{\'Ev\'enement} & \textbf{Destinataire} \\
+  \midrule
+  Demande de r\^ole approuv\'ee   & Demandeur \\
+  \rowcolor{cgplightgray}
+  Demande de r\^ole refus\'ee     & Demandeur \\
+  Signalement cl\^otur\'e        & Auteur du signalement \\
+  \rowcolor{cgplightgray}
+  Signalement escalad\'e         & Services Centraux \\
+  D\'el\'egation re\c{c}ue       & D\'el\'egu\'e \\
+  \rowcolor{cgplightgray}
+  D\'el\'egation r\'evoqu\'ee    & D\'el\'egu\'e \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Consulter les notifications}
+
+\begin{steps}
+  \item Cliquer sur la cloche \faBell{} dans l'en-t\^ete (le badge indique le nombre de non-lues).
+  \item Le panneau de notifications s'ouvre.
+  \item Cliquer sur une notification pour la marquer comme lue et acc\'eder \`a la ressource concern\'ee.
+  \item Optionnel\,: cliquer sur \textbf{Tout marquer comme lu} pour effacer toutes les notifications.
+\end{steps}
+
+\screenshot{img_notifications_detail}{Panneau notifications ouvert}{Capturer le panneau de notifications ouvert avec plusieurs notifications de types diff\'erents (demande approuv\'ee, signalement cl\^otur\'e, d\'el\'egation). Montrer les notifications lues et non lues avec une distinction visuelle claire.}
+
+\section{Raccourcis clavier et navigabilit\'e}
+
+\begin{tipbox}[Navigation rapide]
+  \begin{itemize}
+    \item \textbf{Tabulation} : naviguer entre les champs de formulaire.
+    \item \textbf{Entr\'ee} : valider un formulaire ou une recherche.
+    \item \textbf{\'Echap} : fermer une modale ou annuler une action.
+    \item \textbf{Ctrl+F / Cmd+F} : recherche dans la page (navigateur).
+  \end{itemize}
+\end{tipbox}
+
+\section{Accessibilit\'e et bonnes pratiques}
+
+\begin{itemize}
+  \item Utiliser de pr\'ef\'erence \textbf{Google Chrome} ou \textbf{Firefox} en version r\'ecente.
+  \item \'Eviter d'ouvrir l'application dans plusieurs onglets simultan\'ement pour \'eviter les conflits de session.
+  \item En cas de comportement inattendu, rafra\^ichir la page (\textsf{F5}) avant de signaler un bug.
+  \item Ne pas partager vos identifiants de connexion.
+  \item Si vous quittez votre poste de travail, \textbf{d\'econnectez-vous} de l'application.
+\end{itemize}
