@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ROLE_IDS } from '../../auth/roles.constants';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { CurrentUser as CurrentUserType } from '../../common/types/current-user';
 import { AnneesService } from './annees.service';
 import { YearsListQueryDto } from './dto/years-list-query.dto';
 import { CloneYearDto } from './dto/clone-year.dto';
@@ -12,8 +14,11 @@ export class AnneesController {
 
   @Get()
   @Roles(...Object.values(ROLE_IDS))
-  async list(@Query() query: YearsListQueryDto) {
-    const items = await this.anneesService.list(query.statut);
+  async list(
+    @CurrentUser() user: CurrentUserType,
+    @Query() query: YearsListQueryDto,
+  ) {
+    const items = await this.anneesService.listForUser(user, query.statut);
     return { items };
   }
 

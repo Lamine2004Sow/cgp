@@ -380,114 +380,120 @@ export function ErrorReports({
 
       {/* Formulaire de création */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl space-y-5 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-slate-900">Nouveau signalement</h3>
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label="Fermer la fenêtre de création de signalement"
+            onClick={() => setShowForm(false)}
+            className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"
+          />
+          <div className="relative flex min-h-full items-center justify-center p-4">
+            <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5">
+              <h3 className="text-slate-900">Nouveau signalement</h3>
 
-          {/* Sélection du type */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">
-              Type d'erreur <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {SIGNALEMENT_TYPES.map((t) => {
-                const Icon = t.icon;
-                const selected = form.type === t.value;
-                return (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => setForm({ ...form, type: t.value, userId: "", entiteId: "" })}
-                    className={`text-left p-3 rounded-lg border-2 transition-all ${
-                      selected
-                        ? "border-orange-500 bg-orange-50"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
-                    }`}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">
+                  Type d'erreur <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {SIGNALEMENT_TYPES.map((t) => {
+                    const Icon = t.icon;
+                    const selected = form.type === t.value;
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() =>
+                          setForm({ ...form, type: t.value, userId: "", entiteId: "" })
+                        }
+                        className={`text-left p-3 rounded-lg border-2 transition-all ${
+                          selected
+                            ? "border-orange-500 bg-orange-50"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                      >
+                        <div className={`flex items-center gap-2 font-medium text-sm ${t.color}`}>
+                          <Icon className="w-4 h-4" />
+                          {t.label}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">{t.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {"needsUser" in selectedType && selectedType.needsUser && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Personne concernée <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.userId}
+                    onChange={(e) => setForm({ ...form, userId: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                   >
-                    <div className={`flex items-center gap-2 font-medium text-sm ${t.color}`}>
-                      <Icon className="w-4 h-4" />
-                      {t.label}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">{t.desc}</div>
-                  </button>
-                );
-              })}
+                    <option value="">Sélectionner une personne</option>
+                    {users.map((u) => (
+                      <option key={u.id_user} value={u.id_user}>
+                        {u.prenom} {u.nom} ({u.login})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {"needsEntite" in selectedType && selectedType.needsEntite && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Structure concernée
+                  </label>
+                  <select
+                    value={form.entiteId}
+                    onChange={(e) => setForm({ ...form, entiteId: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Sélectionner une structure</option>
+                    {formEntites.map((e) => (
+                      <option key={e.id_entite} value={e.id_entite}>
+                        {e.nom} ({e.type_entite})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Description de l'erreur <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  placeholder="Décrivez précisément l'erreur et la correction attendue…"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-60"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="flex items-center gap-2 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Annuler
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* Personne ciblée */}
-          {"needsUser" in selectedType && selectedType.needsUser && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Personne concernée <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.userId}
-                onChange={(e) => setForm({ ...form, userId: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">Sélectionner une personne</option>
-                {users.map((u) => (
-                  <option key={u.id_user} value={u.id_user}>
-                    {u.prenom} {u.nom} ({u.login})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Structure ciblée */}
-          {"needsEntite" in selectedType && selectedType.needsEntite && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Structure concernée
-              </label>
-              <select
-                value={form.entiteId}
-                onChange={(e) => setForm({ ...form, entiteId: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">Sélectionner une structure</option>
-                {formEntites.map((e) => (
-                  <option key={e.id_entite} value={e.id_entite}>
-                    {e.nom} ({e.type_entite})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Description de l'erreur <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={4}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-              placeholder="Décrivez précisément l'erreur et la correction attendue…"
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-60"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              Envoyer
-            </button>
-            <button
-              onClick={() => setShowForm(false)}
-              className="flex items-center gap-2 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
-            >
-              <XCircle className="w-4 h-4" />
-              Annuler
-            </button>
-          </div>
           </div>
         </div>
       )}

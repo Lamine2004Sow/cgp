@@ -37,8 +37,8 @@ En plus de `@Roles`, la lecture ou l'écriture peut être refusée par:
 
 | Méthode | Route | Accès | Usage |
 | --- | --- | --- | --- |
-| `GET` | `/years` | tous rôles | liste des années, filtre possible par statut |
-| `GET` | `/years/:id` | tous rôles | détail d'une année |
+| `GET` | `/years` | tous rôles | liste complète pour `services centraux`, année courante seulement pour les autres rôles |
+| `GET` | `/years/:id` | tous rôles | détail d'une année, limité à l'année courante pour les non-`services centraux` |
 | `POST` | `/years/:id/clone` | services centraux | crée une nouvelle année depuis une année source ou `0` pour une année vide |
 | `PATCH` | `/years/:id/status` | services centraux | passe l'année en `EN_COURS`, `PREPARATION` ou `ARCHIVEE` |
 | `DELETE` | `/years/:id` | services centraux | exporte une sauvegarde workbook puis supprime l'année |

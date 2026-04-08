@@ -79,9 +79,14 @@ Capture à insérer:
 
 ### 3.3 Changer d'année universitaire
 
-Le changement d'année se fait depuis le sélecteur d'année visible dans l'application.
+Le changement d'année est réservé aux `services centraux`.
 
-Quand l'année change:
+Pour les autres rôles:
+
+- l'application reste bloquée sur l'année `EN_COURS`
+- l'année est visible dans l'en-tête mais n'est pas modifiable
+
+Pour les `services centraux`, le sélecteur d'année permet de changer de contexte. Quand l'année change:
 
 - les structures affichées changent
 - les droits peuvent changer
@@ -90,7 +95,7 @@ Quand l'année change:
 Capture à insérer:
 
 - fichier: `documentation/captures/02-tableau-de-bord.png`
-- montrer: le sélecteur d'année dans l'en-tête ou dans la zone visible la plus claire
+- montrer: le sélecteur d'année pour un compte services centraux, ou à défaut l'affichage figé de l'année courante pour un autre rôle
 - note: inutile de faire une deuxième capture si le sélecteur est déjà visible sur la capture du tableau de bord
 
 ## 4. Navigation générale

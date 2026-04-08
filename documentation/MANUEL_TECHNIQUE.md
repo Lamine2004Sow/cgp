@@ -126,7 +126,7 @@ Le backend applique globalement:
 - `ScopeGuard`
   limite l'accès à l'entité de l'utilisateur et à ses descendants hiérarchiques
 - `YearGuard`
-  limite l'accès aux années de l'utilisateur, sauf `services-centraux`
+  limite l'accès aux années de l'utilisateur, sauf `services-centraux`, et borne les autres rôles à l'année `EN_COURS`
 - `ThrottleGuard`
   garde de base anti-abus
 
@@ -225,7 +225,7 @@ Les tables spécialisées enrichissent selon le type:
 
 - l'authentification locale
 - le chargement de l'utilisateur courant
-- la sélection de l'année courante
+- la sélection de l'année courante, avec changement de contexte réservé aux `services-centraux`
 - le menu de navigation
 - le rendu conditionnel des écrans selon le rôle
 

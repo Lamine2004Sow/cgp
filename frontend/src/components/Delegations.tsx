@@ -343,10 +343,17 @@ export function Delegations({
       )}
 
       {showCreateForm && canCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-slate-900 mb-4">Nouvelle délégation</h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label="Fermer la fenêtre de création de délégation"
+            onClick={() => setShowCreateForm(false)}
+            className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"
+          />
+          <div className="relative flex min-h-full items-center justify-center p-4">
+            <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+              <h3 className="text-slate-900 mb-4">Nouvelle délégation</h3>
+              <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -444,6 +451,7 @@ export function Delegations({
                 Annuler
               </button>
             </div>
+              </div>
             </div>
           </div>
         </div>

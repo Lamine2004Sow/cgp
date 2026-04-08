@@ -263,6 +263,18 @@ const deriveYearsFromAffectations = (affectations: ApiAffectation[]): AcademicYe
   }));
 };
 
+const getPreferredAcademicYear = (years: AcademicYear[]) =>
+  years.find((year) => year.status === "en-cours") || years[years.length - 1] || null;
+
+const getVisibleAcademicYears = (years: AcademicYear[], role: UserRole): AcademicYear[] => {
+  if (role === "services-centraux") {
+    return years;
+  }
+
+  const preferredYear = getPreferredAcademicYear(years);
+  return preferredYear ? [preferredYear] : [];
+};
+
 const deriveEntitesFromAffectations = (
   affectations: ApiAffectation[],
   yearId?: string | null,
@@ -391,6 +403,7 @@ export default function App() {
       }
 
       const normalizedAffectations = normalizeAffectations(meData.user.affectations);
+      const topRole = getTopRole(normalizedAffectations);
 
       let mappedYears: AcademicYear[] = [];
       try {
@@ -409,10 +422,14 @@ export default function App() {
         throw new Error("Aucune annee disponible pour cet utilisateur");
       }
 
-      setAcademicYears(mappedYears);
+      const visibleYears = getVisibleAcademicYears(mappedYears, topRole);
+      if (!visibleYears.length) {
+        throw new Error("Aucune annee disponible pour cet utilisateur");
+      }
 
-      const yearToUse =
-        mappedYears.find((year) => year.status === "en-cours") || mappedYears[0] || null;
+      setAcademicYears(visibleYears);
+
+      const yearToUse = getPreferredAcademicYear(visibleYears);
       setCurrentYear(yearToUse);
 
       let entiteItems: EntiteStructure[] = [];
@@ -458,6 +475,8 @@ export default function App() {
     clearStoredLogin();
     setAuthLogin(null);
     setCurrentUser(null);
+    setFocusUserId(null);
+    setFocusEntiteId(null);
     setCurrentView("dashboard");
   };
 
@@ -482,6 +501,13 @@ export default function App() {
   };
 
   const handleYearChange = async (year: AcademicYear) => {
+    if (currentUser?.role !== "services-centraux" && currentYear?.id !== year.id) {
+      setYearSelectorOpen(false);
+      return;
+    }
+
+    setFocusUserId(null);
+    setFocusEntiteId(null);
     setCurrentYear(year);
     if (!authLogin) return;
     setLoading(true);
@@ -517,7 +543,7 @@ export default function App() {
   };
 
   const refreshYears = async () => {
-    if (!authLogin) return;
+    if (!authLogin || !currentUser) return;
     try {
       const yearsData = await apiFetch<{ items: ApiYear[] }>("/years", { login: authLogin });
       const mappedYears = yearsData.items.map((year) => ({
@@ -526,10 +552,11 @@ export default function App() {
         status: mapYearStatus(year.statut),
         isFrozen: false,
       }));
-      setAcademicYears(mappedYears);
-      if (!currentYear || !mappedYears.find((year) => year.id === currentYear.id)) {
+      const visibleYears = getVisibleAcademicYears(mappedYears, currentUser.role);
+      setAcademicYears(visibleYears);
+      if (!currentYear || !visibleYears.find((year) => year.id === currentYear.id)) {
         const fallback =
-          mappedYears.find((year) => year.status === "en-cours") || mappedYears[0] || null;
+          getPreferredAcademicYear(visibleYears);
         setCurrentYear(fallback);
       }
     } catch {
@@ -544,6 +571,8 @@ export default function App() {
   if (!currentUser || !currentYear) {
     return <Login onLogin={handleLogin} error={authError} loading={loading} />;
   }
+
+  const canSwitchAcademicYear = currentUser.role === "services-centraux";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -568,22 +597,36 @@ export default function App() {
             <div className="flex items-center gap-4">
               <NotificationBell authLogin={authLogin} />
               <div className="relative">
-                <button
-                  onClick={() => setYearSelectorOpen(!yearSelectorOpen)}
-                  className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors border border-indigo-200"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span className="font-medium">{currentYear.year}</span>
-                  <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded">
-                    {currentYear.status === "en-cours"
-                      ? "En cours"
-                      : currentYear.status === "en-preparation"
-                      ? "Preparation"
-                      : "Archivee"}
-                  </span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                {yearSelectorOpen && (
+                {canSwitchAcademicYear ? (
+                  <button
+                    onClick={() => setYearSelectorOpen(!yearSelectorOpen)}
+                    className="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors border border-indigo-200"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">{currentYear.year}</span>
+                    <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded">
+                      {currentYear.status === "en-cours"
+                        ? "En cours"
+                        : currentYear.status === "en-preparation"
+                        ? "Preparation"
+                        : "Archivee"}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <span className="font-medium">{currentYear.year}</span>
+                    <span className="text-xs bg-slate-200 px-2 py-0.5 rounded text-slate-600">
+                      {currentYear.status === "en-cours"
+                        ? "En cours"
+                        : currentYear.status === "en-preparation"
+                        ? "Preparation"
+                        : "Archivee"}
+                    </span>
+                  </div>
+                )}
+                {canSwitchAcademicYear && yearSelectorOpen && (
                   <>
                     <div
                       className="fixed inset-0 z-10"
@@ -711,7 +754,7 @@ export default function App() {
               <Dashboard
                 user={currentUser}
                 currentYear={currentYear}
-                onNavigate={setCurrentView}
+                onNavigate={(view) => handleNavigate(view)}
                 authLogin={authLogin}
               />
             )}

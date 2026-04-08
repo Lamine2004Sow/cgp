@@ -35,7 +35,7 @@ interface FilterBarProps {
 export function FilterBar({ title, fields, hasActiveFilters, onReset, className }: FilterBarProps) {
   return (
     <div className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className ?? ""}`.trim()}>
-      {title && <h3 className="mb-3 text-sm font-medium text-slate-900">{title}</h3>}
+      {title && <h3 className="mb-3 text-sm font-semibold text-slate-900">{title}</h3>}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
         {fields.map((field) => (
           <div key={field.key}>
@@ -46,14 +46,14 @@ export function FilterBar({ title, fields, hasActiveFilters, onReset, className 
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
                 placeholder={field.placeholder}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
               />
             ) : (
               <select
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
                 disabled={field.disabled}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               >
                 {field.options.map((opt) => (
                   <option key={opt.value} value={opt.value}>

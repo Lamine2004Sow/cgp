@@ -16,6 +16,7 @@ exports.AnneesController = void 0;
 const common_1 = require("@nestjs/common");
 const roles_constants_1 = require("../../auth/roles.constants");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const annees_service_1 = require("./annees.service");
 const years_list_query_dto_1 = require("./dto/years-list-query.dto");
 const clone_year_dto_1 = require("./dto/clone-year.dto");
@@ -25,8 +26,8 @@ let AnneesController = class AnneesController {
     constructor(anneesService) {
         this.anneesService = anneesService;
     }
-    async list(query) {
-        const items = await this.anneesService.list(query.statut);
+    async list(user, query) {
+        const items = await this.anneesService.listForUser(user, query.statut);
         return { items };
     }
     async findOne(id) {
@@ -49,9 +50,10 @@ exports.AnneesController = AnneesController;
 __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)(...Object.values(roles_constants_1.ROLE_IDS)),
-    __param(0, (0, common_1.Query)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [years_list_query_dto_1.YearsListQueryDto]),
+    __metadata("design:paramtypes", [Object, years_list_query_dto_1.YearsListQueryDto]),
     __metadata("design:returntype", Promise)
 ], AnneesController.prototype, "list", null);
 __decorate([

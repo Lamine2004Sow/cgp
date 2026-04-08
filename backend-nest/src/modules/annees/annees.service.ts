@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import type { CurrentUser } from '../../common/types/current-user';
+import { ROLE_IDS } from '../../auth/roles.constants';
 import { StandardWorkbookService } from '../exports/standard-workbook.service';
 import { CloneYearDto } from './dto/clone-year.dto';
 
@@ -35,6 +37,19 @@ export class AnneesService {
     });
 
     return items.map((item) => this.mapYear(item));
+  }
+
+  async listForUser(user: CurrentUser, statut?: string) {
+    if (this.isServicesCentraux(user)) {
+      return this.list(statut);
+    }
+
+    const currentYear = await this.findCurrentYear(statut);
+    if (!currentYear) {
+      return [];
+    }
+
+    return [this.mapYear(currentYear)];
   }
 
   async cloneYear(sourceId: string, payload: CloneYearDto) {
@@ -487,5 +502,29 @@ export class AnneesService {
       statut: item.statut,
       id_annee_source: item.id_annee_source ? Number(item.id_annee_source) : null,
     };
+  }
+
+  private isServicesCentraux(user: CurrentUser): boolean {
+    return user.affectations.some(
+      (affectation) => affectation.roleId === ROLE_IDS.SERVICES_CENTRAUX,
+    );
+  }
+
+  private async findCurrentYear(statut?: string) {
+    if (!statut || statut === 'EN_COURS') {
+      const current = await this.prisma.annee_universitaire.findFirst({
+        where: { statut: 'EN_COURS' },
+        orderBy: { id_annee: 'desc' },
+      });
+
+      if (current) {
+        return current;
+      }
+    }
+
+    return this.prisma.annee_universitaire.findFirst({
+      where: statut ? { statut: statut as never } : undefined,
+      orderBy: { id_annee: 'desc' },
+    });
   }
 }

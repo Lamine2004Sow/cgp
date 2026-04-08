@@ -5,12 +5,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.YearGuard = void 0;
 const common_1 = require("@nestjs/common");
 const roles_constants_1 = require("../../auth/roles.constants");
+const prisma_service_1 = require("../prisma/prisma.service");
 let YearGuard = class YearGuard {
-    canActivate(context) {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async canActivate(context) {
         const request = context.switchToHttp().getRequest();
         if (request.path?.endsWith('/health')) {
             return true;
@@ -25,6 +33,10 @@ let YearGuard = class YearGuard {
         const yearIds = this.extractYearIds(request);
         if (yearIds.length === 0) {
             return true;
+        }
+        const currentYearId = await this.resolveCurrentYearId();
+        if (currentYearId && !yearIds.every((yearId) => yearId === currentYearId)) {
+            return false;
         }
         const userYears = new Set(user.affectations.map((affectation) => affectation.anneeId));
         return yearIds.every((yearId) => userYears.has(yearId));
@@ -85,9 +97,25 @@ let YearGuard = class YearGuard {
         }
         out.add(value);
     }
+    async resolveCurrentYearId() {
+        const current = await this.prisma.annee_universitaire.findFirst({
+            where: { statut: 'EN_COURS' },
+            orderBy: { id_annee: 'desc' },
+            select: { id_annee: true },
+        });
+        if (current) {
+            return String(current.id_annee);
+        }
+        const latest = await this.prisma.annee_universitaire.findFirst({
+            orderBy: { id_annee: 'desc' },
+            select: { id_annee: true },
+        });
+        return latest ? String(latest.id_annee) : null;
+    }
 };
 exports.YearGuard = YearGuard;
 exports.YearGuard = YearGuard = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], YearGuard);
 //# sourceMappingURL=year.guard.js.map

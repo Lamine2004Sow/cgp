@@ -2,10 +2,13 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 import type { CurrentUser } from '../types/current-user';
 import { ROLE_IDS } from '../../auth/roles.constants';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class YearGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     if (request.path?.endsWith('/health')) {
       return true;
@@ -28,6 +31,11 @@ export class YearGuard implements CanActivate {
     const yearIds = this.extractYearIds(request);
     if (yearIds.length === 0) {
       return true;
+    }
+
+    const currentYearId = await this.resolveCurrentYearId();
+    if (currentYearId && !yearIds.every((yearId) => yearId === currentYearId)) {
+      return false;
     }
 
     const userYears = new Set(
@@ -102,5 +110,24 @@ export class YearGuard implements CanActivate {
       return;
     }
     out.add(value);
+  }
+
+  private async resolveCurrentYearId(): Promise<string | null> {
+    const current = await this.prisma.annee_universitaire.findFirst({
+      where: { statut: 'EN_COURS' },
+      orderBy: { id_annee: 'desc' },
+      select: { id_annee: true },
+    });
+
+    if (current) {
+      return String(current.id_annee);
+    }
+
+    const latest = await this.prisma.annee_universitaire.findFirst({
+      orderBy: { id_annee: 'desc' },
+      select: { id_annee: true },
+    });
+
+    return latest ? String(latest.id_annee) : null;
   }
 }
