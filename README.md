@@ -88,6 +88,7 @@ Réponse attendue: `HTTP/1.1 200 OK`
 ## Fonctionnalités clés déjà en place
 
 - gestion des années avec création, activation, archivage, clonage complet ou sélectif et suppression avec sauvegarde standardisée
+- changement d'année réservé aux services centraux, les autres profils restant sur l'année `EN_COURS`
 - organigrammes en vue `structures` et `personnes`, avec filtres, exports et bibliothèque des organigrammes déjà générés
 - vue personnes avec affiliation, mail institutionnel et mail secondaire
 - vue structures avec responsables affichés de manière simplifiée: nom, prénom et mail institutionnel

@@ -142,7 +142,10 @@ Points d'attention:
 
 Scénarios:
 
-- lister les années
+- vérifier qu'un profil `services-centraux` peut lister et changer d'année
+- vérifier qu'un profil non `services-centraux` ne voit que l'année `EN_COURS`
+- vérifier qu'un profil non `services-centraux` ne peut pas changer d'année dans l'interface
+- vérifier qu'un profil non `services-centraux` ne peut pas forcer une autre année via l'API
 - créer une année vide
 - cloner une année complète
 - cloner une année avec structures sélectionnées seulement
